@@ -1,0 +1,13 @@
+* {
+    font-family: sans-serif;
+}
+body {
+    text-align: center;
+    background-color: aquamarine;
+    justify-content: center;
+    align-items:  center;
+    height:  100vh;
+    flex-direction: column;
+    position: fixed;
+    width: 100%;
+}
