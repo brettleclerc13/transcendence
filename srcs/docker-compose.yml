@@ -1,0 +1,47 @@
+    services:
+        postgresql:
+          build:
+            context: ./requirements/postgresql
+            dockerfile: Dockerfile
+          image: postgres:16.4
+          container_name: postgresql
+          env_file: .env
+          init: true
+          restart: always
+          hostname: postgresql
+
+        app:
+          depends_on:
+              - postgresql
+          build:
+            context: ./requirements/app
+            dockerfile: Dockerfile
+          image: python:3.13.0rc1
+          container_name: app
+          env_file: .env
+          init: true
+          restart: always
+          hostname: app
+
+                #        smart_contract:
+                #          depends_on:
+                #              - postgresql
+                #          build:
+                #            context: ./requirements/smart_contract
+                #            dockerfile: Dockerfile
+                #          image: solidity:10.11.6
+                #          container_name: smart_contract
+                #          env_file: .env
+                #          init: true
+                #          restart: always
+                #          hostname: smart_contract
+                #          volumes:
+                #              - "smart_contract:/projects"
+
+                #    volumes:
+                #      smart_contract:
+                #        driver: local
+                #        driver_opts:
+                #          type: 'none'
+                #          o: 'bind'
+                #          device: "/home/volume"

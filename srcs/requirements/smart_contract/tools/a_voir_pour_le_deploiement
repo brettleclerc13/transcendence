@@ -1,0 +1,41 @@
+from web3 import Web3, AsyncWeb3
+import json
+
+# Connect to your Ethereum node
+infura_url = "https://sepolia.infura.io/v3/9b554d658fc34c70a9579f794c3203c3"
+web3 = AsyncWeb3(AsyncWeb3.HTTPProvider(infura_url))
+
+
+
+# Load the compiled contract ABI and bytecode
+with open('build/TournamentResults_sol_TournamentResults.abi', 'r') as file:
+    contract_abi = json.load(file)
+
+with open('build/TournamentResults_sol_TournamentResults.bin', 'r') as file:
+    contract_bytecode = file.read()
+
+# Create a new contract instance
+contract = web3.eth.contract(abi=contract_abi, bytecode=contract_bytecode)
+
+# Get the account to deploy the contract
+account = web3.eth.accounts[0]  # Replace with your account address
+
+# Build the transaction
+transaction = contract.constructor().buildTransaction({
+    'from': account,
+    'nonce': web3.eth.getTransactionCount(account),
+    'gas': 2000000,
+    'gasPrice': web3.toWei('50', 'gwei')
+})
+
+# Sign the transaction
+signed_txn = web3.eth.account.signTransaction(transaction, private_key='YOUR_PRIVATE_KEY')  # Replace with your private key
+
+# Send the transaction
+tx_hash = web3.eth.sendRawTransaction(signed_txn.rawTransaction)
+
+# Wait for the transaction to be mined
+tx_receipt = web3.eth.waitForTransactionReceipt(tx_hash)
+
+# Print the contract address
+print('Contract deployed to:', tx_receipt.contractAddress)
