@@ -10,8 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
+postgresql_name = os.getenv('POSTGRESQL_NAME', '')
+postgresql_user = os.getenv('POSTGRESQL_USER', '')
+postgresql_password = os.getenv('POSTGRESQL_PASSWORD', '')
+postgresql_host = os.getenv('POSTGRESQL_HOST', '')
+postgresql_port = os.getenv('POSTGRESQL_PORT', '')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -76,14 +82,15 @@ WSGI_APPLICATION = 'game.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "postgres",
-        "USER": "postgres",
-        "PASSWORD": "mdp",
-        "HOST": "172.18.0.2",
-        "PORT": "5432",
+        "NAME": postgresql_name,
+        "USER": postgresql_user,
+        "PASSWORD": postgresql_password,
+        "HOST": postgresql_host,
+        "PORT": postgresql_port,
     }
 }
 
+print(f"MY_VARIABLE is set to {postgresql_name}")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

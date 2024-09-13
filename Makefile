@@ -1,8 +1,16 @@
 .PHONY: all clean fclean re
 
 all:
-	@if [ ! -d "/home/volume" ]; then \
-		sudo mkdir -p "/home/volume"; \
+	@if [ ! -d "./volume/smart_contract" ]; then \
+		sudo mkdir -p "./volume/smart_contract"; \
+	fi
+
+	@if [ ! -d "./volume/django_web_app" ]; then \
+		sudo mkdir -p "./volume/django_web_app"; \
+	fi
+
+	@if [ ! -d "./volume/postgresql" ]; then \
+		sudo mkdir -p "./volume/postgresql"; \
 	fi
 
 	@sudo docker compose -f ./srcs/docker-compose.yml up -d --build
