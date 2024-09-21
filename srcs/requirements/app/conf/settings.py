@@ -13,11 +13,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 
-postgresql_name = os.getenv('POSTGRESQL_NAME', '')
-postgresql_user = os.getenv('POSTGRESQL_USER', '')
-postgresql_password = os.getenv('POSTGRESQL_PASSWORD', '')
-postgresql_host = os.getenv('POSTGRESQL_HOST', '')
-postgresql_port = os.getenv('POSTGRESQL_PORT', '')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,12 +21,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-futv7-6hxf39qa^%&6vhh&9l6v!xwkxq*19rmr*1(s-eip&)h$'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['transcendence.fr']
+CSRF_TRUSTED_ORIGINS = ['https://transcendence.fr']
 
 
 # Application definition
@@ -75,22 +71,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'game.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": postgresql_name,
-        "USER": postgresql_user,
-        "PASSWORD": postgresql_password,
-        "HOST": postgresql_host,
-        "PORT": postgresql_port,
+        "NAME": os.getenv('POSTGRESQL_NAME'),
+        "USER": os.getenv('POSTGRESQL_USER'),
+        "PASSWORD": os.getenv('POSTGRESQL_PASSWORD'),
+        "HOST": os.getenv('POSTGRESQL_HOST'),
+        "PORT": os.getenv('POSTGRESQL_PORT'),
     }
 }
-
-print(f"MY_VARIABLE is set to {postgresql_name}")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -126,7 +119,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_ROOT = '/static/'
+STATIC_URL = '/static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

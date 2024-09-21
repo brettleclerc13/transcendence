@@ -30,6 +30,7 @@
           hostname: app
           volumes:
               - "app:/django_web_app"
+              - "static:/static"
 
         nginx:
           depends_on:
@@ -38,6 +39,7 @@
             context: ./requirements/nginx
             dockerfile: Dockerfile
           ports:
+            #- "80:80"
             - "443:443/tcp"
           image: nginx:1.27.1
           container_name: nginx
@@ -47,6 +49,9 @@
           networks:
             - network
           hostname: nginx
+          volumes:
+              - "static:/static"
+
                 #        smart_contract:
                 #          depends_on:
                 #              - postgresql
@@ -81,6 +86,12 @@
           type: 'none'
           o: 'bind'
           device: "../volume/django_web_app"
+      static:
+        driver: local
+        driver_opts:
+          type: 'none'
+          o: 'bind'
+          device: "../volume/static"
       postgresql:
         driver: local
         driver_opts:
