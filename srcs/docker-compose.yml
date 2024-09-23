@@ -39,7 +39,6 @@
             context: ./requirements/nginx
             dockerfile: Dockerfile
           ports:
-            #- "80:80"
             - "443:443/tcp"
           image: nginx:1.27.1
           container_name: nginx

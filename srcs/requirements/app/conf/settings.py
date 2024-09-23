@@ -26,8 +26,8 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['transcendence.fr']
-CSRF_TRUSTED_ORIGINS = ['https://transcendence.fr']
+ALLOWED_HOSTS = ['${DOMAIN_NAME}']
+CSRF_TRUSTED_ORIGINS = ['https://${DOMAIN_NAME}']
 
 
 # Application definition

@@ -14,12 +14,12 @@ RUN openssl req -x509 -nodes \
 	-subj "/C=FR/ST=Alpes-Maritimes/L=Nice/O=Ecole\ 42/OU=Ecole/CN=transcendence.fr/emailAddress=mcordes@student.42nice.fr"
 
 WORKDIR /etc/nginx/conf.d
-COPY ./conf/default.conf ./default.conf
+RUN rm default.conf
+COPY ./conf/transcendence_fr.conf ./transcendence_fr.conf
 
 COPY ./tools/init_nginx.sh /tmp/init_nginx.sh
 RUN chmod +x /tmp/init_nginx.sh
 
-#EXPOSE 443
-EXPOSE 80
+EXPOSE 443
 
 CMD ["/tmp/init_nginx.sh"]
