@@ -14,7 +14,6 @@ RUN rm /var/lib/postgresql/data/postgresql.conf /var/lib/postgresql/data/pg_hba.
 COPY ./conf/postgresql.conf /var/lib/postgresql/data/postgresql.conf
 COPY ./conf/pg_hba.conf /var/lib/postgresql/data/pg_hba.conf
 
-
 EXPOSE 5432
 
 CMD ["postgres"]

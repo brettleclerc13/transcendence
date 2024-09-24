@@ -14,9 +14,27 @@
           volumes:
               - "postgresql:/var/lib/postgresql"
 
+        reactjs:
+          build:
+            context: ./requirements/reactjs
+            dockerfile: Dockerfile
+          image: reactjs
+          container_name: reactjs
+          env_file: .env
+          init: true
+          restart: always
+          ports:
+            - "3000:3000"
+          #networks:
+          #  - network
+          hostname: reactjs
+          #volumes:
+          #    - "postgresql:/var/lib/postgresql"
+
         app:
           depends_on:
               - postgresql
+              - reactjs
           build:
             context: ./requirements/app
             dockerfile: Dockerfile
