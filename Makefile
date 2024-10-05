@@ -6,6 +6,10 @@ all:
 		sudo mkdir -p "./volume/smart_contract"; \
 	fi
 
+	@if [ ! -d "./volume/nextjs" ]; then \
+		sudo mkdir -p "./volume/nextjs"; \
+	fi
+
 	@if [ ! -d "./volume/django_web_app" ]; then \
 		sudo mkdir -p "./volume/django_web_app"; \
 	fi

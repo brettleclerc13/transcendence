@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'pong',
 ]
 
 MIDDLEWARE = [
@@ -82,6 +84,8 @@ DATABASES = {
         "PASSWORD": os.getenv('POSTGRESQL_PASSWORD'),
         "HOST": os.getenv('POSTGRESQL_HOST'),
         "PORT": os.getenv('POSTGRESQL_PORT'),
+        "CONN_MAX_AGE":None,
+        "CONN_HEALTH_CHECKS":True,
     }
 }
 

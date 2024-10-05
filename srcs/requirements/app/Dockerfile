@@ -18,13 +18,22 @@ WORKDIR $APP_DIR
 
 RUN	python3 -m venv env \
 	&& source $ENV_DIR \
-    && pip install django psycopg gunicorn \
+    && pip install django psycopg gunicorn djangorestframework \
 	&& pip freeze > requirements.txt \
     && django-admin startproject $PROJECT_DIR
 
 WORKDIR	$APP_DIR/$PROJECT_DIR
 
+RUN source $ENV_DIR \
+    && python3 manage.py startapp pong
+
 COPY ./conf/settings.py ./$PROJECT_DIR/settings.py
+
+COPY ./tools/models.py ./pong/models.py
+COPY ./tools/serializers.py ./pong/serializers.py
+COPY ./tools/views.py ./pong/views.py
+
+COPY ./tools/urls.py ./game/urls.py
 
 COPY ./tools/init.sh ./init.sh
 RUN chmod +x init.sh
