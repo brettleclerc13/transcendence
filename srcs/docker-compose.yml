@@ -12,7 +12,7 @@
             - network
           hostname: postgresql
           volumes:
-              - "postgresql:/var/lib/postgresql"
+              - "postgresql:/var/lib/postgresql/data"
 
         app:
           depends_on:
