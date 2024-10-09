@@ -19,6 +19,6 @@ from django.urls import path
 from pong.views import ma_vue
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('api/admin/', admin.site.urls),
     path('api/articles/', ma_vue, name='articles'),
 ]
