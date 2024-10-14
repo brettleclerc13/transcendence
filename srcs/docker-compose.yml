@@ -1,54 +1,4 @@
     services:
-        postgresql:
-          build:
-            context: ./requirements/postgresql
-            dockerfile: Dockerfile
-          image: postgres:16.4
-          container_name: postgresql
-          env_file: .env
-          init: true
-          restart: always
-          networks:
-            - network
-          hostname: postgresql
-          volumes:
-              - "postgresql:/var/lib/postgresql/data"
-
-        app:
-          depends_on:
-              - postgresql
-          build:
-            context: ./requirements/app
-            dockerfile: Dockerfile
-          image: python:3.13.0rc1
-          container_name: app
-          env_file: .env
-          init: true
-          restart: always
-          networks:
-            - network
-          hostname: app
-          volumes:
-              - "app:/django_web_app"
-              - "static:/static"
-
-        nextjs:
-          depends_on:
-              - app
-          build:
-            context: ./requirements/nextjs
-            dockerfile: Dockerfile
-          image: nextjs
-          container_name: nextjs
-          env_file: .env
-          init: true
-          restart: always
-          networks:
-            - network
-          hostname: nextjs
-          volumes:
-              - "nextjs:/transcendence"
-
         nginx:
           depends_on:
               - nextjs
@@ -59,14 +9,106 @@
             - "443:443/tcp"
           image: nginx:1.27.1
           container_name: nginx
-          env_file: .env
+          env_file: ./env/.env_nginx
           init: true
           restart: always
           networks:
-            - network
+            network:
+              ipv4_address: 172.18.0.2
           hostname: nginx
           volumes:
-              - "static:/static"
+              - "static_service_app:/static/api"
+              - "static_service_chat:/static/chat"
+
+        nextjs:
+          depends_on:
+              - service_app_django
+              - service_chat_django
+          build:
+            context: ./requirements/nextjs
+            dockerfile: Dockerfile
+          image: nextjs
+          container_name: nextjs
+          init: true
+          restart: always
+          networks:
+            network:
+              ipv4_address: 172.18.0.3
+          hostname: nextjs
+          volumes:
+              - "nextjs:/transcendence"
+
+        service_app_django:
+          depends_on:
+              - service_app_postgresql
+          build:
+            context: ./requirements/service_app/django
+            dockerfile: Dockerfile
+          image: python:3.13.0rc1
+          container_name: service_app_django
+          env_file:
+            - ./env/.env_nginx
+            - ./env/.env_service_app
+          init: true
+          restart: always
+          networks:
+            network:
+              ipv4_address: 172.18.0.4
+          hostname: service_app_django
+          volumes:
+              - "service_app_django:/django_web_app"
+              - "static_service_app:/static"
+
+        service_app_postgresql:
+          build:
+            context: ./requirements/service_app/postgresql
+            dockerfile: Dockerfile
+          image: postgres:16.4
+          container_name: service_app_postgresql
+          init: true
+          restart: always
+          networks:
+            network:
+              ipv4_address: 172.18.0.5
+          hostname: service_app_postgresql
+          volumes:
+              - "service_app_postgresql:/var/lib/postgresql/data"
+
+        service_chat_django:
+          depends_on:
+              - service_chat_postgresql
+          build:
+            context: ./requirements/service_chat/django
+            dockerfile: Dockerfile
+          image: python:3.13.0rc1_1
+          container_name: service_chat_django
+          env_file:
+            - ./env/.env_nginx
+            - ./env/.env_service_chat
+          init: true
+          restart: always
+          networks:
+            network:
+              ipv4_address: 172.18.0.6
+          hostname: service_chat_django
+          volumes:
+              - "service_chat_django:/django_web_chat"
+              - "static_service_chat:/static"
+
+        service_chat_postgresql:
+          build:
+            context: ./requirements/service_chat/postgresql
+            dockerfile: Dockerfile
+          image: postgres:16.4_1
+          container_name: service_chat_postgresql
+          init: true
+          restart: always
+          networks:
+            network:
+              ipv4_address: 172.18.0.7
+          hostname: service_chat_postgresql
+          volumes:
+              - "service_chat_postgresql:/var/lib/postgresql/data"
 
                 #        smart_contract:
                 #          depends_on:
@@ -94,29 +136,50 @@
     networks:
       network:
         driver: bridge
+        ipam:
+          config:
+            - subnet: 172.18.0.0/24
 
     volumes:
-      app:
-        driver: local
-        driver_opts:
-          type: 'none'
-          o: 'bind'
-          device: "../volume/django_web_app"
-      static:
-        driver: local
-        driver_opts:
-          type: 'none'
-          o: 'bind'
-          device: "../volume/static"
-      postgresql:
-        driver: local
-        driver_opts:
-          type: 'none'
-          o: 'bind'
-          device: "../volume/postgresql"
       nextjs:
         driver: local
         driver_opts:
           type: 'none'
           o: 'bind'
           device: "../volume/nextjs"
+      static_service_app:
+        driver: local
+        driver_opts:
+          type: 'none'
+          o: 'bind'
+          device: "../volume/static/static_service_app"
+      service_app_django:
+        driver: local
+        driver_opts:
+          type: 'none'
+          o: 'bind'
+          device: "../volume/service_app/django"
+      service_app_postgresql:
+        driver: local
+        driver_opts:
+          type: 'none'
+          o: 'bind'
+          device: "../volume/service_app/postgresql"
+      static_service_chat:
+        driver: local
+        driver_opts:
+          type: 'none'
+          o: 'bind'
+          device: "../volume/static/static_service_chat"
+      service_chat_django:
+        driver: local
+        driver_opts:
+          type: 'none'
+          o: 'bind'
+          device: "../volume/service_chat/django"
+      service_chat_postgresql:
+        driver: local
+        driver_opts:
+          type: 'none'
+          o: 'bind'
+          device: "../volume/service_chat/postgresql"

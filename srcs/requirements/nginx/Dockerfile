@@ -7,7 +7,7 @@ RUN apk update \
     && apk upgrade \
     && apk add vim openssl
 
-RUN mkdir /etc/nginx/ssl /static
+RUN mkdir -p /etc/nginx/ssl /static/api /static/chat
 RUN openssl req -x509 -nodes \
 	-out /etc/nginx/ssl/transcendence.pem \
 	-keyout /etc/nginx/ssl/transcendence.key \

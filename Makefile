@@ -10,16 +10,28 @@ all:
 		sudo mkdir -p "./volume/nextjs"; \
 	fi
 
-	@if [ ! -d "./volume/django_web_app" ]; then \
-		sudo mkdir -p "./volume/django_web_app"; \
+	@if [ ! -d "./volume/static/static_service_app" ]; then \
+		sudo mkdir -p "./volume/static/static_service_app"; \
 	fi
 
-	@if [ ! -d "./volume/static" ]; then \
-		sudo mkdir -p "./volume/static"; \
+	@if [ ! -d "./volume/service_app/django" ]; then \
+		sudo mkdir -p "./volume/service_app/django"; \
 	fi
 
-	@if [ ! -d "./volume/postgresql" ]; then \
-		sudo mkdir -p "./volume/postgresql"; \
+	@if [ ! -d "./volume/service_app/postgresql" ]; then \
+		sudo mkdir -p "./volume/service_app/postgresql"; \
+	fi
+
+	@if [ ! -d "./volume/static/static_service_chat" ]; then \
+		sudo mkdir -p "./volume/static/static_service_chat"; \
+	fi
+
+	@if [ ! -d "./volume/service_chat/django" ]; then \
+		sudo mkdir -p "./volume/service_chat/django"; \
+	fi
+
+	@if [ ! -d "./volume/service_chat/postgresql" ]; then \
+		sudo mkdir -p "./volume/service_chat/postgresql"; \
 	fi
 
 	@sudo docker compose -f ./srcs/docker-compose.yml up -d --build

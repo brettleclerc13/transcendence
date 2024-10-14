@@ -13,7 +13,7 @@ RUN apk update \
     && apk upgrade \
     && apk add vim postgresql-dev postgresql-client gcc python3-dev musl-dev
 
-RUN mkdir /django_web_app /static
+RUN mkdir $APP_DIR /static
 WORKDIR $APP_DIR
 
 RUN	python3 -m venv env \
