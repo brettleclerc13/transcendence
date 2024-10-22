@@ -3,7 +3,7 @@ import Grid from "../components/grid"
 export default function Home() {
   return (
     <div className="relative h-screen">
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 w-full">
         <Grid />
       </div>
 
