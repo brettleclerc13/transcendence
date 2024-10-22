@@ -32,6 +32,7 @@ export default function Grid() {
 			cell.hoverCount = 0;
 		}
 		cell.hoverCount++;
+		if (cell.hoverCount >= 2) cell.className = "flex items-center justify-center w-[50px] h-[50px] overflow-hidden"
 
 		const darkeningPercentage = Math.max(1 - (0.5 * cell.hoverCount), 0);
 
@@ -48,9 +49,6 @@ export default function Grid() {
 
 		const numCols = Math.floor(largeurPage / cellSize); // Nombre de colonnes basées sur la largeur disponible
 		const numRows = Math.floor(window.innerHeight / cellSize);
-		// const totalSpacing = 16 * 2;
-		// let cellDimension = (largeurPage - totalSpacing) / 16;
-		// cellDimension = parseInt(cellDimension.toString());
 
 		for (let i = 0; i < numRows; i++) {
 			for (let j = 0; j < numCols; j++) {
@@ -61,11 +59,11 @@ export default function Grid() {
 				cell.addEventListener("mouseenter", () => isHovered(cell), true);
 
 				// Ajout des classes Tailwind pour chaque cellule
-				cell.className = 'border border-blue-900/50 flex items-center justify-center w-[50px] h-[50px]';
+				cell.className = 'border border-blue-900/50 flex items-center justify-center w-[50px] h-[50px] overflow-hidden';
 
 				container.appendChild(cell);
 			}
 		}
 	}
-	return <div ref={containerRef} id="container" className="flex flex-wrap w-full"></div>;
+	return <div ref={containerRef} id="container" className="flex flex-wrap w-full overflow-hidden"></div>;
 }
