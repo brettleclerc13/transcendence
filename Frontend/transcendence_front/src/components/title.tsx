@@ -12,6 +12,7 @@ export default function Title () {
 	const fullTextDance = "ft_transcendance🕺🏽🪩";
 	const fullText = "ft_transcendence";
 	const typingSpeed = 150;
+	const deleteSpeed = 50;
 	let cursorBlinkSpeed = 500;
 
 	// First typing animation
@@ -59,10 +60,10 @@ export default function Title () {
 						clearInterval(deleteInterval);
 						setIsFinalTypingComplete(true);
 					}
-				}, typingSpeed);
+				}, deleteSpeed);
 	
 				return () => clearInterval(deleteInterval);
-			}, 1000);
+			}, 700);
 		}
 	}, [isFirstTypingComplete]);
 
