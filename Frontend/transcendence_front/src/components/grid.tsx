@@ -58,7 +58,6 @@ const Grid = forwardRef(function Grid({ onDisappear }: { onDisappear: () => void
 
 	function handleClick(cell: HTMLDivElement) {
 		if (cell.hoverCount >= 2) {
-			cell.style.opacity = '0'; // Hide the cell by making it transparent
 			cell.style.pointerEvents = 'none'; // Disable further interactions with the cell
 			onDisappear();
 		}
