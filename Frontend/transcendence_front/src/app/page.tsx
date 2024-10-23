@@ -1,16 +1,44 @@
+'use client'
+
+import { useState, useRef } from "react";
 import Grid from "../components/grid"
 import Title from "../components/title"
+import BackButton from "@/components/backButton";
 
 export default function Home() {
-  return (
-    <div className="relative h-screen flex justify-center items-center">
-      <div className="absolute inset-0 z-0 w-full">
-        <Grid />
-      </div>
+  const [showFirstLayer, setShowFirstLayer] = useState(true);
+	const [showBlackLayer, setShowBlackLayer] = useState(false);
+  const gridRef = useRef<any>(null);
 
-      <div className="absolute shadow-lg shadow-gray-900 bg-gray-800 text-white rounded-full px-8 py-4 pointer-events-none">
-        <Title />
-      </div>
+  const handleDisappear = () => {
+    setShowFirstLayer(false);
+
+    setTimeout(() => {
+      setShowBlackLayer(true);
+    }, 500);
+  };
+
+  const handleReappear = () => {
+    setShowBlackLayer(false);
+    setShowFirstLayer(true);
+    if (gridRef.current) {
+      gridRef.current.resetGrid();
+    }
+  };
+
+  return (
+    <div className="relative h-screen flex justify-center items-center bg-teal-600">
+        <Grid ref={gridRef} onDisappear={handleDisappear}/>
+        {showFirstLayer && (
+          <div className="absolute shadow-lg shadow-gray-900 bg-gray-800 text-white rounded-full px-8 py-4 pointer-events-none transition-opacity duration-500 ${!showFirstLayer ? 'opacity-0' : 'opacity-100'}">
+            <Title />
+          </div>
+        )}
+        {showBlackLayer && (
+				<div className="absolute inset-0 bg-black transition-opacity duration-500 opacity-100 z-20">
+					<BackButton onReappear={handleReappear}/>
+				</div>
+			)}
     </div>
   );
 }

@@ -1,11 +1,20 @@
 "use client"
 
-import { useEffect, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 
-export default function Grid() {
+const Grid = forwardRef(function Grid({ onDisappear }: { onDisappear: () => void}, ref) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const cellSize = 50;
 	const titleHeight = 200;
+
+	useImperativeHandle(ref, () => ({
+		resetGrid() {
+			if (containerRef.current) {
+				containerRef.current.innerHTML = ''; // Effacer toutes les cellules
+				generateGrid(window.innerWidth); // Régénérer la grille
+			}
+		}
+	}));
 
 	useEffect(() => {
 		const updateGrid = () => {
@@ -26,15 +35,18 @@ export default function Grid() {
 	function isHovered(cell: HTMLDivElement) {
 		if (!cell.hoverCount) {
 			cell.initColor = {
-				r : 62,
-				g : 68,
-				b : 160
+				r : 13,
+				g : 148,
+				b : 136
 			};
 			cell.hoverCount = 0;
 		}
 		cell.hoverCount++;
-		if (cell.hoverCount >= 2) cell.className = "flex items-center justify-center w-[50px] h-[50px] overflow-hidden"
-
+		if (cell.hoverCount >= 2) {
+			cell.className = "flex items-center justify-center w-[50px] h-[50px] overflow-hidden";
+			cell.classList.add('clickable');
+			cell.style.cursor = 'pointer';
+		}
 		const darkeningPercentage = Math.max(1 - (0.5 * cell.hoverCount), 0);
 
 		const r = Math.floor(cell.initColor.r * darkeningPercentage);
@@ -42,6 +54,14 @@ export default function Grid() {
 		const b = Math.floor(cell.initColor.b * darkeningPercentage);
 
 		cell.style.backgroundColor = `rgba(${r}, ${g}, ${b}, 1)`;
+	}
+
+	function handleClick(cell: HTMLDivElement) {
+		if (cell.hoverCount >= 2) {
+			cell.style.opacity = '0'; // Hide the cell by making it transparent
+			cell.style.pointerEvents = 'none'; // Disable further interactions with the cell
+			onDisappear();
+		}
 	}
 
 	function generateGrid(largeurPage: number) {
@@ -63,7 +83,7 @@ export default function Grid() {
 				const cellYPosition = i * cellSize;
 				const fadeStart = middleScreenY - titleHeight / 2; // Le début du fondu (haut du titre)
 				const fadeEnd = middleScreenY + titleHeight / 2; // La fin du fondu (bas du titre)
-				
+
 				// Calcul de l'opacité en fonction de la position de la cellule
 				let opacity = 1;
 				if (cellYPosition > fadeStart && cellYPosition < fadeEnd) {
@@ -77,11 +97,24 @@ export default function Grid() {
 				cell.style.opacity = `${opacity}`;
 
 				cell.addEventListener("mouseenter", () => isHovered(cell), true);
-				cell.className = 'border border-blue-900/50 flex items-center justify-center w-[50px] h-[50px] overflow-hidden';
+				cell.addEventListener('click', () => handleClick(cell), true);
+
+				cell.className = 'border border-teal-900/50 flex items-center justify-center w-[50px] h-[50px] overflow-hidden';
 
 				container.appendChild(cell);
 			}
 		}
 	}
+
+	const resetGrid = () => {
+		if (containerRef.current) {
+			containerRef.current.innerHTML = ''; // Clear previous grid cells
+			const largeurPage = window.innerWidth; // Recalculate width for grid
+			generateGrid(largeurPage); // Generate the grid again
+		}
+	};
+
 	return <div ref={containerRef} id="container" className="flex flex-wrap w-full overflow-hidden"></div>;
-}
+});
+
+export default Grid;
