@@ -30,7 +30,7 @@ export default function Home() {
     <div className="relative h-screen flex justify-center items-center bg-teal-600">
         <Grid ref={gridRef} onDisappear={handleDisappear}/>
         {showFirstLayer && (
-          <div className="absolute shadow-lg shadow-gray-900 bg-gray-800 text-white rounded-full px-8 py-4 pointer-events-none transition-opacity duration-500 ${!showFirstLayer ? 'opacity-0' : 'opacity-100'}">
+          <div className="absolute shadow-lg shadow-gray-900 bg-gray-800 text-white rounded-full px-7 py-5 pointer-events-none transition-opacity duration-500 ${!showFirstLayer ? 'opacity-0' : 'opacity-100'}">
             <Title />
           </div>
         )}
