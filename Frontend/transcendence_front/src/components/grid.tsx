@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 export default function Grid() {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const cellSize = 50;
+	const titleHeight = 200;
 
 	useEffect(() => {
 		const updateGrid = () => {
@@ -49,6 +50,7 @@ export default function Grid() {
 
 		const numCols = Math.floor(largeurPage / cellSize); // Nombre de colonnes basées sur la largeur disponible
 		const numRows = Math.floor(window.innerHeight / cellSize);
+		const middleScreenY = window.innerHeight / 2;
 
 		for (let i = 0; i < numRows; i++) {
 			for (let j = 0; j < numCols; j++) {
@@ -56,9 +58,25 @@ export default function Grid() {
 				cell.classList.add("cell");
 				cell.style.width = `${cellSize}px`;
 				cell.style.height = `${cellSize}px`;
-				cell.addEventListener("mouseenter", () => isHovered(cell), true);
 
-				// Ajout des classes Tailwind pour chaque cellule
+				// Calcul de la distance de chaque cellule par rapport au centre de la page
+				const cellYPosition = i * cellSize;
+				const fadeStart = middleScreenY - titleHeight / 2; // Le début du fondu (haut du titre)
+				const fadeEnd = middleScreenY + titleHeight / 2; // La fin du fondu (bas du titre)
+				
+				// Calcul de l'opacité en fonction de la position de la cellule
+				let opacity = 1;
+				if (cellYPosition > fadeStart && cellYPosition < fadeEnd) {
+					const distanceFromFadeStart = Math.abs(cellYPosition - fadeStart);
+					const fadeRange = fadeEnd - fadeStart;
+					opacity = 1 - (distanceFromFadeStart / fadeRange); // Réduction progressive de l'opacité
+				} else if (cellYPosition >= fadeEnd) {
+					opacity = 0; // Les cellules après le titre deviennent complètement transparentes
+				}
+
+				cell.style.opacity = `${opacity}`;
+
+				cell.addEventListener("mouseenter", () => isHovered(cell), true);
 				cell.className = 'border border-blue-900/50 flex items-center justify-center w-[50px] h-[50px] overflow-hidden';
 
 				container.appendChild(cell);
