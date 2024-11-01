@@ -22,6 +22,10 @@ all:
 		sudo mkdir -p "./volume/postgresql"; \
 	fi
 
+	@if [ ! -d "./volume/pong_backend" ]; then \
+    sudo mkdir -p "./volume/pong_backend"; \
+	fi
+
 	@sudo docker compose -f ./srcs/docker-compose.yml up -d --build
 
 clean:

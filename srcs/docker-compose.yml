@@ -48,6 +48,7 @@
           hostname: nextjs
           volumes:
               - "nextjs:/transcendence"
+          command: tail -f /dev/null
 
         nginx:
           depends_on:
@@ -67,6 +68,24 @@
           hostname: nginx
           volumes:
               - "static:/static"
+        pong_backend:
+          build:
+            context: ./requirements/pong_backend
+            dockerfile: Dockerfile
+          image: pong_backend
+          container_name: pong_backend
+          env_file: .env
+          restart: always
+          networks:
+            - network
+          depends_on:
+            - redis
+          volumes:
+            - "pong_backend:/app"
+          expose:
+            - "8000"
+          hostname: pong_backend
+          
 
                 #        smart_contract:
                 #          depends_on:
@@ -90,6 +109,13 @@
                 #          type: 'none'
                 #          o: 'bind'
                 #          device: "../volume/smart_contract"
+        redis:
+          image: redis:6-alpine
+          container_name: redis
+          restart: always
+          networks:
+            - network
+          hostname: redis
 
     networks:
       network:
@@ -120,3 +146,12 @@
           type: 'none'
           o: 'bind'
           device: "../volume/nextjs"
+      pong_backend:
+        driver: local
+        driver_opts:
+          type: 'none'
+          o: 'bind'
+          device: "../volume/pong_backend"
+      
+
+
