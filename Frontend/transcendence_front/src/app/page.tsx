@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Grid from "../components/grid"
 import Title from "../components/title"
 import BackButton from "@/components/backButton";
+import Header from "../components/header";
 
 export default function Home() {
   const [showFirstLayer, setShowFirstLayer] = useState(true);
@@ -28,12 +29,12 @@ export default function Home() {
 
   return (
     <div className="relative h-screen flex justify-center items-center bg-teal-600">
-
+      <Header />
 		{/* Layer to cover bottom half of grid elements with a smooth gradient teal to transparent effect */}
 		<div className="absolute inset-x-0 bottom-0 h-screen bg-gradient-to-t from-teal-600 from-30% pointer-events-none z-10"></div>
 
 		{/* Similar gradient effect on the top 10% for a finishing touch*/}
-		<div className="absolute inset-x-0 top-0 h-screen bg-gradient-to-b from-teal-600 opacity-70 to-10% pointer-events-none z-10"></div>
+		{/* <div className="absolute inset-x-0 h-screen bg-gradient-to-b from-teal-600 opacity-70 to-10% pointer-events-none z-10"></div> */}
 
         <Grid ref={gridRef} onDisappear={handleDisappear}/>
         {showFirstLayer && (
