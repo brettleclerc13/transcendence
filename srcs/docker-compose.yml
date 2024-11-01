@@ -1,0 +1,157 @@
+    services:
+        postgresql:
+          build:
+            context: ./requirements/postgresql
+            dockerfile: Dockerfile
+          image: postgres:16.4
+          container_name: postgresql
+          env_file: .env
+          init: true
+          restart: always
+          networks:
+            - network
+          hostname: postgresql
+          volumes:
+              - "postgresql:/var/lib/postgresql/data"
+
+        app:
+          depends_on:
+              - postgresql
+          build:
+            context: ./requirements/app
+            dockerfile: Dockerfile
+          image: python:3.13.0rc1
+          container_name: app
+          env_file: .env
+          init: true
+          restart: always
+          networks:
+            - network
+          hostname: app
+          volumes:
+              - "app:/django_web_app"
+              - "static:/static"
+
+        nextjs:
+          depends_on:
+              - app
+          build:
+            context: ./requirements/nextjs
+            dockerfile: Dockerfile
+          image: nextjs
+          container_name: nextjs
+          env_file: .env
+          init: true
+          restart: always
+          networks:
+            - network
+          hostname: nextjs
+          volumes:
+              - "nextjs:/transcendence"
+          command: tail -f /dev/null
+
+        nginx:
+          depends_on:
+              - nextjs
+          build:
+            context: ./requirements/nginx
+            dockerfile: Dockerfile
+          ports:
+            - "443:443/tcp"
+          image: nginx:1.27.1
+          container_name: nginx
+          env_file: .env
+          init: true
+          restart: always
+          networks:
+            - network
+          hostname: nginx
+          volumes:
+              - "static:/static"
+        pong_backend:
+          build:
+            context: ./requirements/pong_backend
+            dockerfile: Dockerfile
+          image: pong_backend
+          container_name: pong_backend
+          env_file: .env
+          restart: always
+          networks:
+            - network
+          depends_on:
+            - redis
+          volumes:
+            - "pong_backend:/app"
+          expose:
+            - "8000"
+          hostname: pong_backend
+          
+
+                #        smart_contract:
+                #          depends_on:
+                #              - postgresql
+                #          build:
+                #            context: ./requirements/smart_contract
+                #            dockerfile: Dockerfile
+                #          image: solidity:10.11.6
+                #          container_name: smart_contract
+                #          env_file: .env
+                #          init: true
+                #          restart: always
+                #          hostname: smart_contract
+                #          volumes:
+                #              - "smart_contract:/projects"
+
+                #    volumes:
+                #      smart_contract:
+                #        driver: local
+                #        driver_opts:
+                #          type: 'none'
+                #          o: 'bind'
+                #          device: "../volume/smart_contract"
+        redis:
+          image: redis:6-alpine
+          container_name: redis
+          restart: always
+          networks:
+            - network
+          hostname: redis
+
+    networks:
+      network:
+        driver: bridge
+
+    volumes:
+      app:
+        driver: local
+        driver_opts:
+          type: 'none'
+          o: 'bind'
+          device: "../volume/django_web_app"
+      static:
+        driver: local
+        driver_opts:
+          type: 'none'
+          o: 'bind'
+          device: "../volume/static"
+      postgresql:
+        driver: local
+        driver_opts:
+          type: 'none'
+          o: 'bind'
+          device: "../volume/postgresql"
+      nextjs:
+        driver: local
+        driver_opts:
+          type: 'none'
+          o: 'bind'
+          device: "../volume/nextjs"
+      pong_backend:
+        driver: local
+        driver_opts:
+          type: 'none'
+          o: 'bind'
+          device: "../volume/pong_backend"
+      
+
+
