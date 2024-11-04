@@ -5,5 +5,8 @@ class Article(models.Model):
     contenu = models.TextField()
     date_creation = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        db_table = 'pong_article'
+
     def __str__(self):
         return self.titre

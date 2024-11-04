@@ -34,7 +34,23 @@ all:
 		sudo mkdir -p "./volume/service_chat/postgresql"; \
 	fi
 
+	@if [ ! -d "./volume/eventbus" ]; then \
+		sudo mkdir -p "./volume/eventbus"; \
+	fi
+
 	@sudo docker compose -f ./srcs/docker-compose.yml up -d --build
+
+	@printf "\033[00;32mDebezium source connectors create\033[00m\n"
+
+	@while ! docker compose -f ./srcs/docker-compose.yml exec debezium /bin/bash /connectors/source.sh -eq 0; do \
+		sleep 1; \
+	done
+
+	@printf "\033[00;32mDebezium sink connectors create\033[00m\n"
+
+	@while ! docker compose -f ./srcs/docker-compose.yml exec debezium /bin/bash /connectors/sink.sh -eq 0; do \
+		sleep 1; \
+	done
 
 clean:
 
