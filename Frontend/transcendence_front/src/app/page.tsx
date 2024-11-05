@@ -5,22 +5,38 @@ import Grid from "../components/grid"
 import Title from "../components/title"
 import BackButton from "@/components/backButton";
 import Header from "../components/header";
+import LoginForm from "@/components/loginForm";
+import RegisterForm from "../components/registerForm";
 
 export default function Home() {
+  const [showLoginLayer, setShowLoginLayer] = useState(false);
+  const [showRegisterLayer, setShowRegisterLayer] = useState(false);
   const [showFirstLayer, setShowFirstLayer] = useState(true);
-	const [showBlackLayer, setShowBlackLayer] = useState(false);
+	const [showGameLayer, setShowGameLayer] = useState(false);
   const gridRef = useRef<any>(null);
+
+  const handleLoginClick = () => {
+    setShowLoginLayer(true);
+    setShowFirstLayer(false);
+  };
+
+  const handleRegisterClick = () => {
+    setShowRegisterLayer(true);
+    setShowFirstLayer(false);
+  };
 
   const handleDisappear = () => {
     setShowFirstLayer(false);
 
     setTimeout(() => {
-      setShowBlackLayer(true);
+      setShowGameLayer(true);
     }, 500);
   };
 
-  const handleReappear = () => {
-    setShowBlackLayer(false);
+  const handleHomeReappear = () => {
+    setShowGameLayer(false);
+    setShowLoginLayer(false);
+    setShowRegisterLayer(false);
     setShowFirstLayer(true);
     if (gridRef.current) {
       gridRef.current.resetGrid();
@@ -29,26 +45,26 @@ export default function Home() {
 
   return (
     <div className="relative h-screen flex justify-center items-center bg-teal-600">
-      <Header />
+      <Header onLoginClick={handleLoginClick} onRegisterClick={handleRegisterClick}/>
 		{/* Layer to cover bottom half of grid elements with a smooth gradient teal to transparent effect */}
 		<div className="absolute inset-x-0 bottom-0 h-screen bg-gradient-to-t from-teal-600 from-30% pointer-events-none z-10"></div>
-
-		{/* Similar gradient effect on the top 10% for a finishing touch*/}
-		{/* <div className="absolute inset-x-0 h-screen bg-gradient-to-b from-teal-600 opacity-70 to-10% pointer-events-none z-10"></div> */}
-
         <Grid ref={gridRef} onDisappear={handleDisappear}/>
-        {showFirstLayer && (
+        {!showRegisterLayer && !showLoginLayer && showFirstLayer && (
           <div className="absolute shadow-lg shadow-gray-900 bg-gray-800 text-white rounded-full px-7 py-5 pointer-events-none transition-opacity duration-500 ${!showFirstLayer ? 'opacity-0' : 'opacity-100'} z-20">
             <Title />
           </div>
         )}
-        {showBlackLayer && (
-				<div className="absolute inset-0 bg-black transition-opacity duration-500 opacity-100 z-30">
-					<BackButton onReappear={handleReappear}/>
+        {showGameLayer && (
+				<div className="absolute inset-0 bg-teal-800 transition-opacity duration-500 opacity-100 z-30">
+					<BackButton onReappear={handleHomeReappear}/>
 				</div>
-			)}
+			  )}
+        {showLoginLayer && (
+        <LoginForm onBackClick={handleHomeReappear} />
+        )}
+        {showRegisterLayer && (
+        <RegisterForm onBackClick={handleHomeReappear} />
+        )}
     </div>
   );
 }
-
-//relative flex flex-col items-center justify-center h-full z-10 pointer-events-none

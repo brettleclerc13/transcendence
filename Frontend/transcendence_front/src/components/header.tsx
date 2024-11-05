@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { useState } from "react";
-import LoginButton from "./loginButton";
-import RegisterButton from "./registerButton";
+import LoginForm from "./loginForm";
+import RegisterForm from "./registerForm";
 
-export default function Header() {
+export default function Header({ onLoginClick, onRegisterClick }) {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 	return (
 		<header className="fixed top-0 left-0 w-full bg-gray-800 text-white p-4 flex justify-between items-center">
 			{/* Menu burger à gauche */}
 			<button 
-				onClick={() => setIsMenuOpen(!isMenuOpen)} 
+				onClick={() => setIsMenuOpen(!isMenuOpen)}
 				className="flex items-center text-xl">
 				&#9776; {/* Icône de menu burger */}
 			</button>
@@ -23,14 +23,14 @@ export default function Header() {
 				<Link href="/settings" className="border-b-2 py-4 text-white">Paramètres</Link>
 				</div>
 			)}
-
-			{/* Titre centré */}
 			<h1 className="text-xl font-bold mx-auto">DISCO PONG !</h1>
-
-			{/* Boutons à droite */}
 			<div className="flex space-x-4">
-				<LoginButton />
-				<RegisterButton />
+				<button onClick={onLoginClick} className="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 dark:focus:ring-teal-800 shadow-lg shadow-teal-500/50 dark:shadow-lg dark:shadow-teal-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+					Login
+				</button>
+				<button onClick={onRegisterClick} className="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 dark:focus:ring-teal-800 shadow-lg shadow-teal-500/50 dark:shadow-lg dark:shadow-teal-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+					Sign Up
+				</button>
 			</div>
 		</header>
 	);
