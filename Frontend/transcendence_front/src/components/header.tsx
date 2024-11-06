@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { useState } from "react";
-import LoginForm from "./loginForm";
-import RegisterForm from "./registerForm";
 
 export default function Header({ onLoginClick, onRegisterClick }) {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);

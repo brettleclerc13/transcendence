@@ -17,11 +17,13 @@ export default function Home() {
 
   const handleLoginClick = () => {
     setShowLoginLayer(true);
+    setShowRegisterLayer(false);
     setShowFirstLayer(false);
   };
 
   const handleRegisterClick = () => {
     setShowRegisterLayer(true);
+    setShowLoginLayer(false)
     setShowFirstLayer(false);
   };
 
@@ -60,10 +62,10 @@ export default function Home() {
 				</div>
 			  )}
         {showLoginLayer && (
-        <LoginForm onBackClick={handleHomeReappear} />
+        <LoginForm onBackClick={handleHomeReappear} onFormSwitch={handleRegisterClick}/>
         )}
         {showRegisterLayer && (
-        <RegisterForm onBackClick={handleHomeReappear} />
+        <RegisterForm onBackClick={handleHomeReappear} onFormSwitch={handleLoginClick}/>
         )}
     </div>
   );

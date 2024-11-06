@@ -1,30 +1,53 @@
-import {useState } from "react";
+import React, {useState } from "react";
+import { FormProps } from "@/app/types";
 
-export default function RegisterForm({ onBackClick }) {
+export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 	const [email, setEmail] = useState("");
 	const [username, setUsername] = useState("");
 	const [pass, setPass] = useState("");
 	const [age, setAge] = useState("");
 	const [nationality, setNationality] = useState("");
 	const [bio, setBio] = useState("");
-	
-	const handleSubmit = (e) => {
+	const [errors, setErrors] = useState({ email: "", username: "", pass: "" });
+
+	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+		let formIsValid = true;
+		const newErrors = {email: "", username: "", pass: "" };
+
+		if (!email) {
+			newErrors.email = "Email is required.";
+			formIsValid = false;
+		}
+		if (!username) {
+			newErrors.username = "Username is required.";
+			formIsValid = false;
+		}
+		if (!pass) {
+			newErrors.pass = "Password is required.";
+			formIsValid = false;
+		}
+
+		setErrors(newErrors);
+
+		if (!formIsValid) {
+			return;
+		}
 		console.log(email, username, pass, age, nationality, bio);
-		onBackClick(false);
+		onBackClick();
 	};
 
 	return (
 		<div className="fixed inset-0 top-20 bg-teal-800 flex justify-center items-center z-50">
 			<div className="bg-white p-8 rounded-lg shadow-lg w-96">
 				<button 
-					onClick={() => onBackClick(false)} 
+					onClick={() => onBackClick()} 
 					className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
 				>
 					&times;
 				</button>
 				<form onSubmit={handleSubmit}>
-					<label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
+					<label htmlFor="email" className="block text-sm font-medium mb-1">Email<span className="text-red-500 ml-1">*</span></label>
 					<input
 						type="email"
 						placeholder="youremail@gmail.com"
@@ -33,7 +56,8 @@ export default function RegisterForm({ onBackClick }) {
 						onChange={(e) => setEmail(e.target.value)}
 						className="border rounded-md p-2 mb-4 w-full"
 					/>
-					<label htmlFor="username" className="block text-sm font-medium mb-1">Username</label>
+					{errors.email && <p className="text-red-500 text-sm mb-2">{errors.email}</p>}
+					<label htmlFor="username" className="block text-sm font-medium mb-1">Username<span className="text-red-500 ml-1">*</span></label>
 					<input
 						type="username"
 						placeholder="JohnDoe"
@@ -42,7 +66,8 @@ export default function RegisterForm({ onBackClick }) {
 						onChange={(e) => setUsername(e.target.value)}
 						className="border rounded-md p-2 mb-4 w-full"
 					/>
-					<label htmlFor="password" className="block text-sm font-medium mb-1">Password</label>
+					{errors.username && <p className="text-red-500 text-sm mb-2">{errors.username}</p>}
+					<label htmlFor="password" className="block text-sm font-medium mb-1">Password<span className="text-red-500 ml-1">*</span></label>
 					<input
 						type="password"
 						placeholder="*************"
@@ -51,6 +76,7 @@ export default function RegisterForm({ onBackClick }) {
 						onChange={(e) => setPass(e.target.value)}
 						className="border rounded-md p-2 mb-4 w-full"
 					/>
+					{errors.pass && <p className="text-red-500 text-sm mb-2">{errors.pass}</p>}
 					<label htmlFor="age" className="block text-sm font-medium mb-1">Age</label>
 					<input
 						type="age"
@@ -85,6 +111,10 @@ export default function RegisterForm({ onBackClick }) {
 						Sign Up
 					</button>
 				</form>
+				<button className="link-btn underline mt-4 ml-6" onClick={onFormSwitch}>
+					Already have an account ? Login here
+				</button>
+				<p className="text-xs mt-4"><span className="text-red-500 mr-1">*</span>: Mandatory information</p>
 			</div>
     	</div>
 	);
