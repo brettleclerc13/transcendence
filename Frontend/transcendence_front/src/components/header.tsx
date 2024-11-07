@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { useState } from "react";
+import { FormProps } from "@/app/types";
 
-export default function Header({ onLoginClick, onRegisterClick }) {
+export default function Header({ onLoginClick, onRegisterClick, onFirstLayerClick }: FormProps) {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 	return (
@@ -16,9 +17,9 @@ export default function Header({ onLoginClick, onRegisterClick }) {
 			{/* Menu burger (mobile) */}
 			{isMenuOpen && (
 				<div className="absolute top-16 left-0 w-52 h-screen bg-gray-800 p-4 flex flex-col items-center">
-				<Link href="/" className="border-b-2 py-4 text-white">Accueil</Link>
-				<Link href="/profil" className="border-b-2 py-4 text-white">Profil</Link>
-				<Link href="/settings" className="border-b-2 py-4 text-white">Paramètres</Link>
+				<button onClick={onFirstLayerClick} className="border-b-2 py-4 text-white">Home</button>
+				<button onClick="/profil" className="border-b-2 py-4 text-white">Game</button>
+				<button onClick="/settings" className="border-b-2 py-4 text-white">About Us</button>
 				</div>
 			)}
 			<h1 className="text-xl font-bold mx-auto">DISCO PONG !</h1>
