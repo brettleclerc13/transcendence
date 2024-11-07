@@ -83,18 +83,6 @@ const Grid = forwardRef(function Grid({ onDisappear }: { onDisappear: () => void
 				const fadeStart = middleScreenY - titleHeight / 2; // Le début du fondu (haut du titre)
 				const fadeEnd = middleScreenY + titleHeight / 2; // La fin du fondu (bas du titre)
 
-				// // Calcul de l'opacité en fonction de la position de la cellule
-				// let opacity = 1;
-				// if (cellYPosition > fadeStart && cellYPosition < fadeEnd) {
-				// 	const distanceFromFadeStart = Math.abs(cellYPosition - fadeStart);
-				// 	const fadeRange = fadeEnd - fadeStart;
-				// 	opacity = 1 - (distanceFromFadeStart / fadeRange); // Réduction progressive de l'opacité
-				// } else if (cellYPosition >= fadeEnd) {
-				// 	opacity = 0; // Les cellules après le titre deviennent complètement transparentes
-				// }
-
-				// cell.style.opacity = `${opacity}`;
-
 				cell.addEventListener("mouseenter", () => isHovered(cell), true);
 				cell.addEventListener('click', () => handleClick(cell), true);
 
