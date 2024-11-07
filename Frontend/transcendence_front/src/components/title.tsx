@@ -1,7 +1,5 @@
 'use client'
 
-import { setMaxIdleHTTPParsers } from "http";
-import { waitForDebugger } from "inspector";
 import { useState, useEffect } from "react";
 
 export default function Title () {
