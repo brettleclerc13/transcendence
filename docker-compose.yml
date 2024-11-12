@@ -34,6 +34,8 @@ services:
       - "5432:5432"
     networks:
       - app-network
+    volumes:
+      - db-data:/var/lib/postgresql/data
 
   nginx:
     build:
@@ -50,3 +52,11 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  db-data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: "./volume/postgresql"
