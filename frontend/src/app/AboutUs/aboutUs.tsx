@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { FormProps } from "@/app/types";
+// import React, { useEffect, useState } from "react";
+// import { FormProps } from "@/app/types";
 
-export interface AboutUsProps {
-	onBackClick: () => void;
-}
+// export interface AboutUsProps {
+// 	onBackClick: () => void;
+// }
 
-export default function AboutUsLayer({ onBackClick }: AboutUsProps) {
+// export default function AboutUsLayer({ onBackClick }: AboutUsProps) {
 	// const textAboutUs = "About us:";
 	// const typingSpeed = 150;
 
@@ -22,9 +22,9 @@ export default function AboutUsLayer({ onBackClick }: AboutUsProps) {
 	// 	return () => clearInterval(intervalId);
 	// }, []);
 
-	return (
-		<div onClick={onBackClick} className="fixed inset-0 top-20 bg-teal-800 flex justify-center items-center z-50">
-			<h1 className="align-top justify-center ">ABOUT US</h1>
-		</div>
-	);
-}
+// 	return (
+// 		<div onClick={onBackClick} className="fixed inset-0 top-20 bg-teal-800 flex justify-center items-center z-50">
+// 			<h1 className="align-top justify-center ">ABOUT US</h1>
+// 		</div>
+// 	);
+// }

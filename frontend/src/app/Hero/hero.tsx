@@ -7,7 +7,7 @@ export interface HeroProps {
 }
 
 export default function Hero({goToGame}:HeroProps) {
-	const gridRef = useRef<any>(null);
+	const gridRef = useRef(null);
 
 	return (
 		<>

@@ -68,7 +68,7 @@ export default function LoginForm({ onBackClick, onFormSwitch }: FormProps) {
 					</button>
 				</form>
 				<button className="link-btn underline mt-4 ml-6" onClick={onFormSwitch}>
-					Don't have an account ? Register here
+					Don&apos;t have an account ? Register here
 				</button>
 				<p className="text-xs mt-4"><span className="text-red-500 mr-1">*</span>: Mandatory information</p>
 			</div>

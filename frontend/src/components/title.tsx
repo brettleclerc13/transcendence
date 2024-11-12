@@ -11,7 +11,7 @@ export default function Title () {
 	const fullText = "ft_transcendence";
 	const typingSpeed = 150;
 	const deleteSpeed = 50;
-	let cursorBlinkSpeed = 500;
+	const cursorBlinkSpeed = 500;
 
 	// First typing animation
 	useEffect(() => {

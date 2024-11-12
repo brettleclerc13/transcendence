@@ -5,7 +5,7 @@ import Hero from "./Hero/hero";
 import Header from "./header";
 import LoginForm from "@/components/loginForm";
 import RegisterForm from "../components/registerForm";
-import AboutUsLayer from "./AboutUs/aboutUs";
+// import AboutUsLayer from "./AboutUs/aboutUs";
 import Game from "./Game/game"
 
 export default function Home() {
@@ -17,7 +17,7 @@ export default function Home() {
 	};
 
 	useEffect(() => {
-		const handlePopState = (event:any) => {
+		const handlePopState = (event: PopStateEvent) => {
 			const state = event.state || {layer: 'home' };
 
 			switch (state.layer) {
@@ -59,9 +59,9 @@ export default function Home() {
 				<Game onBackClick={() => goToSection('home')}/>
 			)}
 			
-			{currentSection == 'aboutUs' && (
+			{/* {currentSection == 'aboutUs' && (
 				<AboutUsLayer onBackClick={() => goToSection('home')}/>
-			)}
+			)} */}
 			
 			{currentSection == 'login' && (
 				<LoginForm onBackClick={() => goToSection('home')} onFormSwitch={() => goToSection('register')}/>
