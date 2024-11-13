@@ -9,14 +9,12 @@ export default function Header({goToSection}:MenuProps) {
 
 	return (
 		<header className="fixed top-0 left-0 w-full bg-gray-800 text-white p-4 flex justify-between items-center">
-			{/* Menu burger à gauche */}
 			<button 
 				onClick={() => setIsMenuOpen(!isMenuOpen)}
 				className="flex items-center text-xl">
 				&#9776; {/* Icône de menu burger */}
 			</button>
 
-			{/* Menu burger (mobile) */}
 			{isMenuOpen && (
 				<div className="absolute top-16 left-0 w-52 h-screen bg-gray-800 p-4 flex flex-col items-center">
 				<button onClick={() => goToSection('home')} className="border-b-2 py-4 text-white">Home</button>

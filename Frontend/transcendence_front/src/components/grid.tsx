@@ -2,6 +2,7 @@
 
 import { HoverableDiv } from '@/app/types';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
+import "./grid.css"
 
 const Grid = forwardRef(function Grid({ onDisappear }: { onDisappear: () => void}, ref) {
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -47,7 +48,7 @@ const Grid = forwardRef(function Grid({ onDisappear }: { onDisappear: () => void
 				cell.addEventListener("mouseenter", () => isHovered(cell), true);
 				cell.addEventListener('click', () => handleClick(cell), true);
 
-				cell.className = 'border border-teal-900/50 flex items-center justify-center w-[50px] h-[50px] overflow-hidden';
+				cell.className = 'custom-cell';
 				container!.appendChild(cell);
 			}
 		}
