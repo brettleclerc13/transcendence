@@ -1,6 +1,12 @@
 from django.shortcuts import render
 from .models import Counter
 from django.http import JsonResponse
+
+#from rest_framework.views import APIView
+#from rest_framework.response import Response
+#from . serializer import *
+
+
 # Create your views here.
 
 def incement_counter(request):
@@ -8,3 +14,4 @@ def incement_counter(request):
     counter.count += 1
     counter.save()
     return JsonResponse({'count': counter.count})
+
