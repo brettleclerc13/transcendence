@@ -1,7 +1,7 @@
 services:
   frontend:
     build:
-      context: ./frontend
+      context: ./Frontend
     ports:
       - "3000:3000"
     networks:
@@ -11,16 +11,18 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./Backend
     environment:
       - DATABASE_HOST=db
       - DATABASE_NAME=transcendence
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=postgres
     ports:
-      - "8000:8000"
+      - "8001:8001"
     networks:
       - app-network
+    volumes:
+      - back-data:/app
     depends_on:
       - db
 
@@ -66,3 +68,9 @@ volumes:
       type: 'none'
       o: 'bind'
       device: "./Frontend"
+  back-data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: "./Backend"

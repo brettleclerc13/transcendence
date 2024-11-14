@@ -8,7 +8,7 @@ export default function Header({goToSection}:MenuProps) {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 	return (
-		<header className="fixed top-0 left-0 w-full bg-gray-800 text-white p-4 flex justify-between items-center">
+		<header className="fixed top-0 left-0 w-full bg-gray-800 text-white p-4 flex justify-between items-center z-40">
 			{/* Menu burger à gauche */}
 			<button 
 				onClick={() => setIsMenuOpen(!isMenuOpen)}

@@ -16,10 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from django.conf.urls import url
-from user.views import *
+from user.views import increment_counter  # Import the view directly
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path ('counter/', incement_counter, name="increment_counter")
+    path('counter/', increment_counter, name="increment_counter"),
 ]
