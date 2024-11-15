@@ -9,4 +9,4 @@ echo "PostgreSQL is up and running."
 python manage.py makemigrations user
 python manage.py migrate
 
-python manage.py runserver 0.0.0.0:8001
+python manage.py runserver_plus --cert-file transcendence.pem --key-file transcendence.key 0.0.0.0:8001

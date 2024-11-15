@@ -14,7 +14,10 @@ export default function Game({onBackClick}:GameProps) {
 	useEffect(() => {
         const fetchCount = async () => {
             try {
-                const response = await fetch("http://localhost:8001/counter/");
+                const response = await fetch("/api/counter/");
+				if (!response.ok) {
+					throw new Error(`HTTPS error! status: ${response.status}`);
+				}
                 const data = await response.json();
                 setCount(data.count);
             } catch (error) {
@@ -27,12 +30,15 @@ export default function Game({onBackClick}:GameProps) {
 	// Increment the count when the button is clicked
     const handleIncrement = async () => {
         try {
-            const response = await fetch("http://localhost:8001/counter/", {
+            const response = await fetch("/api/counter/", {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
                 },
             });
+			if (!response.ok) {
+				throw new Error(`HTTPS error! status: ${response.status}`);
+			}
             const data = await response.json();
             setCount(data.count);
         } catch (error) {
