@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Hero from "./Hero/hero";
-import Header from "./header";
+import Header from "./Header/header";
 import LoginForm from "@/components/loginForm";
 import RegisterForm from "../components/registerForm";
 import AboutUsLayer from "./AboutUs/aboutUs";

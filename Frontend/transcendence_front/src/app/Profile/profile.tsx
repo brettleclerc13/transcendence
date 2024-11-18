@@ -11,20 +11,26 @@ const [profile, setProfile] = useState({
 	tournamentName: "",
 	bio: "Whatever!",
 });
-//prend les valeurs de l'utilisateur grace a la base de donnee
+
+const [tempProfile, setTempProfile] = useState({...profile});
 
 const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setProfile((prevProfile) => ({
-      ...prevProfile,
+    setProfile((prevTempProfile) => ({
+      ...prevTempProfile,
       [name]: value,
     }));
-  };
+};
 
 const handleSave = () => {
+	setProfile(tempProfile);
  	// appel API pour sauvegarder les changements
 	console.log("Saved profile data:", profile);
 };
+
+const handleCancel = () => {
+	setTempProfile(profile);
+}
 
 	return (
 		<div className="contour-informations">
@@ -35,7 +41,7 @@ const handleSave = () => {
 					<input 
 						type="text"
 						name="username"
-						value={profile.username}
+						value={tempProfile.username}
 						onChange={handleChange}
 					/>
 				</div>
@@ -44,7 +50,7 @@ const handleSave = () => {
 					<input 
 						type="email"
 						name="email"
-						value={profile.email}
+						value={tempProfile.email}
 						onChange={handleChange}
 					/>
 				</div>
@@ -53,7 +59,7 @@ const handleSave = () => {
 					<input 
 						type="number"
 						name="age"
-						value={profile.age}
+						value={tempProfile.age}
 						onChange={handleChange}
 					/>
 				</div>
@@ -62,7 +68,7 @@ const handleSave = () => {
 					<input 
 						type="text"
 						name="nationality"
-						value={profile.nationality}
+						value={tempProfile.nationality}
 						onChange={handleChange}
 					/>
 				</div>
@@ -71,7 +77,7 @@ const handleSave = () => {
 					<input 
 						type="text"
 						name="tournamentName"
-						value={profile.tournamentName}
+						value={tempProfile.tournamentName}
 						onChange={handleChange}
 					/>
 				</div>
@@ -81,7 +87,7 @@ const handleSave = () => {
 					<label>Bio:</label>
 					<textarea 
 						name="bio"
-						value={profile.bio}
+						value={tempProfile.bio}
 						onChange={handleChange}
 					/>
 				</div>
@@ -89,6 +95,7 @@ const handleSave = () => {
 				{/* w/l wheel */}
 			</div>
 			<button onClick={handleSave}>Save Changes</button>
+			<button onClick={handleCancel}>Cancel</button>
 		</div>
 	);
 }
