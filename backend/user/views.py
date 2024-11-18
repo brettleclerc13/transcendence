@@ -14,3 +14,18 @@ def increment_counter(request):
     counter.save()
     return JsonResponse({'count': counter.count})
 
+#USERS
+#	details (map):
+#		email -> email
+#		age -> number
+#		nationality -> string
+#		bio -> string
+#		profile_pic -> string (png path)
+#
+#	game_stats (map):
+#	tournament_name -> string (default required)
+#	match_history (map)
+#		adversary -> string
+#		date -> date
+#		win -> number
+#		loss -> number

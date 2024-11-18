@@ -1,0 +1,15 @@
+.contour-informations {
+	display: flex;
+	background-color: rgba(49, 97, 93, 0.5);
+	margin-left: 30%;
+	margin-right: 30%;
+}
+
+.left-informations {
+	margin-right: 50%;
+	margin-left: 10%;
+}
+
+.profile-picture {
+	
+}
