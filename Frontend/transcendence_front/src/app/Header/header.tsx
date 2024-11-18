@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "./Header.css";
+import "./header.css";
 
 export interface MenuProps {
 	goToSection: (section: string) => void;
