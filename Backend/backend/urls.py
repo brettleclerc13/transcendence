@@ -16,9 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from user.views import increment_counter  # Import the view directly
+from user.views import UserAPIView , MatchAPIView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('counter/', increment_counter, name="increment_counter"),
+    path('users/', UserAPIView.as_view(), name="User-get-post"),
+    path('users/<int:pk>/', UserAPIView.as_view(), name='User-put/patch-delete'),
+    path('matches/', MatchAPIView.as_view(), name="Match-get-post"),
+    path('matches/<int:pk>/', MatchAPIView.as_view(), name="Match-put/patch-delete"),
 ]
