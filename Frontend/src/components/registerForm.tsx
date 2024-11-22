@@ -10,7 +10,7 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 	const [bio, setBio] = useState("");
 	const [errors, setErrors] = useState({ email: "", username: "", pass: "" });
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		let formIsValid = true;
 		const newErrors = {email: "", username: "", pass: "" };
@@ -33,8 +33,46 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 		if (!formIsValid) {
 			return;
 		}
+
+		// Préparer les données pour l'API
+		const requestData = {
+			email,
+			username,
+			password: pass,
+			age: age || null,
+			nationality: nationality || null,
+			bio: bio || null,
+		};
 		console.log(email, username, pass, age, nationality, bio);
-		onBackClick();
+
+		try {
+			// Envoyer les données au backend avec fetch
+			const response = await fetch("http://localhost:8000/api/users/", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(requestData), // Convertir les données en JSON
+			});
+
+			// Vérifier la réponse
+			if (!response.ok) {
+				// Si erreur, récupérer les messages d'erreur
+				const errorData = await response.json();
+				console.error("Error creating user:", errorData);
+				alert("Failed to register. Please try again.");
+				return;
+			}
+
+			// Succès : Traiter la réponse
+			const data = await response.json();
+			console.log("User created:", data);
+			onBackClick(); // Revenir à la page précédente
+		} catch (error) {
+			// Gérer les erreurs réseau ou autres
+			console.error("Error:", error);
+			alert("An error occurred. Please try again later.");
+		}
 	};
 
 	return (
