@@ -7,8 +7,9 @@ export default function LoginForm({ onBackClick, onFormSwitch }: FormProps) {
 	const [email, setEmail] = useState("");
 	const [pass, setPass] = useState("");
 	const [errors, setErrors] = useState({email: "", pass: ""});
+	const [serverError, setServerError] = useState("");
 	
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		let formIsValid = true;
 		const newErrors = {email: "", pass: ""};
@@ -26,8 +27,38 @@ export default function LoginForm({ onBackClick, onFormSwitch }: FormProps) {
 		if (!formIsValid) {
 			return;
 		}
-		console.log(email, pass);
-		onBackClick();
+		// Préparation des données pour l'API
+		const requestData = {
+			email,
+			password: pass, // Assurez-vous que votre backend attend ce champ
+		};
+
+		try {
+			// Appel à l'API avec fetch
+			const response = await fetch("http://localhost:8000/api/auth/login/", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(requestData),
+			});
+
+			// Vérifier la réponse
+			if (!response.ok) {
+				const errorData = await response.json();
+				setServerError(errorData.detail || "Login failed. Please try again.");
+				return;
+			}
+
+			// Succès : Traiter la réponse
+			const data = await response.json();
+			console.log("Login successful:", data);
+
+			onBackClick(); // Retour à la page précédente après connexion réussie
+		} catch (error) {
+			console.error("Error during login:", error);
+			setServerError("An unexpected error occurred. Please try again later.");
+		}
 	};
 
 	return (
