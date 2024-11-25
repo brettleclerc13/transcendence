@@ -6,6 +6,8 @@ while ! nc -z $DATABASE_HOST 5432; do
 done
 echo "PostgreSQL is up and running."
 
+redis-server --daemonize yes
+
 python manage.py makemigrations user
 python manage.py migrate
 

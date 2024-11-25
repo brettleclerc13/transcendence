@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y libpq-dev gcc curl openssl netcat-traditional -y && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libpq-dev gcc curl openssl netcat-traditional -y && apt-get install -y libpq-dev gcc redis-server && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 COPY entrypoint.sh .
