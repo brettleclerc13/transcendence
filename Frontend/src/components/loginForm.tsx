@@ -35,7 +35,7 @@ export default function LoginForm({ onBackClick, onFormSwitch }: FormProps) {
 
 		try {
 			// Appel à l'API avec fetch
-			const response = await fetch("http://localhost:8000/api/auth/login/", {
+			const response = await fetch("http://localhost:8000/login/", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",

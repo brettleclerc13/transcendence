@@ -47,7 +47,7 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 
 		try {
 			// Envoyer les données au backend avec fetch
-			const response = await fetch("http://localhost:8000/api/users/", {
+			const response = await fetch("http://localhost:8000/users/", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
