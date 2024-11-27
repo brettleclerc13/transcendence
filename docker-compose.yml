@@ -8,6 +8,7 @@ services:
       - app-network
     volumes:
       - front-data:/app
+      - /app/.next
       - /app/node_modules
 
   backend:

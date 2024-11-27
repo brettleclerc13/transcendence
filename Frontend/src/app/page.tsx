@@ -54,7 +54,7 @@ export default function Home() {
 			{currentSection == 'home' && (
 				<Hero goToGame={() => goToSection('game')}/>
 			)}
-			
+				
 			{currentSection == 'game' && (
 				<Game onBackClick={() => goToSection('home')}/>
 			)}

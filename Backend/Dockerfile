@@ -10,7 +10,7 @@ COPY entrypoint.sh .
 RUN openssl req -x509 -nodes -out transcendence.pem -keyout transcendence.key \
     -subj "/C=FR/ST=Seine-et-Marne/L=Vernou/O=Ecole\ 42/OU=Ecole/CN=transcendence.fr/emailAddress=bleclerc@student.42nice.fr"
 
-RUN pip install django-extensions Werkzeug
+RUN pip install django-extensions Werkzeug daphne
 
 #COPY . .
 

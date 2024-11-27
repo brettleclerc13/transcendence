@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./profile.css";
 
-export default function Profile {
+export default function Profile() {
 const [profile, setProfile] = useState({
 	picture: "./img/default.png",
 	username: "",

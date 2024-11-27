@@ -28,7 +28,7 @@ export default function Header({goToSection, isLoggedIn, userProfile}:MenuProps)
 			</button>
 
 			{isMenuOpen && (
-				<div className="menu-container">
+				<div className="menu-container z-30">
 				<button onClick={() => goToSection('home')} className="menu-button">Home</button>
 				<button onClick={() => goToSection('game')} className="menu-button">Game</button>
 				<button onClick={() => goToSection('aboutUs')} className="menu-button">About Us</button>

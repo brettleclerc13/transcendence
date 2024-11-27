@@ -6,7 +6,6 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class PongGameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Extract room name from URL
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = f"pong_{self.room_name}"
         self.state_lock = asyncio.Lock()
@@ -33,12 +32,12 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         if not len(self.players) >= 2:
             await self.accept() #if not accapted send response!
             self.players.add(self.channel_name)
-            
-
 
         # Start game loop when 2 players are connected
-        if len(self.players) == 2:
-            self.game_task = asyncio.create_task(self.game_loop())
+        #if len(self.players) == 2:
+        print("Moving on to game loop")
+        self.game_task = asyncio.create_task(self.game_loop())
+        
 
     async def disconnect(self, close_code):
         # Remove player from the room
@@ -123,7 +122,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                         else:
                             self.game_state["score"][0] += 1  # Player 1 scores
                             self.reset_ball()
-
                 # Broadcast the updated game state to all players
                 await self.channel_layer.group_send(
                     self.room_group_name,
