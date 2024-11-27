@@ -8,7 +8,7 @@ class User(models.Model):
     password = models.CharField(max_length=100)
     nationality = models.CharField(max_length=50)
     bio = models.CharField(max_length=500)
-    age = models.IntegerField()
+    age = models.CharField()
     profile_picture = models.CharField(max_length=100)
     tournament_name = models.CharField(max_length=20)
 

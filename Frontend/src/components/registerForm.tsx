@@ -10,10 +10,27 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 	const [bio, setBio] = useState("");
 	const [errors, setErrors] = useState({ email: "", username: "", pass: "" });
 
+	const validatePassword = (password: string) => {
+		const requirements = [
+			{ label: "At least 8 characters", isMet: password.length >= 8 },
+			{ label: "At least one uppercase character", isMet: /[A-Z]/.test(password) },
+			{ label: "At least one number", isMet: /[0-9]/.test(password) },
+			{ label: "At least one special character (e.g., ! @ # ? _)", isMet: /[!@#?_]/.test(password) },
+		];
+		const unmetRequirements = requirements.filter((req) => !req.isMet);
+		return unmetRequirements.map((req) => req.label);
+	};
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		let formIsValid = true;
 		const newErrors = {email: "", username: "", pass: "" };
+
+		const passwordErrors = validatePassword(pass);
+		if (passwordErrors.length > 0) {
+			newErrors.pass = `Password must meet the following requirements:\n- ${passwordErrors.join("\n- ")}`;
+			formIsValid = false;
+		}
 
 		if (!email) {
 			newErrors.email = "Email is required.";
@@ -37,17 +54,18 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 		// Préparer les données pour l'API
 		const requestData = {
 			email,
-			username,
+			user: username,
 			password: pass,
-			age: age || null,
-			nationality: nationality || null,
-			bio: bio || null,
+			...(age ? { age } : {}), // Ajoute `age` uniquement si défini
+    		...(nationality ? { nationality } : {}),  // Ajoute `nationality` uniquement si défini
+    		...(bio ? { bio } : {}),
 		};
+		console.log(JSON.stringify(requestData));
 		console.log(email, username, pass, age, nationality, bio);
 
 		try {
 			// Envoyer les données au backend avec fetch
-			const response = await fetch("http://localhost:8000/users/", {
+			const response = await fetch("/api/users/", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",

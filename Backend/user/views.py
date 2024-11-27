@@ -65,10 +65,12 @@ class UserAPIView(APIView): # Allow to register a new User
     
     def post(self, request):
         try:
+            print("Request Data:", request.data)
             serializer = UserSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+            print("Validation Errors:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
