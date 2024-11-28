@@ -29,9 +29,12 @@ export default function LoginForm({ onBackClick, onFormSwitch }: FormProps) {
 		}
 		// Préparation des données pour l'API
 		const requestData = {
-			email,
-			password: pass, // Assurez-vous que votre backend attend ce champ
+			email: email,
+			password: pass,
 		};
+
+		console.log("ICI : ")
+		console.log("Request Data: ", requestData);
 
 		try {
 			// Appel à l'API avec fetch

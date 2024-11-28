@@ -1,16 +1,24 @@
+import sys
+
 from rest_framework import serializers
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from .models import *
+
+from authentication.backends import EmailBackend
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        user = authenticate(username=data['email'], password=data['password'])
+        user = EmailBackend.authenticate(self, request=self.context.get('request'), user_email=data['email'], password=data['password'])
+        # user = authenticate(request=self.context.get('request'), user=data['email'], password=data['password'])
         if not user:
+            print("Check 3", file=sys.stderr)
+            print(user, file=sys.stderr)
             raise serializers.ValidationError("Invalid email or password.")
         return {'user': user}
 

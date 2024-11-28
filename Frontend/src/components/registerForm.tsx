@@ -60,8 +60,6 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
     		...(nationality ? { nationality } : {}),  // Ajoute `nationality` uniquement si défini
     		...(bio ? { bio } : {}),
 		};
-		console.log(JSON.stringify(requestData));
-		console.log(email, username, pass, age, nationality, bio);
 
 		try {
 			// Envoyer les données au backend avec fetch

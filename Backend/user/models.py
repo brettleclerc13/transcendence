@@ -11,6 +11,11 @@ class User(models.Model):
     age = models.CharField()
     profile_picture = models.CharField(max_length=100)
     tournament_name = models.CharField(max_length=20)
+    
+    def check_password(raw_password: str):
+        if (raw_password==User.password):
+            return True
+        return False
 
     def __str__(self):
         return self.user
