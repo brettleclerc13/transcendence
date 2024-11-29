@@ -3,7 +3,11 @@
 import React, { useState } from "react";
 import { FormProps } from "@/app/types";
 
-export default function LoginForm({ onBackClick, onFormSwitch }: FormProps) {
+interface LoginFormProps extends FormProps {
+	onLoginSuccess: (userData: any) => void;
+}
+
+export default function LoginForm({ onBackClick, onFormSwitch, onLoginSuccess }: LoginFormProps) {
 	const [email, setEmail] = useState("");
 	const [pass, setPass] = useState("");
 	const [errors, setErrors] = useState({email: "", pass: ""});
@@ -56,6 +60,12 @@ export default function LoginForm({ onBackClick, onFormSwitch }: FormProps) {
 			// Succès : Traiter la réponse
 			const data = await response.json();
 			console.log("Login successful:", data);
+
+			onLoginSuccess({
+				name: data.name,
+				profilePicture: data.profilePicture,
+				status: "Disponible",
+			});
 
 			onBackClick(); // Retour à la page précédente après connexion réussie
 		} catch (error) {
