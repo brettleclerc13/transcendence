@@ -48,27 +48,16 @@ import sys
 
 
 class EmailBackend(BaseBackend):
-    """
-    Custom authentication backend that allows users to log in using their email and password.
-    """
 
     def authenticate(self, request, user_email=None, password=None, **kwargs):
         try:
-            # Récupérer l'utilisateur correspondant à l'email (ou None si l'utilisateur n'existe pas)
             user = User.objects.filter(email=user_email).first()
 
-            print(f"EMAILBACKEND: user_email = {user_email}", file=sys.stderr)
-            print(f"USER FOUND: {user}", file=sys.stderr)
-
-            if user is not None:
-                # Vérifier le mot de passe
-                # if user.check_password(password):
-                #     print(f"AUTH SUCCESS: {user.email}", file=sys.stderr)
-                    return user
-            #     else:
-            #         print(f"INVALID PASSWORD for {user.email}", file=sys.stderr)
+            if user is not None and user.check_password(password):
+                print(f"AUTH SUCCESS: {user.email}", file=sys.stderr)
+                return user
             else:
-                print("User not found", file=sys.stderr)
+                print("AUTH FAILED: Invalid email or password", file=sys.stderr)
 
         except Exception as e:
             print(f"AUTH ERROR: {str(e)}", file=sys.stderr)

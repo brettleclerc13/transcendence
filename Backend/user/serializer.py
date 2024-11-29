@@ -15,10 +15,7 @@ class LoginSerializer(serializers.Serializer):
 
     def validate(self, data):
         user = EmailBackend.authenticate(self, request=self.context.get('request'), user_email=data['email'], password=data['password'])
-        # user = authenticate(request=self.context.get('request'), user=data['email'], password=data['password'])
         if not user:
-            print("Check 3", file=sys.stderr)
-            print(user, file=sys.stderr)
             raise serializers.ValidationError("Invalid email or password.")
         return {'user': user}
 
