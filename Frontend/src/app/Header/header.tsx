@@ -1,6 +1,9 @@
 import { useState } from "react";
 import "./header.css";
 
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
+
 export interface MenuProps {
 	goToSection: (section: string) => void;
 	isLoggedIn: boolean;
@@ -14,6 +17,11 @@ export interface MenuProps {
 export default function Header({goToSection, isLoggedIn, userProfile}:MenuProps) {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [userStatus, setUserStatus] = useState(userProfile?.status || "Disponible");
+	const [isSwitchChecked, setIsSwitchChecked] = useState(true);
+
+	const handleSwitchToggle = () => {
+		setIsSwitchChecked((prev) => !prev);
+	};
 
 	const toggleStatus = () => {
 		const newStatus = userStatus === "Disponible" ? "Invisible" : "Disponible";
@@ -47,17 +55,18 @@ export default function Header({goToSection, isLoggedIn, userProfile}:MenuProps)
 					</>
 				) : (
 					<div className="profile-section">
+						<div className="form-check form-switch">
+  							<input className="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked" checked={isSwitchChecked} onChange={handleSwitchToggle}/>
+  							<label className="form-check-label" htmlFor="flexSwitchCheckChecked">{isSwitchChecked ? "Online" : "Invisible"}</label>
+						</div>
+						<button onClick={() => goToSection("profile")} className="login-button">
+							Profile
+						</button>
 						<img
 							src={userProfile?.profilePicture || "./img/default.png"}
 							alt="Profile"
 							className="profile-picture"
 						/>
-						<button onClick={() => goToSection("profile")} className="login-button">
-							Profile
-						</button>
-						<button onClick={toggleStatus} className="status-button">
-							{userStatus}
-						</button>
 					</div>
 				)}
 			</div>
