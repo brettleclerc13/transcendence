@@ -10,10 +10,27 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 	const [bio, setBio] = useState("");
 	const [errors, setErrors] = useState({ email: "", username: "", pass: "" });
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const validatePassword = (password: string) => {
+		const requirements = [
+			{ label: "At least 8 characters", isMet: password.length >= 8 },
+			{ label: "At least one uppercase character", isMet: /[A-Z]/.test(password) },
+			{ label: "At least one number", isMet: /[0-9]/.test(password) },
+			{ label: "At least one special character (e.g., ! @ # ? _)", isMet: /[!@#?_]/.test(password) },
+		];
+		const unmetRequirements = requirements.filter((req) => !req.isMet);
+		return unmetRequirements.map((req) => req.label);
+	};
+
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		let formIsValid = true;
 		const newErrors = {email: "", username: "", pass: "" };
+
+		const passwordErrors = validatePassword(pass);
+		if (passwordErrors.length > 0) {
+			newErrors.pass = `Password must meet the following requirements:\n- ${passwordErrors.join("\n- ")}`;
+			formIsValid = false;
+		}
 
 		if (!email) {
 			newErrors.email = "Email is required.";
@@ -33,8 +50,45 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 		if (!formIsValid) {
 			return;
 		}
-		console.log(email, username, pass, age, nationality, bio);
-		onBackClick();
+
+		// Préparer les données pour l'API
+		const requestData = {
+			email,
+			user: username,
+			password: pass,
+			...(age ? { age } : {}), // Ajoute `age` uniquement si défini
+    		...(nationality ? { nationality } : {}),  // Ajoute `nationality` uniquement si défini
+    		...(bio ? { bio } : {}),
+		};
+
+		try {
+			// Envoyer les données au backend avec fetch
+			const response = await fetch("/api/users/", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(requestData), // Convertir les données en JSON
+			});
+
+			// Vérifier la réponse
+			if (!response.ok) {
+				// Si erreur, récupérer les messages d'erreur
+				const errorData = await response.json();
+				console.error("Error creating user:", errorData);
+				alert("Failed to register. Please try again.");
+				return;
+			}
+
+			// Succès : Traiter la réponse
+			const data = await response.json();
+			console.log("User created:", data);
+			onBackClick(); // Revenir à la page précédente
+		} catch (error) {
+			// Gérer les erreurs réseau ou autres
+			console.error("Error:", error);
+			alert("An error occurred. Please try again later.");
+		}
 	};
 
 	return (

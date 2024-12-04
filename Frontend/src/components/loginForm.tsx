@@ -3,12 +3,17 @@
 import React, { useState } from "react";
 import { FormProps } from "@/app/types";
 
-export default function LoginForm({ onBackClick, onFormSwitch }: FormProps) {
+interface LoginFormProps extends FormProps {
+	onLoginSuccess: (userData: any) => void;
+}
+
+export default function LoginForm({ onBackClick, onFormSwitch, onLoginSuccess }: LoginFormProps) {
 	const [email, setEmail] = useState("");
 	const [pass, setPass] = useState("");
 	const [errors, setErrors] = useState({email: "", pass: ""});
+	const [serverError, setServerError] = useState("");
 	
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		let formIsValid = true;
 		const newErrors = {email: "", pass: ""};
@@ -26,8 +31,47 @@ export default function LoginForm({ onBackClick, onFormSwitch }: FormProps) {
 		if (!formIsValid) {
 			return;
 		}
-		console.log(email, pass);
-		onBackClick();
+		// Préparation des données pour l'API
+		const requestData = {
+			email: email,
+			password: pass,
+		};
+
+		console.log("ICI : ")
+		console.log("Request Data: ", requestData);
+
+		try {
+			// Appel à l'API avec fetch
+			const response = await fetch("/api/login/", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(requestData),
+			});
+
+			// Vérifier la réponse
+			if (!response.ok) {
+				const errorData = await response.json();
+				setServerError(errorData.detail || "Login failed. Please try again.");
+				return;
+			}
+
+			// Succès : Traiter la réponse
+			const data = await response.json();
+			console.log("Login successful:", data);
+
+			onLoginSuccess({
+				name: data.name,
+				profilePicture: data.profilePicture,
+				status: "Disponible",
+			});
+
+			onBackClick(); // Retour à la page précédente après connexion réussie
+		} catch (error) {
+			console.error("Error during login:", error);
+			setServerError("An unexpected error occurred. Please try again later.");
+		}
 	};
 
 	return (

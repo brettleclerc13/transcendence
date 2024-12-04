@@ -1,11 +1,16 @@
 from django.shortcuts import render
-from .models import User, Match
+from .models import User, Match 
+
+import sys
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from . serializer import UserSerializer, MatchSerializer
+from rest_framework.authtoken.models import Token
 
+from rest_framework.renderers import JSONRenderer
+
+from . serializer import UserSerializer, MatchSerializer, LoginSerializer
 
 # Create your views here.
 
@@ -21,7 +26,39 @@ def validate_request_data_match(data):
         if key not in allowed_fields:
             raise ValueError(f"Invalid field: {key}")
 
-class UserAPIView(APIView):
+class ListUserAPIView(APIView):
+
+    renderer_classes = [JSONRenderer]  # Désactiver l'interface HTML
+
+    def get(self, request):
+        users = User.objects.all()  # Récupère tous les utilisateurs
+        user_data = [
+            {
+                'id': user.id,
+                'username': user.user,
+                'email': user.email,
+            }
+            for user in users
+        ]
+        return Response(user_data, status=status.HTTP_200_OK)
+
+class LoginAPIView(APIView):
+
+    def post(self, request):
+        print("Goodbye cruel world!", file=sys.stderr)
+        print(f"data : {request.data}", file=sys.stderr)
+        serializer = LoginSerializer(data=request.data)
+        print("Check 2", file=sys.stderr)
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            # Générer un token d'authentification
+            # token, _ = Token.objects.get_or_create(user=user)
+            return Response({'message': 'Login successful', 'user': user.id}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        #     return Response({"token": token.key}, status=status.HTTP_200_OK)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class UserAPIView(APIView): # Allow to register a new User
     
     def get(self, request):
         try:
@@ -49,13 +86,15 @@ class UserAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     def post(self, request):
         try:
+            print("Request Data:", request.data)
             serializer = UserSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+            print("Validation Errors:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
