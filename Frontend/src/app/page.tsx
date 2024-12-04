@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Hero from "./Hero/hero";
-import Header from "./Header/header";
+import HeaderComponent from "./Header/headerComponent";
 import LoginForm from "@/components/loginForm";
 import RegisterForm from "../components/registerForm";
 import AboutUsLayer from "./AboutUs/aboutUs";
@@ -62,7 +62,7 @@ export default function Home() {
 
 	return (
 		<div className="relative h-screen flex justify-center items-center bg-teal-600">
-			<Header goToSection={goToSection} isLoggedIn={isLoggedIn} userProfile={userProfile || undefined} />
+			<HeaderComponent goToSection={goToSection} isLoggedIn={isLoggedIn} userProfile={userProfile || undefined} />
 			
 			{currentSection == 'home' &&
 				<Hero goToGame={() => goToSection('game')}/>

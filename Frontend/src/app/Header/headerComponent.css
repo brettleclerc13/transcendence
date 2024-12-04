@@ -16,7 +16,7 @@ header {
 	align-items: center;
 	font-size: 1.25rem; /* text-xl */
 }
-  
+
 .menu-container {
 	position: absolute;
 	top: 4rem; /* top-16 */
@@ -50,9 +50,14 @@ header {
   
 .action-buttons {
 	display: flex;
+	align-items: center;
 	gap: 1rem; /* space-x-4 */
 }
-  
+
+.logged-name {
+	border-left: #ccc, 0.5rem;
+}
+
 .login-button,
 .signup-button {
 	color: white;
@@ -64,10 +69,41 @@ header {
 	box-shadow: 0 4px 6px rgba(56, 178, 172, 0.5); /* shadow-teal-500/50 */
 	cursor: pointer;
 }
-  
+
 .login-button:hover,
 .signup-button:hover {
 	background: linear-gradient(to bottom right, #319795, #2c7a7b); /* hover:bg-gradient-to-br */
+}
+
+.dropdown-menu {
+	position: absolute;
+	top: 50px;
+	right: 0;
+	background-color: white;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	box-shadow: 0px 4px 6px rgba(255, 255, 255, 0.9);
+	z-index: 1050;
+	min-width: 150px;
+	display: block !important;
+}
+
+.dropdown-item {
+	padding: 10px;
+	text-align: left;
+	background-color: white;
+	color: #333;
+	cursor: pointer;
+	border: none;
+	width: 100%;
+}
+  
+.dropdown-item:hover {
+	background-color: #f5f5f5;
+}
+  
+.logout {
+	color: red;
 }
   
 .profile-section {
@@ -75,12 +111,18 @@ header {
 	align-items: center;
 	gap: 1rem; /* space-x-4 */
 }
-  
+
+.profile-button {
+	background: none;
+	border: none;
+	cursor: pointer;
+}
+
 .profile-picture {
-	width: 2.5rem; /* w-10 */
-	height: 2.5rem; /* h-10 */
-	border-radius: 50%; /* rounded-full */
-	border: 2px solid #319795; /* border-teal-500 */
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 50%;
+	border: 2px solid #319795;
 }
 
 .form-check-input {
