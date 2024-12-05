@@ -6,7 +6,8 @@ import HeaderComponent from "./Header/headerComponent";
 import LoginForm from "@/components/loginForm";
 import RegisterForm from "../components/registerForm";
 import AboutUsLayer from "./AboutUs/aboutUs";
-import Game from "./Game/game"
+import Profile from "./Profile/profile";
+import Game from "./Game/game";
 
 export default function Home() {
 	const [currentSection, setCurrentSection] = useState('home');
@@ -34,6 +35,9 @@ export default function Home() {
 			const state = event.state || {layer: 'home' };
 
 			switch (state.layer) {
+				case 'profile':
+					setCurrentSection('profile');
+				break;
 				case 'login':
 					setCurrentSection('login');
 				break;
@@ -82,6 +86,10 @@ export default function Home() {
 			
 			{currentSection == 'register' && (
 				<RegisterForm onBackClick={() => goToSection('home')} onFormSwitch={() => goToSection('login')}/>
+			)}
+
+			{currentSection == 'profile' && (
+				<Profile onBackClick={() => goToSection('home')}/>
 			)}
 		</div>
   	);
