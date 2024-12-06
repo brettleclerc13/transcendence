@@ -100,7 +100,7 @@ header {
 	border: none;
 	width: 100% !important;
 }
-  
+
 .dropdown-item:hover {
 	background-color: #f5f5f5c2;
 }
@@ -127,7 +127,7 @@ header {
 	cursor: pointer;
 }
 
-.profile-picture {
+.profile-picture-header{
 	width: 2.5rem;
 	height: 2.5rem;
 	border-radius: 50%;

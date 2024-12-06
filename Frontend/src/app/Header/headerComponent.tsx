@@ -81,7 +81,7 @@ export default function HeaderComponent({goToSection, isLoggedIn, userProfile}:M
 							<img
 								src={userProfile?.profilePicture || "./img/default.png"}
 								alt="Profile"
-								className="profile-picture"
+								className="profile-picture-header"
 							/>
 						</button>
 
