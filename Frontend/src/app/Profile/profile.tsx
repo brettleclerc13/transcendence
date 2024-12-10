@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+// import { Doughnut } from "react-chartjs-2";
 import "./profile.css";
 
 interface Profile {
@@ -11,10 +12,18 @@ interface Profile {
     bio: string;
 }
 
+interface Match {
+    duelNumber: number;
+    adversary: string;
+    date: string;
+    result: string; // W/L
+}
+
 export default function Profile() {
 	const [profile, setProfile] = useState<Profile | null>(null);
 	const [tempProfile, setTempProfile] = useState<Profile | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [matches, setMatches] = useState<Match[]>([]);
 
 	useEffect(() => {
         fetch("/users/")
@@ -32,6 +41,15 @@ export default function Profile() {
             .catch((error) => {
                 console.error("Error fetching profile data:", error);
 				setLoading(false);
+            });
+
+		fetch("/matches/")
+            .then((response) => response.json())
+            .then((data) => {
+                setMatches(data);
+            })
+            .catch((error) => {
+                console.error("Error fetching match data:", error);
             });
     }, []);
 
@@ -71,6 +89,33 @@ export default function Profile() {
 	const handleCancel = () => {
 		setTempProfile(profile);
 	}
+
+	// Calcul des statistiques Win/Lose
+	const totalMatches = matches.length;
+	const wins = matches.filter(match => match.result === "W").length;
+	const losses = totalMatches - wins;
+
+	// Données pour la roue
+	const chartData = {
+		labels: ["Wins", "Losses"],
+		datasets: [
+			{
+				data: [wins, losses],
+				backgroundColor: ["#4caf50", "#f44336"], // Couleurs pour Win et Lose
+				borderWidth: 1,
+			},
+		],
+	};
+
+	const chartOptions = {
+		cutout: "70%", // Taille du "trou" au centre de l'anneau
+		plugins: {
+			legend: {
+				display: true,
+				position: "bottom",
+			},
+		},
+	};
 
 	if (loading) {
         return <div>Loading profile...</div>; // Affiche un message ou un spinner pendant le chargement
@@ -143,8 +188,36 @@ export default function Profile() {
 							onChange={handleChange}
 							/>
 					</div>
-					{/* match history */}
-					{/* w/l wheel */}
+					<div className="match-history">
+						<h3>Match History</h3>
+						<div className="table-container">
+							<table className="table">
+								<thead>
+									<tr>
+										<th scope="col">Duel #</th>
+										<th scope="col">Adversary</th>
+										<th scope="col">Date</th>
+										<th scope="col">W/L</th>
+									</tr>
+								</thead>
+								<tbody>
+									{/* Afficher les matchs */}
+									{matches.map((match) => (
+										<tr key={match.duelNumber}>
+											<th scope="row">{match.duelNumber}</th>
+											<td>{match.adversary}</td>
+											<td>{match.date}</td>
+											<td>{match.result}</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div className="win-lose-chart">
+						<h3>Win/Loss Ratio</h3>
+						<Doughnut data={chartData} options={chartOptions} />
+					</div>
 					<div className="button-container">
 						<button className="button-save" onClick={handleSave}>Save</button>
 						<button className="button-cancel" onClick={handleCancel}>Cancel</button>

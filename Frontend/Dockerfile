@@ -6,7 +6,9 @@ COPY package.json package-lock.json ./
 
 RUN npm install
 
-#COPY . .
+RUN npm install chart.js react-chartjs-2
+
+COPY . .
 
 #RUN npm run build
 

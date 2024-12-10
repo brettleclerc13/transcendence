@@ -129,3 +129,38 @@ textarea {
 .button-cancel:hover {
 	background-color: #a81919;
 }
+
+.table-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th, .table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.table th {
+    background-color: #f2f2f2;
+}
+
+.match-history {
+    display: flex;
+    flex-direction: column;
+}
+
+.table-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.win-lose-chart {
+    margin-top: 20px;
+    text-align: center;
+}
