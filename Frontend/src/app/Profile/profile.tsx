@@ -1,36 +1,84 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./profile.css";
 
-export default function Profile() {
-const [profile, setProfile] = useState({
-	picture: "./img/default.png",
-	username: "",
-	email: "",
-	age: "",
-	nationality: "",
-	tournamentName: "",
-	bio: "Whatever!",
-});
-
-const [tempProfile, setTempProfile] = useState({...profile});
-
-const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setProfile((prevTempProfile) => ({
-      ...prevTempProfile,
-      [name]: value,
-    }));
-};
-
-const handleSave = () => {
-	setProfile(tempProfile);
- 	// appel API pour sauvegarder les changements
-	console.log("Saved profile data:", profile);
-};
-
-const handleCancel = () => {
-	setTempProfile(profile);
+interface Profile {
+    picture: string;
+    username: string;
+    email: string;
+    age: string;
+    nationality: string;
+    tournamentName: string;
+    bio: string;
 }
+
+export default function Profile() {
+	const [profile, setProfile] = useState<Profile | null>(null);
+	const [tempProfile, setTempProfile] = useState<Profile | null>(null);
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+        fetch("/users/")
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Failed to fetch profile data");
+                }
+                return response.json();
+            })
+            .then((data) => {
+                setProfile(data);
+                setTempProfile(data);
+				setLoading(false);
+            })
+            .catch((error) => {
+                console.error("Error fetching profile data:", error);
+				setLoading(false);
+            });
+    }, []);
+
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+		if (tempProfile) {
+            const { name, value } = e.target;
+            setTempProfile({
+                ...tempProfile,
+                [name]: value,
+            });
+        }
+	};
+
+	const handleSave = () => {
+        fetch("/users/${profile.id}/", {
+            method: "PUT", // Utilisez POST ou PUT selon votre API
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(tempProfile),
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Failed to save profile data");
+                }
+                return response.json();
+            })
+            .then((data) => {
+                setProfile(data); // Met à jour les données avec la réponse du serveur
+                console.log("Profile saved successfully:", data);
+            })
+            .catch((error) => {
+                console.error("Error saving profile data:", error);
+            });
+    };
+	
+	const handleCancel = () => {
+		setTempProfile(profile);
+	}
+
+	if (loading) {
+        return <div>Loading profile...</div>; // Affiche un message ou un spinner pendant le chargement
+    }
+
+    if (!profile || !tempProfile) {
+        return <div>Failed to load profile.</div>; // Affiche un message si le profil n'est pas disponible
+    }
 
 	return (
 		<div className="profile-container">
@@ -88,8 +136,9 @@ const handleCancel = () => {
 				<div className="right-informations">
 					<div>
 						<label>Bio:</label>
-						<textarea 
+						<textarea
 							name="bio"
+							placeholder="Whatever!"
 							value={tempProfile.bio}
 							onChange={handleChange}
 							/>

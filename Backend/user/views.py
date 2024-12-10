@@ -63,7 +63,7 @@ class UserAPIView(APIView): # Allow to register a new User
     def get(self, request):
         try:
             if request.body:
-                data = request.data
+                data = request.query_params
                 validate_request_data_user(data)
                 user = data.get('user', None)
                 nationality = data.get('nationality', None)
