@@ -2,12 +2,13 @@
 
 import React, { useState } from "react";
 import { FormProps } from "@/app/types";
+import Link from "next/link"
 
 interface LoginFormProps extends FormProps {
 	onLoginSuccess: (userData: any) => void;
 }
 
-export default function LoginForm({ onBackClick, onFormSwitch, onLoginSuccess }: LoginFormProps) {
+export default function LoginForm() {
 	const [email, setEmail] = useState("");
 	const [pass, setPass] = useState("");
 	const [errors, setErrors] = useState({email: "", pass: ""});
@@ -61,13 +62,12 @@ export default function LoginForm({ onBackClick, onFormSwitch, onLoginSuccess }:
 			const data = await response.json();
 			console.log("Login successful:", data);
 
-			onLoginSuccess({
-				name: data.name,
-				profilePicture: data.profilePicture,
-				status: "Disponible",
-			});
+			// onLoginSuccess({
+			// 	name: data.name,
+			// 	profilePicture: data.profilePicture,
+			// 	status: "Disponible",
+			// });
 
-			onBackClick(); // Retour à la page précédente après connexion réussie
 		} catch (error) {
 			console.error("Error during login:", error);
 			setServerError("An unexpected error occurred. Please try again later.");
@@ -77,12 +77,12 @@ export default function LoginForm({ onBackClick, onFormSwitch, onLoginSuccess }:
 	return (
 		<div className="fixed inset-0 top-20 bg-teal-800 flex justify-center items-center z-50">
 			<div className="bg-white p-8 rounded-lg shadow-lg w-96">
-				<button 
-				onClick={() => onBackClick()}
+				<Link 
+				href="?section=home"
 				className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-3xl font-bold"
 				>
 				&times;
-				</button>
+				</Link>
 				<form onSubmit={handleSubmit}>
 					<label htmlFor="email" className="block text-sm font-medium mb-1">Email<span className="text-red-500 ml-1">*</span></label>
 					<input
@@ -111,9 +111,9 @@ export default function LoginForm({ onBackClick, onFormSwitch, onLoginSuccess }:
 						Log In
 					</button>
 				</form>
-				<button className="link-btn underline mt-4 ml-6" onClick={onFormSwitch}>
+				<Link className="link-btn underline mt-4 ml-6" href="?section=register">
 					Don&apos;t have an account ? Register here
-				</button>
+				</Link>
 				<p className="text-xs mt-4"><span className="text-red-500 mr-1">*</span>: Mandatory information</p>
 			</div>
     	</div>

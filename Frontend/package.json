@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+	"postinstall": "sed -i 's|/*# sourceMappingURL=bootstrap.min.css.map||g' node_modules/bootstrap/dist/css/bootstrap.min.css || true"
   },
   "dependencies": {
     "bootstrap": "^5.3.3",
@@ -26,3 +27,4 @@
     "typescript": "^5"
   }
 }
+

@@ -1,7 +1,9 @@
-import React, {useState } from "react";
-import { FormProps } from "@/app/types";
+'use client'
 
-export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
+import React, {useState } from "react";
+import Link from "next/link";
+
+export default function RegisterForm() {
 	const [email, setEmail] = useState("");
 	const [username, setUsername] = useState("");
 	const [pass, setPass] = useState("");
@@ -83,7 +85,6 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 			// Succès : Traiter la réponse
 			const data = await response.json();
 			console.log("User created:", data);
-			onBackClick(); // Revenir à la page précédente
 		} catch (error) {
 			// Gérer les erreurs réseau ou autres
 			console.error("Error:", error);
@@ -94,12 +95,12 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 	return (
 		<div className="fixed inset-0 top-20 bg-teal-800 flex justify-center items-center z-50">
 			<div className="bg-white p-8 rounded-lg shadow-lg w-96">
-				<button 
-					onClick={() => onBackClick()} 
+				<Link 
+					href="?section=home" 
 					className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-3xl font-bold"
 				>
 					&times;
-				</button>
+				</Link>
 				<form onSubmit={handleSubmit}>
 					<label htmlFor="email" className="block text-sm font-medium mb-1">Email<span className="text-red-500 ml-1">*</span></label>
 					<input
@@ -165,9 +166,9 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 						Sign Up
 					</button>
 				</form>
-				<button className="link-btn underline mt-4 ml-6" onClick={onFormSwitch}>
+				<Link className="link-btn underline mt-4 ml-6" href="?section=login">
 					Already have an account ? Login here
-				</button>
+				</Link>
 				<p className="text-xs mt-4"><span className="text-red-500 mr-1">*</span>: Mandatory information</p>
 			</div>
     	</div>

@@ -4,19 +4,22 @@ import { HoverableDiv } from '@/app/types';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
 import "./grid.css"
 
-const Grid = forwardRef(function Grid({ onDisappear }: { onDisappear: () => void}, ref) {
+// { onDisappear }: { onDisappear: () => void} .. goToGame argument removed
+
+const Grid = forwardRef(function Grid() {
+	const gridRef = useRef<{ resetGrid: () => void } | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const cellSize = 50;
 	// const titleHeight = 200;
 
-	const handleClick = useCallback((cell: HoverableDiv) => {
-			if (cell.hoverCount && cell.hoverCount >= 2) {
-				cell.style.pointerEvents = 'none'; // Disable further interactions with the cell
-				onDisappear();
-			}
-		}, [onDisappear]);
+	// const handleClick = useCallback((cell: HoverableDiv) => {
+	// 		if (cell.hoverCount && cell.hoverCount >= 2) {
+	// 			cell.style.pointerEvents = 'none'; // Disable further interactions with the cell
+	// 			onDisappear();
+	// 		}
+	// 	}, [onDisappear]);
 
-	useImperativeHandle(ref, () => ({
+	useImperativeHandle(gridRef, () => ({
 		resetGrid() {
 			if (containerRef.current) {
 				containerRef.current.innerHTML = ''; // Effacer toutes les cellules
@@ -46,13 +49,14 @@ const Grid = forwardRef(function Grid({ onDisappear }: { onDisappear: () => void
 				// const fadeEnd = middleScreenY + titleHeight / 2; // La fin du fondu (bas du titre)
 
 				cell.addEventListener("mouseenter", () => isHovered(cell), true);
-				cell.addEventListener('click', () => handleClick(cell), true);
+				// cell.addEventListener('click', () => handleClick(cell), true);
 
 				cell.className = 'custom-cell';
 				container!.appendChild(cell);
 			}
 		}
-	}, [cellSize, handleClick]);
+	// }, [cellSize, handleClick]);
+	}, [cellSize]);
 
 	useEffect(() => {
 		const updateGrid = () => generateGrid(window.innerWidth);
