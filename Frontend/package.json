@@ -7,12 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-	"postinstall": "sed -i 's|/*# sourceMappingURL=bootstrap.min.css.map||g' node_modules/bootstrap/dist/css/bootstrap.min.css || true"
+    "postinstall": "sed -i 's|/*# sourceMappingURL=bootstrap.min.css.map||g' node_modules/bootstrap/dist/css/bootstrap.min.css || true"
   },
   "dependencies": {
     "bootstrap": "^5.3.3",
     "next": "14.2.15",
     "react": "^18",
+    "react-chartjs-2": "^5.2.0",
     "react-dom": "^18"
   },
   "devDependencies": {
@@ -27,4 +28,3 @@
     "typescript": "^5"
   }
 }
-

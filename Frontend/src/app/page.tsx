@@ -3,18 +3,17 @@ import HeaderComponent from "./Header/headerComponent";
 import LoginForm from "@/components/loginForm";
 import RegisterForm from "../components/registerForm";
 import AboutUsLayer from "./AboutUs/aboutUs";
-import Game from "./Game/game";
-import { MenuProps } from "./types";
-import "./page.css"
-import { useSearchParams } from "next/navigation";
+import Profile from "./Profile/profile";
 import dynamic from "next/dynamic";
+import Game from "./Game/game";
+import "./page.css"
 
 export default function Home({ searchParams } : {
 	searchParams: { [key: string] : string | string [] | undefined };
 }) {
 	const selectedSection = (searchParams.section || 'home') as string;
 
-	//const HeaderComponent = dynamic(import('./Header/headerComponent'), {ssr : false});
+	const Profile = dynamic(import('./Profile/profile'), {ssr : false});
 
 	return (
 		<div className="app-container">
@@ -24,6 +23,7 @@ export default function Home({ searchParams } : {
 			{selectedSection === 'aboutUs' && <AboutUsLayer />}
 			{selectedSection === 'login' && <LoginForm />}
 			{selectedSection === 'register' && <RegisterForm />}
+			{selectedSection === 'profile' && <Profile />}
 		</div>
   	);
 }

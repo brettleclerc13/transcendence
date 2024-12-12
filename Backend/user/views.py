@@ -1,6 +1,9 @@
 from django.shortcuts import render
 from .models import User, Match 
 
+import logging
+logger = logging.getLogger(__name__)
+
 import sys
 
 from rest_framework.views import APIView
@@ -63,7 +66,7 @@ class UserAPIView(APIView): # Allow to register a new User
     def get(self, request):
         try:
             if request.body:
-                data = request.data
+                data = request.query_params
                 validate_request_data_user(data)
                 user = data.get('user', None)
                 nationality = data.get('nationality', None)
@@ -89,16 +92,18 @@ class UserAPIView(APIView): # Allow to register a new User
 
     def post(self, request):
         try:
-            print("Request Data:", request.data)
+            logger.info("Received POST request with data: %s", request.data)
             serializer = UserSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
+                logger.info("User created successfully: %s", serializer.data)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
-            print("Validation Errors:", serializer.errors)
+            logger.warning("Validation errors: %s", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            logger.error("Error in POST request: %s", str(e), exc_info=True)
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
     def put(self, request, pk=None):
         try:
             user = User.objects.get(pk=pk)

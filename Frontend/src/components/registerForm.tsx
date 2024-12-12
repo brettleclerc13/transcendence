@@ -75,16 +75,19 @@ export default function RegisterForm() {
 
 			// Vérifier la réponse
 			if (!response.ok) {
-				// Si erreur, récupérer les messages d'erreur
-				const errorData = await response.json();
+				const responseText = await response.text(); // Log raw response text
+				console.error("Raw response:", responseText); // Helps debug non-JSON responses
+				const errorData = response.headers.get("Content-Type") === "application/json" 
+					? JSON.parse(responseText)
+					: { message: "Unexpected response format" };
 				console.error("Error creating user:", errorData);
 				alert("Failed to register. Please try again.");
-				return;
 			}
 
 			// Succès : Traiter la réponse
 			const data = await response.json();
 			console.log("User created:", data);
+			//back to home page function.
 		} catch (error) {
 			// Gérer les erreurs réseau ou autres
 			console.error("Error:", error);
