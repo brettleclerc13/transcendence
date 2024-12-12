@@ -1,27 +1,44 @@
 import json
+import math
 import time
 import asyncio
+from asyncio import Queue
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 
 class PongGameConsumer(AsyncWebsocketConsumer):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(self, *args, **kwargs)
+        self.game_state = {
+            "player1_position": [],
+            "player2_position": [],
+            "ball_position": [],
+            "ball_direction": [0.7, 0.7],  # Unit Vector for ball direction
+            "ball_speed": 15,
+            "score": [0, 0],
+            "last_update_time": time.time(),
+        }
+        self.game_parametres = {
+            "ball_diametre": 1,
+            "paddle_speed": 10, #units per second
+            "paddle_height": 8,
+            "paddle_width": 2,
+            "ball_speed": 15, #units per second
+            "paddle_xposition": 0.2, #as a fraction of total width where X is fraction distance from the edge
+            "field_width": 100,
+            "field_height": 100
+
+        }
+        self.players = set()  # Track connected players in the room
+        self.input_queue = Queue()
+        self.has_initialize = False
+        self.time_per_tick = 0.05 #50 ms
+
     async def connect(self):
         # Extract room name from URL
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = f"pong_{self.room_name}"
-        self.state_lock = asyncio.Lock()
-
-        # Initialize game state for this instance
-        self.game_state = {
-            "player1_position": 50,
-            "player2_position": 50,
-            "ball_position": [50, 50],
-            "ball_velocity": [1, 1],  # Ball moves 1 unit per tick in both x and y directions
-            "score": [0, 0],
-            "paddle_speed": 30,  # Units per second
-            "last_update_time": time.time(),
-        }
-        self.players = set()  # Track connected players in the room
 
         # Join the room group
         await self.channel_layer.group_add(
@@ -55,75 +72,33 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         )
 
     async def receive(self, text_data):
-        """
-        Handle player input. Input must include:
-        - `player`: "player1" or "player2"
-        - `direction`: -1 (up) or 1 (down)
-        - `timestamp`: Time input was sent from the client
-        """
-        try:
-            data = json.loads(text_data)
-            player = data["player"]  # "player1" or "player2"
-            direction = data["direction"]  # +1 (down) or -1 (up)
-            input_timestamp = data["timestamp"]  # Client-side timestamp
+        data = json.loads(text_data)
+        if data["type"] == "initialize":
+            self.update_game_parametres(data["game_parametres"])
+            self.has_initialize = True
+        await self.input_queue.put(data)
 
-            # Validate input
-            if player not in ["player1", "player2"] or direction not in [-1, 1]:
-                return  # Invalid input, ignore
-
-            # Adjust for lag using input timestamp
-            server_time = time.time()
-            latency = server_time - input_timestamp
-
-            # Update paddle position based on input
-            async with self.state_lock:
-                paddle_speed = self.game_state["paddle_speed"]
-                time_elapsed = latency + 0.05  # Assuming tick duration of 50ms (20 FPS)
-                if player == "player1":
-                    self.game_state["player1_position"] += direction * paddle_speed * time_elapsed
-                    self.game_state["player1_position"] = max(0, min(100, self.game_state["player1_position"]))  # Clamp position
-                elif player == "player2":
-                    self.game_state["player2_position"] += direction * paddle_speed * time_elapsed
-                    self.game_state["player2_position"] = max(0, min(100, self.game_state["player2_position"]))  # Clamp position
-        except Exception as e:
-            # Handle any unexpected errors
-            print(f"Error processing input: {e}")
+    
+       
 
     async def game_loop(self):
-        """
-        The main game loop, running at a fixed tick rate (e.g., 20 FPS).
-        Updates the game state and broadcasts it to all players.
-        """
+
         try:
             while True:
-                # Calculate time elapsed since the last update
-                async with self.state_lock:
-                    current_time = time.time()
-                    time_elapsed = current_time - self.game_state["last_update_time"]
-                    self.game_state["last_update_time"] = current_time
+                while not self.input_queue.empty():
+                    input_event = await self.input_queue.get()
+                    player = input_event["player"]
+                    direction = input_event["direction"]
 
-                    # Update ball position
-                    self.game_state["ball_position"][0] += self.game_state["ball_velocity"][0] * time_elapsed * 50  # Ball speed multiplier
-                    self.game_state["ball_position"][1] += self.game_state["ball_velocity"][1] * time_elapsed * 50
+                if self.has_initialize:
+                    self.update_paddles(player, direction)
+                #!!!update ball position, handle collisions with walls and paddles! handle scoring.
 
-                    # Handle ball collisions with walls
-                    if self.game_state["ball_position"][1] <= 0 or self.game_state["ball_position"][1] >= 100:
-                        self.game_state["ball_velocity"][1] *= -1  # Reverse vertical direction
 
-                    # Handle ball collisions with paddles
-                    if self.game_state["ball_position"][0] <= 0:  # Ball reaches player1's side
-                        if abs(self.game_state["player1_position"] - self.game_state["ball_position"][1]) < 10:
-                            self.game_state["ball_velocity"][0] *= -1  # Reverse horizontal direction
-                        else:
-                            self.game_state["score"][1] += 1  # Player 2 scores
-                            self.reset_ball()
-                    elif self.game_state["ball_position"][0] >= 100:  # Ball reaches player2's side
-                        if abs(self.game_state["player2_position"] - self.game_state["ball_position"][1]) < 10:
-                            self.game_state["ball_velocity"][0] *= -1  # Reverse horizontal direction
-                        else:
-                            self.game_state["score"][0] += 1  # Player 1 scores
-                            self.reset_ball()
+                    
 
+                
+                
                 # Broadcast the updated game state to all players
                 await self.channel_layer.group_send(
                     self.room_group_name,
@@ -138,6 +113,48 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         except asyncio.CancelledError:
             # Gracefully exit the game loop if the task is canceled
             pass
+    
+    #def update_ball_position(self, ball_position, ball_direction, ball_speed):
+
+
+    def update_game_parametres(self, new_parametres):
+        self.game_parametres.update(new_parametres)
+        self.init_starting_positions()
+
+    def init_starting_positions(self):
+        field_width = self.game_parametres["field_width"]
+        field_heigth = self.game_parametres["field_height"]
+        x_fraction = self.game_parametres["paddle_xposition"]
+
+        player1_x = field_width * x_fraction
+        player1_y = field_heigth / 2
+        self.game_state["player1_position"] = [player1_x, player1_y]
+
+        player2_x = field_width - (field_width * x_fraction)
+        player2_y = field_heigth / 2
+        self.game_state["player2_position"] = [player2_x, player2_y]
+
+        self.game_state["ball_position"] = [field_width / 2, field_heigth / 2]
+
+    def update_paddles(self, player, direction):
+        speed = self.game_parametres["paddle_speed"]
+        paddle_height = self.game_parametres["paddle_height"]
+        feild_height = self.game_parametres["field_height"]
+        if player == "player1":
+            old_position = self.game_state["player1_position"][1]
+            new_position = self.clamp(old_position + (direction * speed * self.time_per_tick), paddle_height / 2, feild_height - (paddle_height / 2))
+            self.game_state["player1_position"][1] = new_position
+        elif player =="player2":
+            old_position = self.game_state["player2_position"][1]
+            new_position = self.clamp(old_position + (direction * speed * self.time_per_tick), paddle_height / 2, feild_height - (paddle_height / 2))
+            self.game_state["player2_position"][1] = new_position
+        
+
+
+
+
+
+
 
     async def game_update(self, event):
         """
@@ -151,3 +168,13 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         """
         self.game_state["ball_position"] = [50, 50]
         self.game_state["ball_velocity"] = [1, 1]
+    
+    def clamp(value, min_value, max_value):
+        return max(min_value, min(value, max_value))
+    
+    def normalize(vector):
+        x, y = vector
+        magnitude = math.sqrt(x**2 + y**2)
+        if magnitude == 0:
+            raise ValueError("Zero Vector")
+        return (x / magnitude, y / magnitude)
