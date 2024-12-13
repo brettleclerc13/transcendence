@@ -65,7 +65,7 @@ export default function RegisterForm() {
 
 		try {
 			// Envoyer les données au backend avec fetch
-			const response = await fetch("/api/users/", {
+				const response = await fetch("/api/users/", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
