@@ -1,7 +1,9 @@
-import React, {useState } from "react";
-import { FormProps } from "@/app/types";
+'use client'
 
-export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
+import React, {useState } from "react";
+import Link from "next/link";
+
+export default function RegisterForm() {
 	const [email, setEmail] = useState("");
 	const [username, setUsername] = useState("");
 	const [pass, setPass] = useState("");
@@ -10,10 +12,27 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 	const [bio, setBio] = useState("");
 	const [errors, setErrors] = useState({ email: "", username: "", pass: "" });
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const validatePassword = (password: string) => {
+		const requirements = [
+			{ label: "At least 8 characters", isMet: password.length >= 8 },
+			{ label: "At least one uppercase character", isMet: /[A-Z]/.test(password) },
+			{ label: "At least one number", isMet: /[0-9]/.test(password) },
+			{ label: "At least one special character (e.g., ! @ # ? _)", isMet: /[!@#?_]/.test(password) },
+		];
+		const unmetRequirements = requirements.filter((req) => !req.isMet);
+		return unmetRequirements.map((req) => req.label);
+	};
+
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		let formIsValid = true;
 		const newErrors = {email: "", username: "", pass: "" };
+
+		const passwordErrors = validatePassword(pass);
+		if (passwordErrors.length > 0) {
+			newErrors.pass = `Password must meet the following requirements:\n- ${passwordErrors.join("\n- ")}`;
+			formIsValid = false;
+		}
 
 		if (!email) {
 			newErrors.email = "Email is required.";
@@ -33,19 +52,58 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 		if (!formIsValid) {
 			return;
 		}
-		console.log(email, username, pass, age, nationality, bio);
-		onBackClick();
+
+		// Préparer les données pour l'API
+		const requestData = {
+			email,
+			user: username,
+			password: pass,
+			...(age ? { age } : {}), // Ajoute `age` uniquement si défini
+    		...(nationality ? { nationality } : {}),  // Ajoute `nationality` uniquement si défini
+    		...(bio ? { bio } : {}),
+		};
+
+		try {
+			// Envoyer les données au backend avec fetch
+				const response = await fetch("/api/users/", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(requestData), // Convertir les données en JSON
+			});
+
+			// Vérifier la réponse
+			if (!response.ok) {
+				const responseText = await response.text(); // Log raw response text
+				console.error("Raw response:", responseText); // Helps debug non-JSON responses
+				const errorData = response.headers.get("Content-Type") === "application/json" 
+					? JSON.parse(responseText)
+					: { message: "Unexpected response format" };
+				console.error("Error creating user:", errorData);
+				alert("Failed to register. Please try again.");
+			}
+
+			// Succès : Traiter la réponse
+			const data = await response.json();
+			console.log("User created:", data);
+			//back to home page function.
+		} catch (error) {
+			// Gérer les erreurs réseau ou autres
+			console.error("Error:", error);
+			alert("An error occurred. Please try again later.");
+		}
 	};
 
 	return (
 		<div className="fixed inset-0 top-20 bg-teal-800 flex justify-center items-center z-50">
 			<div className="bg-white p-8 rounded-lg shadow-lg w-96">
-				<button 
-					onClick={() => onBackClick()} 
+				<Link 
+					href="?section=home" 
 					className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-3xl font-bold"
 				>
 					&times;
-				</button>
+				</Link>
 				<form onSubmit={handleSubmit}>
 					<label htmlFor="email" className="block text-sm font-medium mb-1">Email<span className="text-red-500 ml-1">*</span></label>
 					<input
@@ -111,9 +169,9 @@ export default function RegisterForm({ onBackClick, onFormSwitch }: FormProps) {
 						Sign Up
 					</button>
 				</form>
-				<button className="link-btn underline mt-4 ml-6" onClick={onFormSwitch}>
+				<Link className="link-btn underline mt-4 ml-6" href="?section=login">
 					Already have an account ? Login here
-				</button>
+				</Link>
 				<p className="text-xs mt-4"><span className="text-red-500 mr-1">*</span>: Mandatory information</p>
 			</div>
     	</div>

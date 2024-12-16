@@ -36,7 +36,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.reflection_bias = 0.2
 
     async def connect(self):
-        # Extract room name from URL
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = f"pong_{self.room_name}"
 
@@ -50,8 +49,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         if not len(self.players) >= 2:
             await self.accept() #if not accapted send response!
             self.players.add(self.channel_name)
-            
-
 
 
     async def disconnect(self, close_code):

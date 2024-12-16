@@ -25,6 +25,7 @@ SECRET_KEY = 'django-insecure-6#8c!#@(j+&&y*+fwnu0%5==s33(!8v0=hm&*01xy$z#45hxl(
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+DEBUG_PROPAGATE_EXCEPTIONS = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -52,13 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-	#'corsheaders.middleware.CorsMiddleware'
 ]
-
-#CORS_ALLOWED_ORIGINS = [
-#    "http://frontend:3000",
-#	"http://frontend:3000/#game",
-#]
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -148,3 +143,8 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'authentication.backends.EmailBackend',  # Remplacez par le chemin réel de votre backend personnalisé
+]

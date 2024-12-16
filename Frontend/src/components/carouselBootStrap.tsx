@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min';

@@ -2,13 +2,19 @@
 
 import React, { useState } from "react";
 import { FormProps } from "@/app/types";
+import Link from "next/link"
 
-export default function LoginForm({ onBackClick, onFormSwitch }: FormProps) {
+interface LoginFormProps extends FormProps {
+	onLoginSuccess: (userData: any) => void;
+}
+
+export default function LoginForm() {
 	const [email, setEmail] = useState("");
 	const [pass, setPass] = useState("");
 	const [errors, setErrors] = useState({email: "", pass: ""});
+	const [serverError, setServerError] = useState("");
 	
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		let formIsValid = true;
 		const newErrors = {email: "", pass: ""};
@@ -26,19 +32,57 @@ export default function LoginForm({ onBackClick, onFormSwitch }: FormProps) {
 		if (!formIsValid) {
 			return;
 		}
-		console.log(email, pass);
-		onBackClick();
+		// Préparation des données pour l'API
+		const requestData = {
+			email: email,
+			password: pass,
+		};
+
+		console.log("ICI : ")
+		console.log("Request Data: ", requestData);
+
+		try {
+			// Appel à l'API avec fetch
+			const response = await fetch("/api/login/", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(requestData),
+			});
+
+			// Vérifier la réponse
+			if (!response.ok) {
+				const errorData = await response.json();
+				setServerError(errorData.detail || "Login failed. Please try again.");
+				return;
+			}
+
+			// Succès : Traiter la réponse
+			const data = await response.json();
+			console.log("Login successful:", data);
+
+			// onLoginSuccess({
+			// 	name: data.name,
+			// 	profilePicture: data.profilePicture,
+			// 	status: "Disponible",
+			// });
+
+		} catch (error) {
+			console.error("Error during login:", error);
+			setServerError("An unexpected error occurred. Please try again later.");
+		}
 	};
 
 	return (
 		<div className="fixed inset-0 top-20 bg-teal-800 flex justify-center items-center z-50">
 			<div className="bg-white p-8 rounded-lg shadow-lg w-96">
-				<button 
-				onClick={() => onBackClick()}
+				<Link 
+				href="?section=home"
 				className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-3xl font-bold"
 				>
 				&times;
-				</button>
+				</Link>
 				<form onSubmit={handleSubmit}>
 					<label htmlFor="email" className="block text-sm font-medium mb-1">Email<span className="text-red-500 ml-1">*</span></label>
 					<input
@@ -67,9 +111,9 @@ export default function LoginForm({ onBackClick, onFormSwitch }: FormProps) {
 						Log In
 					</button>
 				</form>
-				<button className="link-btn underline mt-4 ml-6" onClick={onFormSwitch}>
+				<Link className="link-btn underline mt-4 ml-6" href="?section=register">
 					Don&apos;t have an account ? Register here
-				</button>
+				</Link>
 				<p className="text-xs mt-4"><span className="text-red-500 mr-1">*</span>: Mandatory information</p>
 			</div>
     	</div>
