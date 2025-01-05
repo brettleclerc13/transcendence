@@ -1,135 +1,22 @@
-from django.shortcuts import render
-from .models import User, Match 
-
-import logging
-logger = logging.getLogger(__name__)
-
-import sys
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.authtoken.models import Token
-
-from rest_framework.renderers import JSONRenderer
-
-from . serializer import UserSerializer, MatchSerializer, LoginSerializer
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from .serializer import UserSerializer, MatchSerializer
 
 # Create your views here.
 
-def validate_request_data_user(data):
-    allowed_fields = {'user', 'nationality', 'age', 'tournament_name'}
-    for key in data.keys():
-        if key not in allowed_fields:
-            raise ValueError(f"Invalid field: {key}")
-        
-def validate_request_data_match(data):
-    allowed_fields = {'user', 'opponent', 'date', 'result'}
-    for key in data.keys():
-        if key not in allowed_fields:
-            raise ValueError(f"Invalid field: {key}")
-
-class ListUserAPIView(APIView):
-
-    renderer_classes = [JSONRenderer]  # Désactiver l'interface HTML
-
-    def get(self, request):
-        users = User.objects.all()  # Récupère tous les utilisateurs
-        user_data = [
-            {
-                'id': user.id,
-                'username': user.user,
-                'email': user.email,
-            }
-            for user in users
-        ]
-        return Response(user_data, status=status.HTTP_200_OK)
-
-class LoginAPIView(APIView):
-
+class UserAPIView(APIView):  # User registration and management
     def post(self, request):
-        print("Goodbye cruel world!", file=sys.stderr)
-        print(f"data : {request.data}", file=sys.stderr)
-        serializer = LoginSerializer(data=request.data)
-        print("Check 2", file=sys.stderr)
+        print("Request Data:", request.data)
+        serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.validated_data['user']
-            # Générer un token d'authentification
-            # token, _ = Token.objects.get_or_create(user=user)
-            return Response({'message': 'Login successful', 'user': user.id}, status=status.HTTP_200_OK)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        print("Errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        #     return Response({"token": token.key}, status=status.HTTP_200_OK)
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class UserAPIView(APIView): # Allow to register a new User
-    
-    def get(self, request):
-        try:
-            if request.body:
-                data = request.query_params
-                validate_request_data_user(data)
-                user = data.get('user', None)
-                nationality = data.get('nationality', None)
-                age = data.get('age', None)
-                tournament_name = data.get('tournament_name', None)
-
-                queryset = User.objects.all()
-                if user:
-                    queryset = queryset.filter(user=user)
-                if age:
-                    queryset = queryset.filter(age=age)
-                if nationality:
-                    queryset = queryset.filter(nationality=nationality)
-                if tournament_name:
-                    queryset = queryset.filter(tournament_name=tournament_name)
-            else:
-                queryset = User.objects.all()
-            
-            serializer = UserSerializer(queryset, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    def post(self, request):
-        try:
-            logger.info("Received POST request with data: %s", request.data)
-            serializer = UserSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                logger.info("User created successfully: %s", serializer.data)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            logger.warning("Validation errors: %s", serializer.errors)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            logger.error("Error in POST request: %s", str(e), exc_info=True)
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    def put(self, request, pk=None):
-        try:
-            user = User.objects.get(pk=pk)
-            serializer = UserSerializer(user, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
-    def patch(self, request, pk=None):
-        try:
-            user = User.objects.get(pk=pk)
-            serializer = UserSerializer(user, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
     def delete(self, request, pk=None):
         try:
             user = User.objects.get(pk=pk)
@@ -137,9 +24,34 @@ class UserAPIView(APIView): # Allow to register a new User
             return Response({"message": "User deleted successfully"}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+class CheckEmailAPIView(APIView):
+	def post(self, request):
+		email = request.data.get('email', None)
+		if email and User.objects.filter(email=email).exists():
+			return Response({"exists": True}, status=status.HTTP_200_OK)
+		return Response({"exists": False}, status=status.HTTP_200_OK)
+
+class LoginAPIView(APIView):
+    def post(self, request):
+        if request.user.is_authenticated:
+            return Response({"message": "User already logged in"}, status=status.HTTP_400_BAD_REQUEST)
+
+        email = request.data.get('email')
+        password = request.data.get('password')
+        user = authenticate(request, username=email, password=password)
+        if user:
+            login(request, user)
+            return Response({"message": "Login successful", "user_id": user.id}, status=status.HTTP_200_OK)
+        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class LogoutAPIView(APIView):
+    def post(self, request):
+        logout(request)
+        return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
+
+
 
 class MatchAPIView(APIView):
 
@@ -215,20 +127,3 @@ class MatchAPIView(APIView):
             return Response({"error": "Match not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)  
-    
-
-#USERS
-#	details (map):
-#		email -> email
-#		age -> number
-#		nationality -> string
-#		bio -> string
-#		profile_pic -> string (png path)
-#
-#	game_stats (map):
-#	tournament_name -> string (default required)
-#	match_history (map)
-#		adversary -> string
-#		date -> date
-#		win -> number
-#		loss -> number

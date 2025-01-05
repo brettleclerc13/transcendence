@@ -11,6 +11,7 @@ export default function RegisterForm() {
 	const [nationality, setNationality] = useState("");
 	const [bio, setBio] = useState("");
 	const [errors, setErrors] = useState({ email: "", username: "", pass: "" });
+	const [alert, setAlert] = useState<{ message: string, type: string } | null>(null);
 
 	const validatePassword = (password: string) => {
 		const requirements = [
@@ -53,19 +54,33 @@ export default function RegisterForm() {
 			return;
 		}
 
-		// Préparer les données pour l'API
-		const requestData = {
-			email,
-			user: username,
-			password: pass,
-			...(age ? { age } : {}), // Ajoute `age` uniquement si défini
-    		...(nationality ? { nationality } : {}),  // Ajoute `nationality` uniquement si défini
-    		...(bio ? { bio } : {}),
-		};
-
 		try {
+			// Check if the email already exists
+			const emailCheckResponse = await fetch("/api/check-email/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ email }),
+			});
+
+			const emailCheckData = await emailCheckResponse.json();
+
+			if (emailCheckData.exists) {
+				setAlert({ message: "Email is already in use.", type: "danger" });
+				return;
+			}
+
+			// Préparer les données pour l'API
+			const requestData = {
+				email,
+				username: username,
+				password: pass,
+				...(age ? { age } : {}), // Ajoute `age` uniquement si défini
+				...(nationality ? { nationality } : {}),  // Ajoute `nationality` uniquement si défini
+				...(bio ? { bio } : {}),
+			};
+
 			// Envoyer les données au backend avec fetch
-				const response = await fetch("/api/users/", {
+				const registerResponse = await fetch("/api/register/", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -74,24 +89,26 @@ export default function RegisterForm() {
 			});
 
 			// Vérifier la réponse
-			if (!response.ok) {
-				const responseText = await response.text(); // Log raw response text
-				console.error("Raw response:", responseText); // Helps debug non-JSON responses
-				const errorData = response.headers.get("Content-Type") === "application/json" 
-					? JSON.parse(responseText)
-					: { message: "Unexpected response format" };
-				console.error("Error creating user:", errorData);
-				alert("Failed to register. Please try again.");
+			if (!registerResponse.ok) {
+				const errorData = await registerResponse.json();
+				console.log("Registration failed: ", errorData);
+				setAlert({ message: "Failed to register. Please try again.", type: "danger" });
+				return;
 			}
 
 			// Succès : Traiter la réponse
-			const data = await response.json();
+			const data = await registerResponse.json();
 			console.log("User created:", data);
-			//back to home page function.
+
+			setAlert({ message: "Registration successful! Redirecting...", type: "success" });
+
+			setTimeout(() => {
+				window.location.href = "/?section=login"; // redirect to login section
+			}, 2000);
+
 		} catch (error) {
-			// Gérer les erreurs réseau ou autres
 			console.error("Error:", error);
-			alert("An error occurred. Please try again later.");
+			setAlert({ message: "An error occurred. Please try again later.", type: "danger" });
 		}
 	};
 
@@ -104,6 +121,13 @@ export default function RegisterForm() {
 				>
 					&times;
 				</Link>
+
+				{alert && (
+                    <div className={`alert alert-${alert.type} mb-4`} role="alert">
+                        {alert.message}
+                    </div>
+                )}
+
 				<form onSubmit={handleSubmit}>
 					<label htmlFor="email" className="block text-sm font-medium mb-1">Email<span className="text-red-500 ml-1">*</span></label>
 					<input

@@ -16,14 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from user.views import UserAPIView , MatchAPIView, LoginAPIView, ListUserAPIView
+from user.views import UserAPIView , MatchAPIView, LoginAPIView, LogoutAPIView, CheckEmailAPIView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-	path('users/list/', ListUserAPIView.as_view(), name='User-list'),
-    path('users/', UserAPIView.as_view(), name="User-get-post"),
-    path('users/<int:pk>/', UserAPIView.as_view(), name='User-put/patch-delete'),
-	path('login/', LoginAPIView.as_view(), name="User-login"),
-    path('matches/', MatchAPIView.as_view(), name="Match-get-post"),
-    path('matches/<int:pk>/', MatchAPIView.as_view(), name="Match-put/patch-delete"),
+	path('admin/', admin.site.urls),
+	# path('users/', UserAPIView.as_view(), name="User-get-post"),
+	# path('users/<int:pk>/', UserAPIView.as_view(), name='User-put/patch-delete'),
+	path('register/', UserAPIView.as_view(), name='register'),
+	path('check-email/', CheckEmailAPIView.as_view(), name='check-email'),
+	path('login/', LoginAPIView.as_view(), name="login"),
+	path('logout/', LogoutAPIView.as_view(), name='logout'),
+	path('matches/', MatchAPIView.as_view(), name="Match-get-post"),
+	path('matches/<int:pk>/', MatchAPIView.as_view(), name="Match-put/patch-delete"),
 ]

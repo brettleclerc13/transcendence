@@ -12,7 +12,7 @@ export default function LoginForm() {
 	const [email, setEmail] = useState("");
 	const [pass, setPass] = useState("");
 	const [errors, setErrors] = useState({email: "", pass: ""});
-	const [serverError, setServerError] = useState("");
+	const [alert, setAlert] = useState<{ message: string, type: string } | null>(null);
 	
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -54,13 +54,23 @@ export default function LoginForm() {
 			// Vérifier la réponse
 			if (!response.ok) {
 				const errorData = await response.json();
-				setServerError(errorData.detail || "Login failed. Please try again.");
+				console.log("Login failed: ", errorData);
+				if (errorData.message === "User already logged in")
+					setAlert({ message: "You are already logged in!", type: "success" });
+				else
+					setAlert({ message: "Login failed. Please try again.", type: "danger" });
 				return;
 			}
 
 			// Succès : Traiter la réponse
 			const data = await response.json();
 			console.log("Login successful:", data);
+
+			setAlert({ message: "Login successful! Redirecting...", type: "success" });
+
+			setTimeout(() => {
+				window.location.href = "/?section=profile"; // redirect to profile section
+			}, 2000);
 
 			// onLoginSuccess({
 			// 	name: data.name,
@@ -70,7 +80,7 @@ export default function LoginForm() {
 
 		} catch (error) {
 			console.error("Error during login:", error);
-			setServerError("An unexpected error occurred. Please try again later.");
+			setAlert({ message: "An unexpected error occurred. Please try again later.", type: "danger" });
 		}
 	};
 
@@ -83,6 +93,13 @@ export default function LoginForm() {
 				>
 				&times;
 				</Link>
+
+				{alert && (
+                    <div className={`alert alert-${alert.type} mb-4`} role="alert">
+                        {alert.message}
+                    </div>
+                )}
+
 				<form onSubmit={handleSubmit}>
 					<label htmlFor="email" className="block text-sm font-medium mb-1">Email<span className="text-red-500 ml-1">*</span></label>
 					<input

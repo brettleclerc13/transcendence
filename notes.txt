@@ -1,0 +1,13 @@
+Way to check hashing of password by django:
+
+(open docker container for postgres and exec psql command with user and db name defined in docker-compose)
+docker exec -it transcendence-db-1 psql -U postgres -d transcendence
+
+(If CMD line starts with transcendence=#, add below command to view list of users)
+SELECT username, email, password FROM auth_user;
+
+(response example)
+ username |     email     |                                         password                                         
+----------+---------------+------------------------------------------------------------------------------------------
+ 123      | 123@gmail.com | pbkdf2_sha256$870000$mx5suvs1hNHhr35jS9S5Mq$eGEJAlomMhSwm75MBT8Vf95NT4AdQx5KT7A2pSCGaoU=
+(1 row)
