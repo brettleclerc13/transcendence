@@ -10,6 +10,7 @@
     "postinstall": "sed -i 's|/*# sourceMappingURL=bootstrap.min.css.map||g' node_modules/bootstrap/dist/css/bootstrap.min.css || true"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.62.16",
     "bootstrap": "^5.3.3",
     "next": "14.2.15",
     "react": "^18",

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { QueryProvider } from "@/components/queryProvider";
 
 export const metadata: Metadata = {
   title: "Transcendence",
@@ -12,10 +13,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
 	return (
-	<html lang="en">
-		<body>
-			{children}
-		</body>
-	</html>
+		<html lang="en">
+			<body>
+				<QueryProvider>{children}</QueryProvider>
+			</body>
+		</html>
   );
 }

@@ -3,7 +3,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from .serializer import UserSerializer, MatchSerializer
+from rest_framework.permissions import IsAuthenticated
+from .serializer import UserSerializer, MatchSerializer, CustomTokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 # Create your views here.
 
@@ -32,26 +34,25 @@ class CheckEmailAPIView(APIView):
 			return Response({"exists": True}, status=status.HTTP_200_OK)
 		return Response({"exists": False}, status=status.HTTP_200_OK)
 
-class LoginAPIView(APIView):
-    def post(self, request):
-        if request.user.is_authenticated:
-            return Response({"message": "User already logged in"}, status=status.HTTP_400_BAD_REQUEST)
-
-        email = request.data.get('email')
-        password = request.data.get('password')
-        user = authenticate(request, username=email, password=password)
-        if user:
-            login(request, user)
-            return Response({"message": "Login successful", "user_id": user.id}, status=status.HTTP_200_OK)
-        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-
-
 class LogoutAPIView(APIView):
     def post(self, request):
         logout(request)
         return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
 
+class CustomTokenObtainPairView(TokenObtainPairView):
+	serializer_class = CustomTokenObtainPairSerializer
 
+class ProfileAPIView(APIView):
+	permission_classes = [IsAuthenticated]
+    
+	def get(self, request):
+		user = request.user
+		profile_data = {
+			"username": user.username,
+			"email": user.email
+            #list of other profile details required
+		}
+		return Response(profile_data, status=status.HTTP_200_OK)
 
 class MatchAPIView(APIView):
 

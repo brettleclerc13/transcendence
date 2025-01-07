@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { FormProps } from "@/app/types";
 import Link from "next/link"
+import { login } from "@/app/actions";
+import { useMutation } from "@tanstack/react-query";
 
 interface LoginFormProps extends FormProps {
 	onLoginSuccess: (userData: any) => void;
@@ -14,6 +16,26 @@ export default function LoginForm() {
 	const [errors, setErrors] = useState({email: "", pass: ""});
 	const [alert, setAlert] = useState<{ message: string, type: string } | null>(null);
 	
+	const { mutate, error } = useMutation({
+		mutationFn: () => login({ email, pass}),
+		onSuccess: () => {
+			setAlert({ message: "Login successful! Redirecting...", type: "success" });
+
+			setTimeout(() => {
+				window.location.href = "/?section=home"; // redirect to profile section
+			}, 2000);
+		},
+		onError: (err: Error) => {
+			if (err.message === "User already logged in")
+				setAlert({ message: "You are already logged in.", type: "danger" });
+			else
+				setAlert({ message: "An unexpected error occurred. Please try again later.", type: "danger" });
+		},
+		onSettled: () => {
+			//setLoading(false);
+		}
+	});
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		let formIsValid = true;
@@ -38,50 +60,11 @@ export default function LoginForm() {
 			password: pass,
 		};
 
-		console.log("ICI : ")
-		console.log("Request Data: ", requestData);
+		console.log("Login request data: ", requestData);
 
-		try {
-			// Appel à l'API avec fetch
-			const response = await fetch("/api/login/", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(requestData),
-			});
+		//setLoading(true);
 
-			// Vérifier la réponse
-			if (!response.ok) {
-				const errorData = await response.json();
-				console.log("Login failed: ", errorData);
-				if (errorData.message === "User already logged in")
-					setAlert({ message: "You are already logged in!", type: "success" });
-				else
-					setAlert({ message: "Login failed. Please try again.", type: "danger" });
-				return;
-			}
-
-			// Succès : Traiter la réponse
-			const data = await response.json();
-			console.log("Login successful:", data);
-
-			setAlert({ message: "Login successful! Redirecting...", type: "success" });
-
-			setTimeout(() => {
-				window.location.href = "/?section=profile"; // redirect to profile section
-			}, 2000);
-
-			// onLoginSuccess({
-			// 	name: data.name,
-			// 	profilePicture: data.profilePicture,
-			// 	status: "Disponible",
-			// });
-
-		} catch (error) {
-			console.error("Error during login:", error);
-			setAlert({ message: "An unexpected error occurred. Please try again later.", type: "danger" });
-		}
+		mutate();
 	};
 
 	return (
@@ -136,3 +119,9 @@ export default function LoginForm() {
     	</div>
 	);
 }
+
+// onLoginSuccess({
+// 	name: data.name,
+// 	profilePicture: data.profilePicture,
+// 	status: "Disponible",
+// });

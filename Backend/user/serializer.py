@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Match, UserProfile
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth import authenticate
 
 class UserProfileSerializer(serializers.ModelSerializer):
      class Meta:
@@ -49,6 +51,22 @@ class UserSerializer(serializers.ModelSerializer):
 		profile.save()
 
 		return instance
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+	def validate(self, attrs):
+		email = attrs.get("username")  # `username` is the default field; treat it as `email`
+		password = attrs.get("password")
+
+		user = authenticate(username=email, password=password)
+
+		if not user:
+			raise serializers.ValidationError("Invalid email or password")
+
+		# Pass validated user to parent serializer
+		data = super().validate(attrs)
+		data.update({"user_id": user.id, "email": user.email})
+
+		return data
 
 class MatchSerializer(serializers.ModelSerializer):
     class Meta:
