@@ -46,11 +46,19 @@ class ProfileAPIView(APIView):
 	permission_classes = [IsAuthenticated]
     
 	def get(self, request):
+		if not request.user.is_authenticated:
+			return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
+
 		user = request.user
 		profile_data = {
 			"username": user.username,
-			"email": user.email
-            #list of other profile details required
+			"email": user.email,
+            "nationality": getattr(user, "nationality", ""),
+            "bio": getattr(user, "bio", ""),
+            "age": getattr(user, "age", None),
+            "profile_picture": getattr(user, "profile_picture", ""),
+            "tournament_name": getattr(user, "tournament", {}).get("_name", ""),
+            "is_online": getattr(user, "is_online", False),
 		}
 		return Response(profile_data, status=status.HTTP_200_OK)
 

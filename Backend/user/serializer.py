@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate
 class UserProfileSerializer(serializers.ModelSerializer):
      class Meta:
         model = UserProfile
-        fields = ['nationality', 'bio', 'age', 'profile_picture', 'tournament_name']
+        fields = ['nationality', 'bio', 'age', 'profile_picture', 'tournament_name', 'is_online']
 
 class UserSerializer(serializers.ModelSerializer):
 	profile = UserProfileSerializer(required=False)

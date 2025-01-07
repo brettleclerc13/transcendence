@@ -34,3 +34,61 @@ export const login = async ( { email, pass } : loginProps ) => {
 			throw new Error(data.detail || "Login failed");
 	}
 }
+
+type UserProfile = {
+    username: string;
+    profilePicture: string;
+    is_online: boolean;
+}
+
+export const fetchUserProfile = async (): Promise<UserProfile> => {
+	try {
+		const token = localStorage.getItem('accessToken');
+		if (!token) throw new Error("Access token missing");
+
+		const response = await fetch("/api/profile/", {	
+			method: 'GET',
+			headers: {
+				"Authorization": `Bearer ${token}`,
+				"Content-Type": "application/json"
+			}
+		});
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			console.error("Profile API Error:", errorText);
+			throw new Error(`HTTP Error: ${response.status}`);
+		}
+
+		return await response.json();
+
+	} catch (error) {
+		console.error("fetUserProfileError: ", error);
+		return { username: '', profilePicture: '', is_online: false };
+	}
+}
+
+export const logout = async () => {
+	try {
+		localStorage.removeItem("accessToken");
+
+		const response = await fetch("/api/logout/", {
+			method: "POST",
+			headers: {
+			  "Content-Type": "application/json",
+			},
+		});
+
+		if (response.ok)
+			console.log("Logout successful");
+		else
+			console.error("Logout unsuccessful");
+
+		setTimeout(() => {
+			window.location.href = "/?section=home";
+		}, 1000);
+
+	} catch (error) {
+		console.error("Error: issue while logging out", error);
+	}
+}

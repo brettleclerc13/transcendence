@@ -10,6 +10,7 @@ export default function Hero() {
 			<Grid />
 			{/* onDisappear={goToGame} */}
 			<div className="absolute shadow-lg shadow-gray-900 bg-gray-800 text-white rounded-full px-7 py-5 pointer-events-none transition-opacity duration-500 ${!showFirstLayer ? 'opacity-0' : 'opacity-100'} z-20">
+				<h1 className="invisible">Transcendence</h1>
 				<Title />
 			</div>
 		</>

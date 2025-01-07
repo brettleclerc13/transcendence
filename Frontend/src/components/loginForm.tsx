@@ -22,7 +22,7 @@ export default function LoginForm() {
 			setAlert({ message: "Login successful! Redirecting...", type: "success" });
 
 			setTimeout(() => {
-				window.location.href = "/?section=home"; // redirect to profile section
+				window.location.href = "/?section=home"; // redirect to home section
 			}, 2000);
 		},
 		onError: (err: Error) => {
