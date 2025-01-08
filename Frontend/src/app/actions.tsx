@@ -85,7 +85,7 @@ export const logout = async () => {
 			console.error("Logout unsuccessful");
 
 		setTimeout(() => {
-			window.location.href = "/?section=home";
+			window.location.href = "/";
 		}, 1000);
 
 	} catch (error) {

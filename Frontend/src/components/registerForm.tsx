@@ -103,7 +103,7 @@ export default function RegisterForm() {
 			setAlert({ message: "Registration successful! Redirecting...", type: "success" });
 
 			setTimeout(() => {
-				window.location.href = "/?section=login"; // redirect to login section
+				window.location.href = "/login"; // redirect to login section
 			}, 2000);
 
 		} catch (error) {
@@ -116,7 +116,7 @@ export default function RegisterForm() {
 		<div className="fixed inset-0 top-20 bg-teal-800 flex justify-center items-center z-50">
 			<div className="bg-white p-8 rounded-lg shadow-lg w-96">
 				<Link 
-					href="?section=home" 
+					href="/" 
 					className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-3xl font-bold"
 				>
 					&times;
@@ -193,7 +193,7 @@ export default function RegisterForm() {
 						Sign Up
 					</button>
 				</form>
-				<Link className="link-btn underline mt-4 ml-6" href="?section=login">
+				<Link className="link-btn underline mt-4 ml-6" href="/login">
 					Already have an account ? Login here
 				</Link>
 				<p className="text-xs mt-4"><span className="text-red-500 mr-1">*</span>: Mandatory information</p>
