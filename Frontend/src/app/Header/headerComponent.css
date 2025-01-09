@@ -12,6 +12,8 @@ header {
 }
 
 .menu-button {
+	text-decoration: none;
+	color: white;
 	display: flex;
 	align-items: center;
 	font-size: 1.25rem; /* text-xl */
