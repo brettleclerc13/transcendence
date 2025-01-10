@@ -1,6 +1,6 @@
 'use client'
 
-import React, {useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 
 export default function RegisterForm() {
@@ -72,11 +72,14 @@ export default function RegisterForm() {
 			// Préparer les données pour l'API
 			const requestData = {
 				email,
-				username: username,
+				username,
 				password: pass,
-				...(age ? { age } : {}), // Ajoute `age` uniquement si défini
-				...(nationality ? { nationality } : {}),  // Ajoute `nationality` uniquement si défini
-				...(bio ? { bio } : {}),
+				profile: {
+					...(age ? { age: parseInt(age, 10) } : {}),
+					...(nationality ? { nationality } : {}),
+					...(bio ? { bio } : {}),
+					...{ is_online: true }
+				}
 			};
 
 			// Envoyer les données au backend avec fetch

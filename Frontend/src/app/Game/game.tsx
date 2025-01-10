@@ -1,4 +1,3 @@
-import Link from "next/link";
 import GameCanvas from "./gameCanvas";
 
 export default function Game() {
@@ -7,9 +6,6 @@ export default function Game() {
             <div className="flex justify-center items-center h-full w-full">
                 <GameCanvas />
             </div>
-            <Link href={"/"} className="absolute top-4 left-4 p-2 bg-red-500 text-white">
-                Go Home
-            </Link>
         </div>
     );
 }

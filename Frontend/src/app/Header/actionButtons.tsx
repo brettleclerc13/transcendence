@@ -1,19 +1,17 @@
 "use client"
 
-import { useState, useRef, useEffect, useActionState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { isUserLoggedIn } from  "@/app/utilities/isLoggedIn"
-import { fetchUserProfile, logout } from "@/app/actions"
+import { isUserLoggedIn } from  "@/app/utilities/actions"
+import { fetchUserProfile, logout } from "@/app/utilities/actions"
 import "./headerComponent.css"
 
 export default function ActionButtons() {
-	//const [isLoggedIn, setIsLoggedIn] = useState(false);
 	const [isSwitchChecked, setIsSwitchChecked] = useState(true);
 	const [userProfile, setUserProfile] = useState<{ username: string; profilePicture: string; status: boolean } | null>(null);
-	const [userStatus, setUserStatus] = useState(userProfile?.status || "Online");
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
-	  
+
 	const run = async () => {
 		try {
 			const result = await fetchUserProfile();
@@ -23,6 +21,7 @@ export default function ActionButtons() {
 				profilePicture: result.profilePicture || "./img/default.png",
 				status: result.is_online,
 			});
+			console.log(userProfile?.status);
 			console.log(result);
 		} catch (err) {
 			console.error("Error fetching user profile:", err);
@@ -56,10 +55,10 @@ export default function ActionButtons() {
 
 
 	const handleSwitchToggle = () => {
-		const newStatus = isSwitchChecked ? "Invisible" : "Online";
-		setUserStatus(newStatus);
-		setIsSwitchChecked((prev) => !prev);
+		setIsSwitchChecked(!isSwitchChecked);
+		// ---------- IMP ----------- //
 		// Appel API pour mise à jour du statut utilisateur
+		// -------------------------- //
 	};
 
 	return (
@@ -76,8 +75,15 @@ export default function ActionButtons() {
 		) : (
 			<div className="profile-section">
 				<div className="form-check form-switch">
-					  <input className="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked" checked={isSwitchChecked} onChange={handleSwitchToggle}/>
-					  <label className="form-check-label" htmlFor="flexSwitchCheckChecked">{userStatus}</label>
+					<input
+					  	className="form-check-input"
+						type="checkbox"
+						role="switch"
+						id="flexSwitchCheckChecked"
+						checked={userProfile?.status || true}
+						onChange={handleSwitchToggle}
+					/>
+					<label className="form-check-label" htmlFor="flexSwitchCheckChecked">{(userProfile?.status ? "Online" : "Invisible")}</label>
 				</div>
 				<label className="logged-name">{userProfile?.username}</label>
 				<button className="profile-button" onClick={toggleDropdown}>

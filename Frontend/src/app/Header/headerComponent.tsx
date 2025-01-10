@@ -12,7 +12,7 @@ export default function HeaderComponent( { section } : { section : string } ) {
 
 	return (
 		<header>
-			<ClientMenuComponent section={section} />
+			<ClientMenuComponent />
 			<h1 className="header-title">DISCO PONG !</h1>
 			<ClientConnectComponent />
 		</header>

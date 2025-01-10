@@ -1,8 +1,27 @@
 "use client"
 
+import { jwtDecode } from "jwt-decode";
+
 type loginProps = {
 	email: string,
 	pass: string,
+}
+
+export const isUserLoggedIn = () => {
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) return false;
+
+    try {
+        const decoded = jwtDecode(token) as { exp : number};
+        const currentTime = Math.floor(Date.now() / 1000); // current time in seconds
+
+        // Check if token has expired
+        return decoded.exp > currentTime;
+    } catch (error) {
+        console.error("Token decoding error:", error);
+        return false;
+    }
 }
 
 export const login = async ( { email, pass } : loginProps ) => {
@@ -28,10 +47,12 @@ export const login = async ( { email, pass } : loginProps ) => {
 		return data;
 	} else {
 		console.error("Login failed: ", data);
-		if (data.message === "User already logged in")
-			throw new Error("User already logged in");
-		else
-			throw new Error(data.detail || "Login failed");
+		const errorMessage =
+			data.non_field_errors?.[0] || // First item in non_field_errors array
+			data.message || // Fallback to a generic message
+			data.detail || // Another common key for error messages
+			"Login failed";
+		throw new Error(errorMessage || "Login failed");
 	}
 }
 
