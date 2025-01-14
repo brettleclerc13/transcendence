@@ -1,6 +1,7 @@
 import json
 import math
 import time
+import aioredis
 import asyncio
 from asyncio import Queue
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -39,24 +40,53 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = f"pong_{self.room_name}"
 
-        # Join the room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-
         # Add the player to the room's player set
-        if not len(self.players) >= 2:
-            await self.accept() #if not accapted send response!
-            self.players.add(self.channel_name)
+        try:
+            self.redis = await aioredis.create_redis_pool("redis://127.0.0.1:6379")
+            print(f"Redis connected for {self.channel_name}", flush=True)
+
+            players_key = f"room:{self.room_name}:players"
+            current_players = await self.redis.lrange(players_key, 0, -1)
+
+            if len(current_players) >= 2:
+                print("Room Full", flush=True)
+                await self.close(code=4000)
+                return
+
+            await self.accept() 
+            await self.redis.rpush(players_key, self.channel_name)
+
+            player_number = f"player_{len(current_players) + 1}"
+
+
+            await self.send(text_data=json.dumps({
+                "type": "initializer_pack",
+                "player_role": player_number
+            }))
+
+            # Join the room group
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
+        except Exception as e:
+            print(f"Error connecting to redis: {e}", flush=True)
+            await self.close()
+        
+
 
 
     async def disconnect(self, close_code):
         # Remove player from the room
-        self.players.discard(self.channel_name)
+        players_key = f"room:{self.room_name}:players"
+
+        if self.redis:
+            await self.redis.lrem(players_key, 1, self.channel_name)
+
+        current_players = await self.redis.lrange(players_key, 0, -1)
 
         # Stop game loop if all players leave
-        if hasattr(self, "game_task") and len(self.players) == 0:
+        if hasattr(self, "game_task") and not current_players:
             self.game_task.cancel()
 
         # Leave the room group
@@ -64,29 +94,83 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
+        if self.redis:
+            await self.redis.close()
+            await self.redis.wait_closed()
 
 #starting game needs upgrading
     async def receive(self, text_data):
         data = json.loads(text_data)
+        
+        players_key = f"room:{self.room_name}:players"
+        initialized_key = f"room:{self.room_name}:initialized_players"
+        game_started_key = f"room:{self.room_name}:game_running"
+        input_queue_key = f"room:{self.room_name}:inputs"
+        
         if data["type"] == "initialize":
+            print(data["game_parametres"], flush=True)
+            
             self.update_game_parametres(data["game_parametres"])
             self.has_initialize = True
-        elif data["type"] == "start_game" and len(self.players) == 2:
-            self.game_task = asyncio.create_task(self.game_loop())
-        else:
-            await self.input_queue.put(data)
+            
+            await self.redis.rpush(initialized_key, self.channel_name)
+            
+            initialized_players = await self.redis.lrange(initialized_key, 0, -1)
+            all_players = await self.redis.lrange(players_key, 0, -1)
+            
+            print(f"init players: {len(initialized_players)}, all players: {len(all_players)}", flush=True)
+            if len(initialized_players) == len(all_players) == 2:
+                was_set = await self.redis.execute("SET", game_started_key, self.channel_name, "NX")
 
+                if was_set:
+                    print("~WAS SET~", flush=True)
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            "type": "start_game",
+                        }
+                    )
+
+                    self.game_task = asyncio.create_task(self.game_loop())
+        elif data["type"] == "input":
+            await self.redis.rpush(input_queue_key, json.dumps({
+                "player": data["player"],
+                "direction": data["direction"]
+            }))
+        
+
+    async def start_game(self, event):
+    # Notify the WebSocket client that the game is starting
+        await self.send(text_data=json.dumps({
+            "type": "start_game",
+            "message": "The game is starting!",
+        }))
     
-       
+    async def game_update(self, event):
+        #print(f"Sending message: {json.dumps({'type': 'game_update', 'game_state': self.game_state})}", flush=True)
+
+        await self.send(text_data=json.dumps({
+            "type": "game_update",
+            "game_state": event["game_state"],
+        }))    
+    
+    async def dispatch(self, message):
+        print(f"Dispatching message: {message}", flush=True)
+        await super().dispatch(message)
 
     async def game_loop(self):
+        input_queue_key = f"room:{self.room_name}:inputs"
 
         try:
+            print("The game has begun")
             while True:
                 
                 #handle player inputs (note there is no safe guard agaisnt spam requests or delayed requests)
-                while not self.input_queue.empty():
-                    input_event = await self.input_queue.get()
+                while True:
+                    input_data = await self.redis.lpop(input_queue_key)
+                    if not input_data:
+                        break
+                    input_event = json.loads(input_data)
                     player = input_event["player"]
                     direction = input_event["direction"]
                     if self.has_initialize:
@@ -100,6 +184,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 self.game_state["last_update_time"] = time.time()
                 
                 # Broadcast the updated game state to all players
+                
+
                 await self.channel_layer.group_send(
                     self.room_group_name,
                     {
@@ -113,6 +199,10 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         except asyncio.CancelledError:
             # Gracefully exit the game loop if the task is canceled
             pass
+        finally:
+            # Clear the game running flag in Redis
+            game_running_key = f"room:{self.room_name}:game_running"
+            await self.redis.delete(game_running_key)
     
     def update_ball_position(self, ball_position, ball_direction, ball_speed):
         deltaX = ball_speed * self.time_per_tick * ball_direction[0]
@@ -121,9 +211,10 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         field_width = self.game_parametres["field_width"]
         ball_diametre = self.game_parametres["ball_diametre"]
 
-        new_x = self.clamp(ball_position[0] + deltaX, field_width - (ball_diametre / 2), ball_diametre / 2)
-        new_y = self.clamp(ball_position[1] + deltaY, field_height - (ball_diametre / 2), ball_diametre / 2)
+        new_x = self.clamp(ball_position[0] + deltaX, ball_diametre / 2, (field_width - (ball_diametre / 2)))
+        new_y = self.clamp(ball_position[1] + deltaY, ball_diametre / 2, (field_height - (ball_diametre / 2)))
 
+        #print(f"delta(x,y): ( {deltaX} , {deltaY} ) ~~~ new(x,y) : ( {new_x} , {new_y})", flush=True)
         self.game_state["ball_position"][0] = new_x
         self.game_state["ball_position"][1] = new_y
 
@@ -150,11 +241,11 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         speed = self.game_parametres["paddle_speed"] #for 20 TPS
         paddle_height = self.game_parametres["paddle_height"]
         feild_height = self.game_parametres["field_height"]
-        if player == "player1":
+        if player == "player_1":
             old_position = self.game_state["player1_position"][1]
             new_position = self.clamp(old_position + (direction * speed * self.time_per_tick), paddle_height / 2, feild_height - (paddle_height / 2))
             self.game_state["player1_position"][1] = new_position
-        elif player =="player2":
+        elif player =="player_2":
             old_position = self.game_state["player2_position"][1]
             new_position = self.clamp(old_position + (direction * speed * self.time_per_tick), paddle_height / 2, feild_height - (paddle_height / 2))
             self.game_state["player2_position"][1] = new_position
@@ -225,6 +316,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         player1_pos = self.game_state["player1_position"]
         player2_pos = self.game_state["player2_position"]
 
+        print(f"collision point: {collision_point[0]} - {collision_point[1]}", flush=True)
+
         #handle collisions on the left and right walls
         if collision_point[0] == 0 or collision_point[0] == self.game_parametres["field_width"]:
             self.init_starting_positions()
@@ -288,14 +381,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         reflection = [rx, ry]
 
         return reflection  
-
-    async def game_update(self, event):
-        """
-        Send the updated game state to the frontend.
-        """
-        await self.send(text_data=json.dumps(event["game_state"]))
     
-    def clamp(value, min_value, max_value):
+    def clamp(self, value, min_value, max_value):
         return max(min_value, min(value, max_value))
     
     def normalize(vector):
