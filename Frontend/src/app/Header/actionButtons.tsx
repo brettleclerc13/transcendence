@@ -80,7 +80,9 @@ export default function ActionButtons() {
 						type="checkbox"
 						role="switch"
 						id="flexSwitchCheckChecked"
+						data-bs-toggle="switch"
 						checked={userProfile?.status || true}
+						//defaultChecked={userProfile?.status || true}
 						onChange={handleSwitchToggle}
 					/>
 					<label className="form-check-label" htmlFor="flexSwitchCheckChecked">{(userProfile?.status ? "Online" : "Invisible")}</label>
