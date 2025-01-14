@@ -5,11 +5,12 @@ import RegisterForm from "@/components/registerForm";
 import AboutUsLayer from "../AboutUs/aboutUs";
 import Profile from "../Profile/profile";
 import Game from "../Game/game";
+import LiveChat from "../LiveChat/liveChat";
 import { redirect } from "next/navigation";
 
 
 export default async function SectionPage(props: { params: Promise<{ section: string }> }) {
-    const  existingSections = ["home", "play", "aboutUs", "login", "register", "profile", "menu"];
+    const  existingSections = ["home", "play", "aboutUs", "login", "register", "profile", "menu", "liveChat"];
 	
 	const params = await props.params;
     let section = await Promise.resolve(params.section);
@@ -26,6 +27,7 @@ export default async function SectionPage(props: { params: Promise<{ section: st
 			{section === "login" && <LoginForm />}
 			{section === "register" && <RegisterForm />}
 			{section === "profile" && <Profile />}
+			{section === "liveChat" && <LiveChat />}
 		</div>
 	);
 }

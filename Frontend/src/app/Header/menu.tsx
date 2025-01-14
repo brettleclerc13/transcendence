@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import "./headerComponent.css"
+import { isUserLoggedIn } from "../utilities/isLoggedIn";
 
 export default function Menu( { section } : { section : string } ) {
 	const [isMenuOpen, setMenuOpen] = useState(false);
@@ -40,6 +41,11 @@ export default function Menu( { section } : { section : string } ) {
                         <Link key="aboutUs" href="/aboutUs" className="menu-button">
                             About Us
                         </Link>
+                        {isUserLoggedIn() && (
+                            <Link key="liveChat" href="/liveChat" className="menu-button">
+                                Live Chat
+                            </Link>
+                        )}
                     </nav>
                 </div>
             )}
