@@ -6,8 +6,8 @@ const Menu = dynamic(() => import('./menu'), {
   ssr: false, // disable server-side rendering for this component
 });
 
-export default function ClientMenuComponent( { section } : { section : string } ) {
+export default function ClientMenuComponent() {
 	return (
-		<Menu section={section} />
+		<Menu />
 	);
 }

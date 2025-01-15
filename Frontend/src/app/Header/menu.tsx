@@ -1,21 +1,31 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import "./headerComponent.css"
 import { isUserLoggedIn } from "../utilities/isLoggedIn";
 
-export default function Menu( { section } : { section : string } ) {
-	const [isMenuOpen, setMenuOpen] = useState(false);
+export default function Menu() {
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const menuRef = useRef<HTMLDivElement>(null);
 
-	const toggleMenu = () => {
-    	setMenuOpen(!isMenuOpen);
-    };
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+				setTimeout(() =>setIsMenuOpen(false), 100);
+			}
+		};
+
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => {
+		document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, []);
 
 	return (
 		<>
 			<button
-					onClick={toggleMenu}
+					onClick={() => setIsMenuOpen(!isMenuOpen)}
 					className="menu-button"
 					aria-label="Toggle menu"
 				>
@@ -23,16 +33,9 @@ export default function Menu( { section } : { section : string } ) {
 			</button>
 
 			{isMenuOpen && (
-                <div className="menu-container">
-                    <button
-                        onClick={toggleMenu}
-                        className="close-menu-button"
-                        aria-label="Close menu"
-                    >
-                        ×
-                    </button>
+                <div ref={menuRef} className="menu-container">
                     <nav className="menu-links">
-                        <Link key="home" href="/home" className="menu-button">
+                        <Link href="/" className="menu-button">
                             Home
                         </Link>
                         <Link key="play" href="/play" className="menu-button">

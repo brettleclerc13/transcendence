@@ -10,7 +10,7 @@ class UserProfile(models.Model):
     age = models.PositiveIntegerField(blank=True, null=True)
     profile_picture = models.CharField(max_length=100, blank=True, null=True)
     tournament_name = models.CharField(max_length=20, blank=True, null=True)
-    is_online = models.BooleanField(blank=True, null=True)
+    is_online = models.BooleanField(default=True, blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username}'s profile"
