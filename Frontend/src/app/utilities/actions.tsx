@@ -2,26 +2,26 @@
 
 import { jwtDecode } from "jwt-decode";
 
-type loginProps = {
-	email: string,
-	pass: string,
-}
-
 export const isUserLoggedIn = () => {
-    const token = localStorage.getItem("accessToken");
-
+	const token = localStorage.getItem("accessToken");
+	
     if (!token) return false;
-
+	
     try {
-        const decoded = jwtDecode(token) as { exp : number};
+		const decoded = jwtDecode(token) as { exp : number};
         const currentTime = Math.floor(Date.now() / 1000); // current time in seconds
-
+		
         // Check if token has expired
         return decoded.exp > currentTime;
     } catch (error) {
-        console.error("Token decoding error:", error);
+		console.error("Token decoding error:", error);
         return false;
     }
+}
+
+type loginProps = {
+	email: string,
+	pass: string,
 }
 
 export const login = async ( { email, pass } : loginProps ) => {
@@ -43,16 +43,49 @@ export const login = async ( { email, pass } : loginProps ) => {
 	if (response.ok) {
 		localStorage.setItem('accessToken', data.access);
 		localStorage.setItem('refreshToken', data.refresh);
-		console.log("Login successful:", data);
 		return data;
 	} else {
-		console.error("Login failed: ", data);
 		const errorMessage =
 			data.non_field_errors?.[0] || // First item in non_field_errors array
 			data.message || // Fallback to a generic message
 			data.detail || // Another common key for error messages
 			"Login failed";
 		throw new Error(errorMessage || "Login failed");
+	}
+}
+
+type registerProps = {
+	email: string,
+	username: string,
+	password: string,
+	profile: {
+		age?: number | undefined,
+		nationality?: string | undefined,
+		bio?: string | undefined,
+		is_online: boolean
+	}
+}
+
+export const register = async ( requestData : registerProps ) => {
+	const response = await fetch("/api/register/", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(requestData),
+	});
+
+	const data = await response.json();
+
+	if (!response.ok) {
+		const errorMessage =
+			data.email?.[0] || // Email error
+			data.username?.[0] || // Username error
+			data.non_field_errors?.[0] || // Other validation error
+			"Registration failed";
+		throw new Error(errorMessage || "Registration failed"); 
+	} else {
+		return data;
 	}
 }
 
@@ -113,3 +146,12 @@ export const logout = async () => {
 		console.error("Error: issue while logging out", error);
 	}
 }
+
+// if (!response.ok) {
+// 	const errorText = await response.text();
+// 	if (response.status >= 400 && response.status < 500) {
+// 	  throw new Error(`HTTP Error: ${response.status} - ${errorText}`);
+// 	} else {
+// 	  throw new Error(`HTTP Error: ${response.status}`);
+// 	}
+// }

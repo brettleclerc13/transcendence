@@ -33,7 +33,7 @@ export default function LoginForm() {
 			}, 2000);
 
 		} catch (error) {
-			return { error: String(error), fieldData: { email } };
+			return { error: String(error), previousValues: { email } };
 		}
 	};
 
@@ -65,7 +65,7 @@ export default function LoginForm() {
 						placeholder="youremail@gmail.com"
 						id="email"
 						name="email"
-						defaultValue={data?.fieldData?.email}
+						defaultValue={data?.previousValues?.email}
 						className="border rounded-md p-2 mb-4 w-full"
 					/>
 					{data?.emailError && <p className="text-red-500 text-sm mb-2">{data?.emailError}</p>}
