@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import "./headerComponent.css"
-import { isUserLoggedIn } from "../utilities/isLoggedIn";
+import { isUserLoggedIn } from "../utilities/actions";
 
 export default function Menu() {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);

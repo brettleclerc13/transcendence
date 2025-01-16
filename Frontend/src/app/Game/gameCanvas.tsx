@@ -44,7 +44,7 @@ export default function GameCanvas () {
 
     useEffect(() => {
         const roomName = "defaultRoom"; // Example room name
-        const wsUrl = `wss://transcendence.fr/game/${roomName}/`;
+        const wsUrl = `wss://transcendence.fr/game/${roomName}/`; // `wss://127.0.0.1/game/${roomName}/`;
 		let ws: WebSocket | null = null;
 
 		const timeout = setTimeout(() => {
