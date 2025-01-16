@@ -1,6 +1,7 @@
 "use client"
 
 import { jwtDecode } from "jwt-decode";
+import { useRouter } from 'next/navigation';
 
 export const isUserLoggedIn = () => {
 	const token = localStorage.getItem("accessToken");
@@ -19,12 +20,12 @@ export const isUserLoggedIn = () => {
     }
 }
 
-type loginProps = {
+type LoginProps = {
 	email: string,
 	pass: string,
 }
 
-export const login = async ( { email, pass } : loginProps ) => {
+export const login = async ( { email, pass } : LoginProps ) => {
 	const requestData = {
 		username: email,
 		password: pass,
@@ -50,11 +51,11 @@ export const login = async ( { email, pass } : loginProps ) => {
 			data.message || // Fallback to a generic message
 			data.detail || // Another common key for error messages
 			"Login failed";
-		throw new Error(errorMessage || "Login failed");
+		throw new Error(errorMessage);
 	}
 }
 
-type registerProps = {
+type RegisterProps = {
 	email: string,
 	username: string,
 	password: string,
@@ -66,7 +67,7 @@ type registerProps = {
 	}
 }
 
-export const register = async ( requestData : registerProps ) => {
+export const register = async ( requestData : RegisterProps ) => {
 	const response = await fetch("/api/register/", {
 		method: "POST",
 		headers: {
@@ -83,19 +84,13 @@ export const register = async ( requestData : registerProps ) => {
 			data.username?.[0] || // Username error
 			data.non_field_errors?.[0] || // Other validation error
 			"Registration failed";
-		throw new Error(errorMessage || "Registration failed"); 
+		throw new Error(errorMessage); 
 	} else {
 		return data;
 	}
 }
 
-type UserProfile = {
-    username: string;
-    profilePicture: string;
-    is_online: boolean;
-}
-
-export const fetchUserProfile = async (): Promise<UserProfile> => {
+export const fetchUserProfile = async () => {
 	try {
 		const token = localStorage.getItem('accessToken');
 		if (!token) throw new Error("Access token missing");
@@ -117,12 +112,58 @@ export const fetchUserProfile = async (): Promise<UserProfile> => {
 		return await response.json();
 
 	} catch (error) {
-		console.error("fetUserProfileError: ", error);
+		console.error("fetchUserProfileError: ", error);
 		return { username: '', profilePicture: '', is_online: false };
 	}
 }
 
-export const logout = async () => {
+type UserProfileUpdate = {
+    email?: string;
+    username?: string;
+    password?: string;
+    profile?: {
+        age?: number;
+        nationality?: string;
+        bio?: string;
+        is_online?: boolean;
+    };
+};
+
+export const updateUserProfile = async (profileData: UserProfileUpdate) => {
+	try {
+		const token = localStorage.getItem('accessToken');
+		if (!token) throw new Error("Access token missing");
+
+		const response = await fetch("/api/profile/", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(profileData),
+		});
+
+		const data = await response.json();
+
+		if (!response.ok) {
+			const errorMessage =
+				data.non_field_errors?.[0] || // First item in non_field_errors array
+				data.message || // Fallback to a generic message
+				data.detail || // Another common key for error messages
+				"Failed to update profile.";
+			throw new Error(errorMessage);
+		}
+
+		console.log("User profile updated successfully. is_online: ", profileData.profile?.is_online);
+		return data;
+
+	} catch (error) {
+		console.error("updateUserProfileError: ", error);
+		throw new Error(String(error) || "Failed to update profile.");
+	}
+};
+
+export async function logout(router: ReturnType<typeof useRouter>) {
 	try {
 		localStorage.removeItem("accessToken");
 
@@ -139,19 +180,10 @@ export const logout = async () => {
 			console.error("Logout unsuccessful");
 
 		setTimeout(() => {
-			window.location.href = "/";
+			router.push("/");
 		}, 1000);
 
 	} catch (error) {
 		console.error("Error: issue while logging out", error);
 	}
 }
-
-// if (!response.ok) {
-// 	const errorText = await response.text();
-// 	if (response.status >= 400 && response.status < 500) {
-// 	  throw new Error(`HTTP Error: ${response.status} - ${errorText}`);
-// 	} else {
-// 	  throw new Error(`HTTP Error: ${response.status}`);
-// 	}
-// }

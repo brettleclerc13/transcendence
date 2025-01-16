@@ -42,17 +42,51 @@ class ProfileAPIView(APIView):
 			return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
 
 		user = request.user
+		profile = user.profile
 		profile_data = {
 			"username": user.username,
 			"email": user.email,
-            "nationality": getattr(user, "nationality", ""),
-            "bio": getattr(user, "bio", ""),
-            "age": getattr(user, "age", None),
-            "profile_picture": getattr(user, "profile_picture", ""),
-            "tournament_name": getattr(user, "tournament", {}).get("_name", ""),
-            "is_online": getattr(user, "is_online", False),
+            "nationality": profile.nationality,
+            "bio": profile.bio,
+            "age": profile.age,
+            "profile_picture": profile.profile_picture,
+            "tournament_name": profile.tournament_name,
+            "is_online": profile.is_online,
 		}
 		return Response(profile_data, status=status.HTTP_200_OK)
+    
+	def post(self, request):
+		user = request.user
+		profile = user.profile
+		data = request.data
+
+		# Validate and update user fields
+		username = data.get("username")
+		if username and username != user.username:
+			if User.objects.filter(username=username).exists():
+				return Response({"error": "Username already exists."}, status=status.HTTP_400_BAD_REQUEST)
+			user.username = username
+
+		email = data.get("email")
+		if email and email != user.email:
+			if User.objects.filter(email=email).exists():
+				return Response({"error": "Email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+			user.email = email
+
+		# Validate and update profile fields
+		profile_fields = ["nationality", "bio", "age", "profile_picture", "tournament_name", "is_online"]
+		for field in profile_fields:
+			if field in data:
+				value = data[field]
+				if field == "age" and (not isinstance(value, int) or value < 0):
+					return Response({"error": "Age must be a positive integer."}, status=status.HTTP_400_BAD_REQUEST)
+				setattr(profile, field, value)
+
+		# Save updated data
+		user.save()
+		profile.save()
+
+		return Response({"message": "Profile updated successfully."}, status=status.HTTP_200_OK)
 
 class MatchAPIView(APIView):
 

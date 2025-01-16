@@ -3,14 +3,15 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { isUserLoggedIn } from  "@/app/utilities/actions"
-import { fetchUserProfile, logout } from "@/app/utilities/actions"
+import { fetchUserProfile, updateUserProfile, logout } from "@/app/utilities/actions"
+import { useRouter } from "next/navigation";
 import "./headerComponent.css"
 
 export default function ActionButtons() {
-	const [isSwitchChecked, setIsSwitchChecked] = useState(true);
 	const [userProfile, setUserProfile] = useState<{ username: string; profilePicture: string; status: boolean } | null>(null);
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
+	const router = useRouter();
 
 	const run = async () => {
 		try {
@@ -44,8 +45,7 @@ export default function ActionButtons() {
 
 	useEffect(() => {
 		if (isUserLoggedIn()) {
-			run();
-		}
+			run();		}
     }, []);
 
 	const toggleDropdown = () => {
@@ -54,12 +54,28 @@ export default function ActionButtons() {
 	}
 
 
-	const handleSwitchToggle = () => {
-		setIsSwitchChecked(!isSwitchChecked);
-		// ---------- IMP ----------- //
-		// Appel API pour mise à jour du statut utilisateur
-		// -------------------------- //
+	const handleSwitchToggle = async () => {
+		if (!userProfile) {
+			console.error("User profile does not exist");
+			return;
+		}
+
+        const newStatus = !userProfile.status;
+		
+        try {
+			await updateUserProfile( { profile: { is_online: newStatus }} )
+
+            setUserProfile((prev) =>
+                prev ? { ...prev, status: newStatus } : prev
+			);
+        } catch (error) {
+            console.error("Error updating status:", error);
+        }
 	};
+
+	const handleLogout = async () => {
+        await logout(router);
+    }; 
 
 	return (
 		<div className="action-buttons">
@@ -81,8 +97,7 @@ export default function ActionButtons() {
 						role="switch"
 						id="flexSwitchCheckChecked"
 						data-bs-toggle="switch"
-						checked={userProfile?.status || true}
-						//defaultChecked={userProfile?.status || true}
+						checked={ userProfile?.status ?? false}
 						onChange={handleSwitchToggle}
 					/>
 					<label className="form-check-label" htmlFor="flexSwitchCheckChecked">{(userProfile?.status ? "Online" : "Invisible")}</label>
@@ -103,7 +118,7 @@ export default function ActionButtons() {
 								<path fillRule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clipRule="evenodd"/>
 							</svg> Profile
 						</Link>
-						<button className="dropdown-item logout" onClick={() => logout()}>
+						<button className="dropdown-item logout" onClick={handleLogout}>
 							<svg className="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
 								<path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H8m12 0-4 4m4-4-4-4M9 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h2"/>
 							</svg> Log Out
