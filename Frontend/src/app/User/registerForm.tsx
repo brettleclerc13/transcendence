@@ -1,18 +1,16 @@
 'use client'
 
-import React, { useState } from "react";
+import React, { useState, useActionState } from "react";
 import Link from "next/link";
+import { register } from "@/app/utilities/actions";
+import { useRouter } from 'next/navigation';
 
 export default function RegisterForm() {
-	const [email, setEmail] = useState("");
-	const [username, setUsername] = useState("");
-	const [pass, setPass] = useState("");
-	const [age, setAge] = useState("");
-	const [nationality, setNationality] = useState("");
-	const [bio, setBio] = useState("");
-	const [errors, setErrors] = useState({ email: "", username: "", pass: "" });
 	const [alert, setAlert] = useState<{ message: string, type: string } | null>(null);
-
+	const router = useRouter();
+	
+	const [data, action, isPending] = useActionState(handleSubmit, undefined);
+	
 	const validatePassword = (password: string) => {
 		const requirements = [
 			{ label: "At least 8 characters", isMet: password.length >= 8 },
@@ -24,96 +22,56 @@ export default function RegisterForm() {
 		return unmetRequirements.map((req) => req.label);
 	};
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		let formIsValid = true;
-		const newErrors = {email: "", username: "", pass: "" };
+	async function handleSubmit(previousState: unknown, formData: FormData) {
+		const email = formData.get("email") as string;
+		const username = formData.get("username") as string;
+		const password = formData.get("password") as string;
+		const age = parseInt(formData.get("age") as string);
+		const nationality = formData.get("nationality") as string;
+		const bio = formData.get("bio") as string;
 
-		const passwordErrors = validatePassword(pass);
-		if (passwordErrors.length > 0) {
-			newErrors.pass = `Password must meet the following requirements:\n- ${passwordErrors.join("\n- ")}`;
-			formIsValid = false;
-		}
-
-		if (!email) {
-			newErrors.email = "Email is required.";
-			formIsValid = false;
-		}
-		if (!username) {
-			newErrors.username = "Username is required.";
-			formIsValid = false;
-		}
-		if (!pass) {
-			newErrors.pass = "Password is required.";
-			formIsValid = false;
+		const previousInputData = {
+			email: email,
+			username: username,
+			password: password,
+			age: ( age ? String(age) : ""),
+			nationality: nationality,
+			bio: bio
 		}
 
-		setErrors(newErrors);
-
-		if (!formIsValid) {
-			return;
-		}
+		const passwordErrors = validatePassword(password);
+		if (!email)
+			return { emailError: "Email is required.", previousInputData };
+		else if (!username)
+			return { usernameError: "Username is required.", previousInputData };
+		else if (!password)
+			return { passwordError: "Password is required.", previousInputData };
+		else if (password && passwordErrors.length > 0)
+			return  { passwordError: `Password must meet the following requirements:\n- ${passwordErrors.join("\n- ")}`, previousInputData };
 
 		try {
-			// Check if the email already exists
-			const emailCheckResponse = await fetch("/api/check-email/", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ email }),
-			});
-
-			const emailCheckData = await emailCheckResponse.json();
-
-			if (emailCheckData.exists) {
-				setAlert({ message: "Email is already in use.", type: "danger" });
-				return;
-			}
-
 			// Préparer les données pour l'API
 			const requestData = {
 				email,
 				username,
-				password: pass,
+				password: password,
 				profile: {
-					...(age ? { age: parseInt(age, 10) } : {}),
+					...(age ? { age } : {}),
 					...(nationality ? { nationality } : {}),
 					...(bio ? { bio } : {}),
 					...{ is_online: true }
 				}
 			};
 
-			// Envoyer les données au backend avec fetch
-				const registerResponse = await fetch("/api/register/", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(requestData), // Convertir les données en JSON
-			});
-
-			// Vérifier la réponse
-			if (!registerResponse.ok) {
-				const errorData = await registerResponse.json();
-				console.log("Registration failed: ", errorData);
-				setAlert({ message: "Failed to register. Please try again.", type: "danger" });
-				return;
-			}
-
-			// Succès : Traiter la réponse
-			const data = await registerResponse.json();
-			console.log("User created:", data);
-
+			await register(requestData);
 			setAlert({ message: "Registration successful! Redirecting...", type: "success" });
-
 			setTimeout(() => {
-				window.location.href = "/login"; // redirect to login section
+				router.push('/login'); // redirect to login section
 			}, 2000);
 
 		} catch (error) {
-			console.error("Error:", error);
-			setAlert({ message: "An error occurred. Please try again later.", type: "danger" });
-		}
-	};
+			return { error: String(error), previousInputData };
+		}}
 
 	return (
 		<div className="fixed inset-0 top-20 bg-teal-800 flex justify-center items-center z-50">
@@ -130,45 +88,50 @@ export default function RegisterForm() {
                         {alert.message}
                     </div>
                 )}
+				{data?.error && (
+                    <div className="alert alert-danger mb-4" role="alert">
+                        {data?.error ?? 'An unknown error occurred'}
+                    </div>
+                )}
 
-				<form onSubmit={handleSubmit}>
+				<form action={action}>
 					<label htmlFor="email" className="block text-sm font-medium mb-1">Email<span className="text-red-500 ml-1">*</span></label>
 					<input
 						type="email"
 						placeholder="youremail@gmail.com"
 						id="email"
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
+						name="email"
+						defaultValue={data?.previousInputData?.email}
 						className="border rounded-md p-2 mb-4 w-full"
 					/>
-					{errors.email && <p className="text-red-500 text-sm mb-2">{errors.email}</p>}
+					{data?.emailError && <p className="text-red-500 text-sm mb-2">{data?.emailError}</p>}
 					<label htmlFor="username" className="block text-sm font-medium mb-1">Username<span className="text-red-500 ml-1">*</span></label>
 					<input
 						type="username"
 						placeholder="JohnDoe"
 						id="username"
-						value={username}
-						onChange={(e) => setUsername(e.target.value)}
+						name="username"
+						defaultValue={data?.previousInputData?.username}
 						className="border rounded-md p-2 mb-4 w-full"
 					/>
-					{errors.username && <p className="text-red-500 text-sm mb-2">{errors.username}</p>}
+					{data?.usernameError && <p className="text-red-500 text-sm mb-2">{data?.usernameError}</p>}
 					<label htmlFor="password" className="block text-sm font-medium mb-1">Password<span className="text-red-500 ml-1">*</span></label>
 					<input
 						type="password"
 						placeholder="*************"
 						id="password"
-						value={pass}
-						onChange={(e) => setPass(e.target.value)}
+						name="password"
+						defaultValue={data?.previousInputData?.password}
 						className="border rounded-md p-2 mb-4 w-full"
 					/>
-					{errors.pass && <p className="text-red-500 text-sm mb-2">{errors.pass}</p>}
+					{data?.passwordError && <p className="text-red-500 text-sm mb-2">{data?.passwordError}</p>}
 					<label htmlFor="age" className="block text-sm font-medium mb-1">Age</label>
 					<input
 						type="age"
 						placeholder="77"
 						id="age"
-						value={age}
-						onChange={(e) => setAge(e.target.value)}
+						name="age"
+						defaultValue={data?.previousInputData?.age}
 						className="border rounded-md p-2 mb-4 w-full"
 					/>
 					<label htmlFor="nationality" className="block text-sm font-medium mb-1">Nationality</label>
@@ -176,8 +139,8 @@ export default function RegisterForm() {
 						type="nationality"
 						placeholder="French"
 						id="nationality"
-						value={nationality}
-						onChange={(e) => setNationality(e.target.value)}
+						name="nationality"
+						defaultValue={data?.previousInputData?.nationality}
 						className="border rounded-md p-2 mb-4 w-full"
 					/>
 					<label htmlFor="bio" className="block text-sm font-medium mb-1">Bio</label>
@@ -185,8 +148,8 @@ export default function RegisterForm() {
 						type="bio"
 						placeholder="Hi there ! I'm John Doe the greatest"
 						id="bio"
-						value={bio}
-						onChange={(e) => setBio(e.target.value)}
+						name="bio"
+						defaultValue={data?.previousInputData?.bio}
 						className="border rounded-md p-2 mb-4 w-full"
 					/>
 					<button

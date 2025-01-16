@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated
 from .serializer import UserSerializer, MatchSerializer, CustomTokenObtainPairSerializer
@@ -9,9 +9,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 # Create your views here.
 
-class UserAPIView(APIView):  # User registration and management
+class RegisterAPIView(APIView):  # User registration and management
     def post(self, request):
-        print("Request Data:", request.data)
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -26,13 +25,6 @@ class UserAPIView(APIView):  # User registration and management
             return Response({"message": "User deleted successfully"}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-class CheckEmailAPIView(APIView):
-	def post(self, request):
-		email = request.data.get('email', None)
-		if email and User.objects.filter(email=email).exists():
-			return Response({"exists": True}, status=status.HTTP_200_OK)
-		return Response({"exists": False}, status=status.HTTP_200_OK)
 
 class LogoutAPIView(APIView):
     def post(self, request):
