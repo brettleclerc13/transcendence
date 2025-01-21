@@ -18,6 +18,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             "ball_direction": [1, 0],  # Unit Vector for ball direction 0.707 0.707
             "ball_speed": 12,
             "score": [0, 0],
+            "resolution": [],
             "last_update_time": time.time(),
         }
         self.game_parametres = {
@@ -27,6 +28,9 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             "paddle_width": 2,
             "ball_speed": 12, #units per second
             "paddle_xposition": 0.2, #as a fraction of total width where X is fraction distance from the edge
+            "resolution": 8,
+            "screen_width": 800,
+            "screen_height": 400,
             "field_width": 100,
             "field_height": 100
         }
@@ -225,6 +229,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 
     def update_game_parametres(self, new_parametres):
         self.game_parametres.update(new_parametres)
+        self.game_parametres["field_width"] = self.game_parametres["screen_width"] / self.game_parametres["resolution"]
+        self.game_parametres["field_height"] = self.game_parametres["screen_height"] / self.game_parametres["resolution"] 
         self.init_starting_positions()
 
     def init_starting_positions(self):
@@ -241,6 +247,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.game_state["player2_position"] = [player2_x, player2_y]
 
         self.game_state["ball_position"] = [field_width / 2, field_heigth / 2]
+        self.game_state["resolution"] = self.game_parametres["resolution"]
+        self.game_state["ball_speed"] = self.game_parametres["ball_speed"]
 
     def update_paddles(self, player, direction):
         speed = self.game_parametres["paddle_speed"] #for 20 TPS
