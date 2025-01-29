@@ -4,8 +4,9 @@ from rest_framework import status
 from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated
-from .serializer import UserSerializer, MatchSerializer, CustomTokenObtainPairSerializer
+from .serializer import UserSerializer, MatchSerializer, CustomTokenObtainPairSerializer, MessageSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from .models import UserProfile, Match, Message
 
 # Create your views here.
 
@@ -162,3 +163,66 @@ class MatchAPIView(APIView):
             return Response({"error": "Match not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)  
+
+# API made for the management of the friend list of the user
+class FriendListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+     
+    def get(self, request):
+        user = request.user
+        profile = user.profile
+        friends = profile.friends.all()
+
+        friends_data = [
+            {
+                "id": friend.user.id,
+                "username": friend.user.username,
+                "profile_picture": friend.profile_picture,
+            }
+            for friend in friends
+        ]
+
+        return Response(friends_data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        user = request.user
+        profile = user.profile
+        friend_id = request.data.get("friend_id")
+
+        try:
+            friend_profile = UserProfile.objects.get(user_id=friend_id)
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        if friend_profile == profile:
+            return Response({"error": "You cannot add yourself as a friend."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        profile.friends.add(friend_profile)
+        return Response({"message": "Friend added successfully."}, status=status.HTTP_200_OK)
+    
+    def delete(self, request):
+        user = request.user
+        profile = user.profile
+        friend_id = request.data.get("friend_id")
+
+        try:
+            friend_profile = UserProfile.objects.get(user_id=friend_id)
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        profile.friends.remove(friend_profile)
+        return Response({"message": "Friend removed successfully."}, status=status.HTTP_200_OK)
+    
+
+class MessageAPIView(APIView):
+    def post(self, request):
+        serializer = MessageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        messages = Message.objects.filter(conversation_id=request.query_params.get('conversation_id')).order_by('timestamp')
+        serializer = MessageSerializer(messages, many=True)
+        return Response(serializer.data)

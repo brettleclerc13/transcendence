@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Match, UserProfile
+from .models import Match, UserProfile, Message
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
 
@@ -86,3 +86,8 @@ class MatchSerializer(serializers.ModelSerializer):
         if not User.objects.filter(user=data['user']).exists():
             raise serializers.ValidationError("User does not exist.")
         return data
+	
+class MessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Message
+        fields = '__all__'

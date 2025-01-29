@@ -12,6 +12,8 @@ class UserProfile(models.Model):
     tournament_name = models.CharField(max_length=20, blank=True, null=True)
     is_online = models.BooleanField(default=True, blank=True, null=True)
 
+    friends = models.ManyToManyField("self", blank=True, symmetrical=True)
+
     def __str__(self):
         return f"{self.user.username}'s profile"
 
@@ -25,3 +27,9 @@ class Match(models.Model):
 
     def __str__(self):
         return f"Match against {self.opponent} on {self.date}"
+    
+class Message(models.Model):
+    sender_id = models.IntegerField()
+    conversation_id = models.IntegerField()
+    text = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)

@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from user.views import RegisterAPIView , MatchAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView
+from user.views import RegisterAPIView , MatchAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, FriendListAPIView, MessageAPIView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
@@ -31,4 +31,8 @@ urlpatterns = [
 
 	path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+	path('profile/', ProfileAPIView.as_view(), name='profile'),
+	path('friends/', FriendListAPIView.as_view(), name='friend_list'),
+	path('message/', MessageAPIView.as_view(), name='message'),
 ]

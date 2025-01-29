@@ -42,7 +42,7 @@ const SearchBar = () => {
 
 	return (
 		<div className="position-relative">
-			<nav className="navbar bg-body-tertiary">
+			<nav className="navbar">
 				<div className="container-fluid">
 					<form className="d-flex" role="search" onSubmit={(e) => e.preventDefault()}>
 						<input
