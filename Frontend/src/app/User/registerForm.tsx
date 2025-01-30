@@ -2,7 +2,7 @@
 
 import React, { useState, useActionState } from "react";
 import Link from "next/link";
-import { register } from "@/app/utilities/actions";
+import { register } from "@/app/utilities/userActions";
 import { useRouter } from 'next/navigation';
 
 export default function RegisterForm() {

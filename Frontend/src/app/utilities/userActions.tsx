@@ -2,6 +2,10 @@
 
 import { jwtDecode } from "jwt-decode";
 import { useRouter } from 'next/navigation';
+import { useEffect, createContext, ReactNode } from "react";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+
+export const AuthContext = createContext({});
 
 export const isUserLoggedIn = () => {
 	const token = localStorage.getItem("accessToken");
@@ -42,8 +46,17 @@ export const login = async ( { email, pass } : LoginProps ) => {
 	const data = await response.json();
 
 	if (response.ok) {
-		localStorage.setItem('accessToken', data.access);
-		localStorage.setItem('refreshToken', data.refresh);
+		const accessToken = data.access;
+		const refreshToken = data.refresh;
+
+		// Decode token to get expiry time (JWT payload is base64 encoded)
+		const tokenPayload = JSON.parse(atob(accessToken.split(".")[1]));
+		const expiresAt = tokenPayload.exp * 1000; // Convert to milliseconds
+
+		localStorage.setItem("accessToken", accessToken);
+		localStorage.setItem("refreshToken", refreshToken);
+		localStorage.setItem("tokenExpiry", expiresAt.toString());
+
 		return data;
 	} else {
 		const errorMessage =
@@ -54,6 +67,95 @@ export const login = async ( { email, pass } : LoginProps ) => {
 		throw new Error(errorMessage);
 	}
 }
+
+export async function logout(router: AppRouterInstance) {
+	try {
+		localStorage.removeItem("accessToken");
+		localStorage.removeItem("refreshToken");
+		localStorage.removeItem("tokenExpiry");
+
+		const response = await fetch("/api/logout/", {
+			method: "POST",
+			headers: {
+			  "Content-Type": "application/json",
+			},
+		});
+
+		if (response.ok)
+			console.log("Logout successful");
+		else
+			console.error("Logout unsuccessful");
+
+		setTimeout(() => {
+			router.push("/");
+		}, 1000);
+
+	} catch (error) {
+		console.error("Error: issue while logging out", error);
+	}
+}
+
+const refreshAccessToken = async ( router : AppRouterInstance ) => {
+
+	const refreshToken = localStorage.getItem("refreshToken");
+	if (!refreshToken) return;
+
+	try {
+		const response = await fetch("/api/token/refresh/", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ refresh: refreshToken }),
+		});
+
+		const data = await response.json();
+		if (response.ok) {
+			const newAccessToken = data.access;
+			const tokenPayload = JSON.parse(atob(newAccessToken.split(".")[1]));
+			const newExpiresAt = tokenPayload.exp * 1000;
+
+			localStorage.setItem("accessToken", newAccessToken);
+			localStorage.setItem("tokenExpiry", newExpiresAt.toString());
+			console.log("Access token refreshed");
+		} else {
+			console.error("Failed to refresh access token");
+			logout(router);
+		}
+	} catch (error) {
+		console.error("Error refreshing access token", error);
+		logout(router);
+	}
+};
+
+const startTokenRefresh = ( router : AppRouterInstance ) => {
+	const checkInterval = 30 * 1000; // Check every 30 secs
+
+	setInterval(async () => {
+		const tokenExpiry = localStorage.getItem("tokenExpiry");
+		if (!tokenExpiry) {
+			console.log("❌ No access token expiry found");
+			return;
+		}
+
+		const expiresIn = parseInt(tokenExpiry) - Date.now();
+		console.log(`⏳ Access token expires in: ${expiresIn / 1000} seconds`);
+
+		if (expiresIn < 2 * 60 * 1000) {
+			console.log("🔄 Refreshing access token...");
+			await refreshAccessToken(router);
+		}
+	}, checkInterval);
+};
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+	const router = useRouter();
+
+	useEffect(() => {
+		startTokenRefresh(router);
+	}, [router]);
+
+	return <AuthContext.Provider value={{ logout }}>{children}</AuthContext.Provider>;
+};
+
 
 type RegisterProps = {
 	email: string,
@@ -162,28 +264,3 @@ export const updateUserProfile = async (profileData: UserProfileUpdate) => {
 		throw new Error(String(error) || "Failed to update profile.");
 	}
 };
-
-export async function logout(router: ReturnType<typeof useRouter>) {
-	try {
-		localStorage.removeItem("accessToken");
-
-		const response = await fetch("/api/logout/", {
-			method: "POST",
-			headers: {
-			  "Content-Type": "application/json",
-			},
-		});
-
-		if (response.ok)
-			console.log("Logout successful");
-		else
-			console.error("Logout unsuccessful");
-
-		setTimeout(() => {
-			router.push("/");
-		}, 1000);
-
-	} catch (error) {
-		console.error("Error: issue while logging out", error);
-	}
-}
