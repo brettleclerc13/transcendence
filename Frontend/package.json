@@ -10,8 +10,11 @@
     "postinstall": "sed -i 's|/*# sourceMappingURL=bootstrap.min.css.map||g' node_modules/bootstrap/dist/css/bootstrap.min.css || true"
   },
   "dependencies": {
+    "@lordicon/element": "^1.10.1",
     "bootstrap": "^5.3.3",
     "jwt-decode": "^4.0.0",
+    "lottie-web": "^5.12.2",
+    "motion": "^12.0.6",
     "next": "15.1.4",
     "react": "^19",
     "react-chartjs-2": "^5.3.0",

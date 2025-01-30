@@ -8,7 +8,6 @@ import Game from "../Game/game";
 import LiveChat from "../LiveChat/liveChat";
 import { redirect } from "next/navigation";
 
-
 export default async function SectionPage(props: { params: Promise<{ section: string }> }) {
     const  existingSections = ["", "play", "aboutUs", "login", "register", "profile", "menu", "liveChat"];
 	

@@ -9,7 +9,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #3e44a0;
+    --background: #teal;
     --foreground: #ededed;
   }
 }
@@ -17,7 +17,7 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Bungee Shade', Arial, Helvetica, sans-serif, ;
 }
 
 @layer utilities {
