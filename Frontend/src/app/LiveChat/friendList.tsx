@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useState, useEffect } from "react";
+import { FetchFriends } from "../utilities/chatActions";
 
 interface Friend {
     id: number;
@@ -17,21 +18,17 @@ const FriendList: React.FC<FriendListProps> = ({ onSelectFriend }) => {
 	const [friends, setFriends] = useState<Friend[]>([]);
 
 	useEffect(() => {
-		const fetchFriends = async () => {
-			try {
-				const response = await fetch('user/friends/');
-				if (response.ok) {
-					const data = await response.json();
-					setFriends(data);
-				} else {
-					console.error("Erreur lors de la recuperation des amis :", response.statusText);
-				}
-			} catch (error) {
-				console.error("Erreur réseau :", error);
-			}
-		};
-
-		fetchFriends();
+		const fetchFriendsList = async () => {
+            try {
+                const friendList = await FetchFriends();
+                if (friendList)
+                    setFriends(friendList);
+    
+            } catch (error) {
+                console.error("Error while fetching user's friend list: ", error);
+            }
+        }
+        fetchFriendsList();
 	}, []);
 
 	return (

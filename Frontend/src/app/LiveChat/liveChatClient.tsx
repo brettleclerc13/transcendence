@@ -37,7 +37,7 @@ const LiveChatClient = () => {
 			};
 	
 			try {
-				const response = await fetch('/messages/', {
+				const response = await fetch('/api/messages/', {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ const LiveChatClient = () => {
 			if (!selectedFriend) return;
 			setLoading(true);
 			try {
-				const response = await fetch(`/messages/?conversation_id=${selectedFriend.id}`);
+				const response = await fetch(`/api/messages/?conversation_id=${selectedFriend.id}`);
 				if (response.ok) {
 					const data = await response.json();
 					setMessages(data);
