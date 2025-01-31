@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthProvider } from "@/app/utilities/userActions";
 import "./globals.css";
 import { Bungee_Shade } from 'next/font/google'
 
@@ -24,7 +25,9 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<body>
-				{children}
+				<AuthProvider>
+					{children}
+				</AuthProvider>
 			</body>
 		</html>
   );
