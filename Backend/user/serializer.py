@@ -5,15 +5,20 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
 
 class UserProfileSerializer(serializers.ModelSerializer):
-     class Meta:
+    user = serializers.SerializerMethodField()
+
+    class Meta:
         model = UserProfile
-        fields = ['nationality', 'bio', 'age', 'profile_picture', 'tournament_name', 'is_online']
+        fields = ['user' ,'nationality', 'bio', 'age', 'profile_picture', 'tournament_name', 'is_online']
+
+    def get_user(self, obj):
+        return {"id": obj.user.id, "username": obj.user.username}
 
 class UserSerializer(serializers.ModelSerializer):
 	profile = UserProfileSerializer(required=False)
 	class Meta:
 		model = User
-		fields = ['username', 'email', 'password', 'profile']
+		fields = ['id', 'username', 'email', 'password', 'profile']
 		extra_kwargs = {
 			'password': {'write_only': True},
 		}

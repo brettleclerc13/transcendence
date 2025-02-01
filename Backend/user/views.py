@@ -4,9 +4,10 @@ from rest_framework import status
 from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from .serializer import UserSerializer, MatchSerializer, CustomTokenObtainPairSerializer, MessageSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .models import UserProfile, Match, Message
+from .models import UserProfile, Match, Message, FriendRequest
 
 # Create your views here.
 
@@ -37,7 +38,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class ProfileAPIView(APIView):
 	permission_classes = [IsAuthenticated]
-    
+        
 	def get(self, request):
 		if not request.user.is_authenticated:
 			return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -55,7 +56,7 @@ class ProfileAPIView(APIView):
             "is_online": profile.is_online,
 		}
 		return Response(profile_data, status=status.HTTP_200_OK)
-    
+        
 	def post(self, request):
 		user = request.user
 		profile = user.profile
@@ -153,7 +154,7 @@ class MatchAPIView(APIView):
             return Response({"error": "Match not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+        
     def delete(self, request, pk=None):
         try:
             match = Match.objects.get(pk=pk)
@@ -183,7 +184,7 @@ class FriendListAPIView(APIView):
         ]
 
         return Response(friends_data, status=status.HTTP_200_OK)
-    
+        
     def post(self, request):
         user = request.user
         profile = user.profile
@@ -199,7 +200,7 @@ class FriendListAPIView(APIView):
         
         profile.friends.add(friend_profile)
         return Response({"message": "Friend added successfully."}, status=status.HTTP_200_OK)
-    
+        
     def delete(self, request):
         user = request.user
         profile = user.profile
@@ -212,7 +213,7 @@ class FriendListAPIView(APIView):
         
         profile.friends.remove(friend_profile)
         return Response({"message": "Friend removed successfully."}, status=status.HTTP_200_OK)
-    
+        
 
 class MessageAPIView(APIView):
     def post(self, request):
@@ -226,3 +227,65 @@ class MessageAPIView(APIView):
         messages = Message.objects.filter(conversation_id=request.query_params.get('conversation_id')).order_by('timestamp')
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
+
+
+class SearchAPIView(APIView):
+    def get(self, request):
+        query = request.query_params.get("query", "").strip()
+        if not query:
+            return Response({"error": "Query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        users = UserProfile.objects.filter(user__username__icontains=query)
+        serializer = UserSerializer([user.user for user in users], many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SendFriendRequestAPIView(APIView):
+    def post(self, request):
+        sender = request.user
+        receiver_id = request.data.get("receiver_id")
+        try:
+            receiver = User.objects.get(id=receiver_id)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if FriendRequest.objects.filter(sender=sender, receiver=receiver, status="pending").exists():
+            return Response({"error": "Friend request already sent"}, status=status.HTTP_400_BAD_REQUEST)
+
+        FriendRequest.objects.create(sender=sender, receiver=receiver)
+        return Response({"message": "Friend request sent"}, status=status.HTTP_201_CREATED)
+
+class AcceptFriendRequestAPIView(APIView):
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, request_id):
+        print("User:", request.user)  # Debug
+        try:
+            friend_request = FriendRequest.objects.get(id=request_id, receiver=request.user, status="pending")
+        except FriendRequest.DoesNotExist:
+            return Response({"error": "Friend request not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        friend_request.status = "accepted"
+        friend_request.save()
+
+        friend_request.sender.profile.friends.add(friend_request.receiver.profile)
+        friend_request.receiver.profile.friends.add(friend_request.sender.profile)
+
+        return Response({"message": "Friend request accepted"}, status=status.HTTP_200_OK)
+
+class DeclineFriendRequestAPIView(APIView):
+    def post(self, request, request_id):
+        try:
+            friend_request = FriendRequest.objects.get(id=request_id, receiver=request.user, status="pending")
+        except FriendRequest.DoesNotExist:
+            return Response({"error": "Friend request not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        friend_request.status = "declined"
+        friend_request.save()
+        return Response({"message": "Friend request declined"}, status=status.HTTP_200_OK)
+
+class PendingFriendRequestsAPIView(APIView):
+    def get(self, request):
+        requests = FriendRequest.objects.filter(receiver=request.user, status="pending").values("id", "sender__username")
+        return Response(list(requests), status=status.HTTP_200_OK)

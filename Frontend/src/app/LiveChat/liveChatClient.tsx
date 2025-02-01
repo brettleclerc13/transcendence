@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import "./liveChat.css";
-import FriendList from './friendList';
+import FriendAndInvitationList from './friendAndInvitationList';
 import CurrentChat from './currentChat';
 import MessageBar from './messageBar';
 import SearchBar from './searchBar';
@@ -25,6 +25,7 @@ const LiveChatClient = () => {
 	const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [loading, setLoading] = useState<boolean>(false);
+	const [viewMode, setViewMode] = useState<"friends" | "invitations">("friends");
 
 	const handleSendMessage = async (text: string) => {
 		if (selectedFriend) {
@@ -100,7 +101,7 @@ const LiveChatClient = () => {
 					<div className="search-bar-container">
 						<SearchBar />
 					</div>
-					<FriendList onSelectFriend={setSelectedFriend} />
+					<FriendAndInvitationList onSelectFriend={setSelectedFriend} />
 				</div>
 
 				<div className="current-chat">
