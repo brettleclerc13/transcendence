@@ -4,7 +4,6 @@ from rest_framework import status
 from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from .serializer import UserSerializer, MatchSerializer, CustomTokenObtainPairSerializer, MessageSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import UserProfile, Match, Message, FriendRequest
@@ -235,19 +234,34 @@ class SearchAPIView(APIView):
         if not query:
             return Response({"error": "Query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
         
-        users = UserProfile.objects.filter(user__username__icontains=query)
-        serializer = UserSerializer([user.user for user in users], many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        users = User.objects.filter(username__icontains=query).values("username")[:3]
+        # serializer = UserSerializer([user.user for user in users], many=True)
+        return Response(list(users), status=status.HTTP_200_OK)
 
 
 class SendFriendRequestAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         sender = request.user
-        receiver_id = request.data.get("receiver_id")
+        receiver_username = request.data.get("receiver_username")
+
+        if not receiver_username:
+            return Response({"error": "Receiver username is required"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            receiver = User.objects.get(id=receiver_id)
+            receiver = User.objects.get(username=receiver_username)
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if sender == receiver:
+            return Response({"error": "You cannot send a friend request to yourself"}, status=status.HTTP_400_BAD_REQUEST)
+
+        sender_profile = sender.profile
+        receiver_profile = receiver.profile
+
+        if receiver_profile in sender_profile.friends.all():
+            return Response({"error": "You are already friends"}, status=status.HTTP_400_BAD_REQUEST)
 
         if FriendRequest.objects.filter(sender=sender, receiver=receiver, status="pending").exists():
             return Response({"error": "Friend request already sent"}, status=status.HTTP_400_BAD_REQUEST)
@@ -256,11 +270,9 @@ class SendFriendRequestAPIView(APIView):
         return Response({"message": "Friend request sent"}, status=status.HTTP_201_CREATED)
 
 class AcceptFriendRequestAPIView(APIView):
-    authentication_classes = [TokenAuthentication, SessionAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request, request_id):
-        print("User:", request.user)  # Debug
         try:
             friend_request = FriendRequest.objects.get(id=request_id, receiver=request.user, status="pending")
         except FriendRequest.DoesNotExist:

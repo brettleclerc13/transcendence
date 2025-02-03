@@ -3,7 +3,7 @@
 export const FetchFriends = async () => {
     const token = localStorage.getItem('accessToken');
         if (!token) throw new Error("Access token missing");
-    
+
     try {
         const response = await fetch('/api/friends/', {
             method: "GET",
@@ -12,9 +12,9 @@ export const FetchFriends = async () => {
                 "Content-Type": "application/json"
             }
         });
-    
+
         const data = await response.json();
-        
+
         if (!response.ok) {
             const errorMessage =
                 data.non_field_errors?.[0] || // First item in non_field_errors array
@@ -23,7 +23,6 @@ export const FetchFriends = async () => {
                 "Failed to update friend's list.";
             throw new Error(errorMessage);
         }
-        
         return data;
 
     } catch (error) {
@@ -58,7 +57,7 @@ export const FetchInvitations = async () => {
         return data;
 
     } catch (error) {
-        throw new Error(String(error) || "Erreur réseau (friends)");
+        throw new Error(String(error) || "Erreur réseau (invitations)");
     }
 };
 

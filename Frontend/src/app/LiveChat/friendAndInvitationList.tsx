@@ -7,6 +7,7 @@ interface Friend {
     id: number;
     username: string;
     profile_picture: string | null;
+    sender__username?: string;
 }
 
 const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => void }> = ({ onSelectFriend }) => {
@@ -53,7 +54,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
                 <button onClick={() => setIsFriendsTab(true)} className={isFriendsTab ? "active" : ""}>Friends</button>
                 <button onClick={() => setIsFriendsTab(false)} className={!isFriendsTab ? "active" : ""}>Invitations</button>
             </div>
-            <div className="friend-list" style={{ overflowY: 'scroll', height: 'calc(100vh - 50px)', flex: 1 }}>
+            <div className="friend-list" style={{ overflowY: 'scroll', height: 'calc(60vh - 50px)', flex: 1 }}>
                 <ul className="list-group">
                     {isFriendsTab ? (
                         friends.length > 0 ? (
@@ -71,12 +72,12 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
                             invitations.map((invite) => (
                                 <li key={invite.id} className="list-group-item d-flex align-items-center justify-content-between">
                                     <div className="d-flex align-items-center">
-                                        <img src={invite.profile_picture || "./img/default.png"} alt={`${invite.username}'s avatar`} style={{ width: 40, height: 40, borderRadius: '50%', marginRight: 10 }} />
-                                        <span>{invite.username}</span>
+                                        <img src={invite.profile_picture || "./img/default.png"} alt={`${invite.sender__username}'s avatar`} style={{ width: 40, height: 40, borderRadius: '50%', marginRight: 10 }} />
+                                        <span>{invite.sender__username}</span>
                                     </div>
                                     <div>
-                                        <button className="btn btn-success me-2" onClick={() => handleAccept(invite.id)}>Accept</button>
-                                        <button className="btn btn-danger" onClick={() => handleDecline(invite.id)}>Decline</button>
+                                        <button className="btn btn-success me-2" onClick={() => handleAccept(invite.id)}>O</button>
+                                        <button className="btn btn-danger" onClick={() => handleDecline(invite.id)}>X</button>
                                     </div>
                                 </li>
                             ))
