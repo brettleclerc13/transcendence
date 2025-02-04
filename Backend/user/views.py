@@ -39,9 +39,6 @@ class ProfileAPIView(APIView):
 	permission_classes = [IsAuthenticated]
     
 	def get(self, request):
-		if not request.user.is_authenticated:
-			return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
-
 		user = request.user
 		profile = user.profile
 		profile_data = {
@@ -90,7 +87,6 @@ class ProfileAPIView(APIView):
 		return Response({"message": "Profile updated successfully."}, status=status.HTTP_200_OK)
 
 class MatchAPIView(APIView):
-
     def get(self, request):
         try:
             if request.body:

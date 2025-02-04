@@ -39,24 +39,24 @@ class UserSerializer(serializers.ModelSerializer):
 		UserProfile.objects.create(user=user, **profile_data)
 		return user
 
-	def update(self, instance, validated_data):
-		profile_data = validated_data.pop('profile', {})
-		profile = instance.profile
+	# def update(self, instance, validated_data):
+	# 	profile_data = validated_data.pop('profile', {})
+	# 	profile = instance.profile
 
-		instance.username = validated_data.get('username', instance.username)
-		instance.email = validated_data.get('email', instance.email)
-		if 'password' in validated_data:
-			instance.set_password(validated_data['password'])
-		instance.save()
+	# 	instance.username = validated_data.get('username', instance.username)
+	# 	instance.email = validated_data.get('email', instance.email)
+	# 	if 'password' in validated_data:
+	# 		instance.set_password(validated_data['password'])
+	# 	instance.save()
 
-		profile.nationality = profile_data.get('nationality', profile.nationality)
-		profile.bio = profile_data.get('bio', profile.bio)
-		profile.age = profile_data.get('age', profile.age)
-		profile.profile_picture = profile_data.get('profile_picture', profile.profile_picture)
-		profile.tournament_name = profile_data.get('tournament_name', profile.tournament_name)
-		profile.save()
+	# 	profile.nationality = profile_data.get('nationality', profile.nationality)
+	# 	profile.bio = profile_data.get('bio', profile.bio)
+	# 	profile.age = profile_data.get('age', profile.age)
+	# 	profile.profile_picture = profile_data.get('profile_picture', profile.profile_picture)
+	# 	profile.tournament_name = profile_data.get('tournament_name', profile.tournament_name)
+	# 	profile.save()
 
-		return instance
+	# 	return instance
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 	def validate(self, attrs):

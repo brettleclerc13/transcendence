@@ -124,6 +124,8 @@ textarea {
 	text-align: center;
 	box-shadow: 0 4px 6px rgba(56, 178, 172, 0.5); /* shadow-teal-500/50 */
 	cursor: pointer;
+	padding: 0.75rem 1.4rem;
+	text-decoration: none;
 }
 
 .button-cancel:hover {

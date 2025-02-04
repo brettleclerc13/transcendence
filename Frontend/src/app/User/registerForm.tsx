@@ -22,7 +22,7 @@ export default function RegisterForm() {
 		return unmetRequirements.map((req) => req.label);
 	};
 
-	async function handleSubmit(previousState: unknown, formData: FormData) {
+	async function handleSubmit(_previousState: unknown, formData: FormData) {
 		const email = formData.get("email") as string;
 		const username = formData.get("username") as string;
 		const password = formData.get("password") as string;
@@ -107,7 +107,6 @@ export default function RegisterForm() {
 					{data?.emailError && <p className="text-red-500 text-sm mb-2">{data?.emailError}</p>}
 					<label htmlFor="username" className="block text-sm font-medium mb-1">Username<span className="text-red-500 ml-1">*</span></label>
 					<input
-						type="username"
 						placeholder="JohnDoe"
 						id="username"
 						name="username"
@@ -127,7 +126,6 @@ export default function RegisterForm() {
 					{data?.passwordError && <p className="text-red-500 text-sm mb-2">{data?.passwordError}</p>}
 					<label htmlFor="age" className="block text-sm font-medium mb-1">Age</label>
 					<input
-						type="age"
 						placeholder="77"
 						id="age"
 						name="age"
@@ -136,7 +134,6 @@ export default function RegisterForm() {
 					/>
 					<label htmlFor="nationality" className="block text-sm font-medium mb-1">Nationality</label>
 					<input
-						type="nationality"
 						placeholder="French"
 						id="nationality"
 						name="nationality"
@@ -145,7 +142,6 @@ export default function RegisterForm() {
 					/>
 					<label htmlFor="bio" className="block text-sm font-medium mb-1">Bio</label>
 					<input
-						type="bio"
 						placeholder="Hi there ! I'm John Doe the greatest"
 						id="bio"
 						name="bio"
@@ -153,6 +149,7 @@ export default function RegisterForm() {
 						className="border rounded-md p-2 mb-4 w-full"
 					/>
 					<button
+						disabled={isPending}
 						type="submit"
 						className="text-white bg-teal-600 hover:bg-teal-700 rounded-md p-2 w-full"
 					>
