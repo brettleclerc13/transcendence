@@ -1,0 +1,57 @@
+import aioredis
+
+class RedisManager:
+    _redis_pool = None
+
+    @classmethod
+    async def get_redis(cls):
+        if not cls._redis_pool:
+            try:
+                cls._redis_pool = await aioredis.create_redis_pool("redis://127.0.0.1:6379")
+            except Exception as e:
+                print(f"Error while initializing redis: {e}", flush=True)
+        return cls._redis_pool
+    
+    @classmethod
+    async def close_redis(cls):
+        if cls._redis_pool:
+            cls._redis_pool.close()
+            await cls._redis_pool.wait_closed()
+            print(f"Redis Closed", flush=True)
+            cls._redis_pool = None
+
+    @classmethod
+    async def delete_keys(cls, pattern: str):
+        redis = await cls.get_redis()
+
+        keys = await redis.keys(pattern)
+        if keys:
+            await redis.delete(*keys)
+
+    @classmethod
+    async def delete_user_data(cls, room_name: str, key_id: str, value: str):
+        redis = await cls.get_redis()
+        key = f"room:{room_name}:{key_id}"
+
+        removed_count = await redis.lrem(key, 1, value)
+
+        if removed_count > 0:
+            print(f"deleted {value} from {key}", flush=True)
+        
+        remaining = await redis.llen(key)
+        if remaining == 0:
+            await redis.delete(key)
+
+    @classmethod
+    async def delete_room_data(cls, room_name: str):
+        redis = await cls.get_redis()
+        pattern = f"room:{room_name}:*"
+
+        cursor = b'0'
+
+        while cursor:
+            cursor, keys = await redis.scan(cursor, match=pattern, count=100)
+            if keys:
+                await redis.delete(*keys)
+        
+        print(f"deleted room: {room_name}", flush=True)

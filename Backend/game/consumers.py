@@ -1,8 +1,8 @@
 import json
 import math
 import time
-import aioredis
 import asyncio
+from utils.redis import RedisManager
 from asyncio import Queue
 from channels.generic.websocket import AsyncWebsocketConsumer
 
@@ -38,7 +38,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.input_queue = Queue()
         self.has_initialize = False
         self.time_per_tick = 0.05 #50 ms
-        self.reflection_bias = 0.2
+        self.reflection_bias = 0.8
         
 
     async def connect(self):
@@ -47,7 +47,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 
         # Add the player to the room's player set
         try:
-            self.redis = await aioredis.create_redis_pool("redis://127.0.0.1:6379")
+            self.redis = await RedisManager.get_redis()
             print(f"Redis connected for {self.channel_name}", flush=True)
 
             players_key = f"room:{self.room_name}:players"
@@ -78,30 +78,23 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             print(f"Error connecting to redis: {e}", flush=True)
             await self.close()
         
-
-
-
     async def disconnect(self, close_code):
-        # Remove player from the room
-        players_key = f"room:{self.room_name}:players"
+        try:    
+            # Remove player from the room
+            players_key = f"room:{self.room_name}:players"
 
-        if self.redis:
-            await self.redis.lrem(players_key, 1, self.channel_name)
+           
+            await RedisManager.delete_user_data(self.room_name, "players", self.channel_name)
+            await RedisManager.delete_user_data(self.room_name, "initialized_players", self.channel_name)
+            current_players = await self.redis.lrange(players_key, 0, -1)
 
-        current_players = await self.redis.lrange(players_key, 0, -1)
-
-        # Stop game loop if all players leave
-        if hasattr(self, "game_task") and not current_players:
-            self.game_task.cancel()
-
-        # Leave the room group
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
-        if self.redis:
-            await self.redis.close()
-            await self.redis.wait_closed()
+            # Stop game loop if all players leave
+            print(f"in disconect: len of players {len(current_players)}", flush=True)
+            if hasattr(self, "game_task") and len(current_players) < 2:
+                print("BOMBASITC", flush=True)
+                await self.handle_game_end("No Winner", "Game ended due to a disconnection")
+        except Exception as e:
+            print(f"Error during disconnect: {e}", flush=True)
 
 #starting game needs upgrading
     async def receive(self, text_data):
@@ -134,7 +127,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                             "type": "start_game",
                         }
                     )
-
                     self.game_task = asyncio.create_task(self.game_loop(), name=f"GameLoop-{self.room_name}")
         elif data["type"] == "input":
             await self.redis.rpush(input_queue_key, json.dumps({
@@ -156,11 +148,39 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             "type": "game_update",
             "game_state": event["game_state"],
-        }))    
+        })) 
+
+    async def game_end(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "game_end",
+            "message": event["message"],
+            "winner": event["winner"]
+        }))
     
     async def dispatch(self, message):
         print(f"Dispatching message: {message}", flush=True)
         await super().dispatch(message)
+
+    async def handle_game_end(self, winner: str, msg: str):
+        try:
+            print("Games Ending TROLLFACE", flush=True)
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "game_end",
+                    "message": msg,
+                    "winner": winner
+                }
+            )
+            await RedisManager.delete_room_data(self.room_name)
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name
+            )
+            self.game_task.cancel()
+        except Exception as e:
+            print(f"Error handling game end: {e}", flush=True)
+     
 
     async def game_loop(self):
         input_queue_key = f"room:{self.room_name}:inputs"
@@ -373,7 +393,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 
         if self.game_state["ball_direction"][1] == 0:
             if relative_pos == 0:
-                relative_pos == 0.01
+                relative_pos == 0.08
             reflected[1] += self.reflection_bias * relative_pos
             print(f"reflected: {reflected}", flush=True)
             reflected = self.normalize(reflected)
