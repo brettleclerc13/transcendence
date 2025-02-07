@@ -3,18 +3,24 @@
 import React, { useEffect, useState, useActionState } from "react";
 import { Doughnut } from "react-chartjs-2";
 import "./profile.css";
-import { fetchUserProfile } from "../utilities/userActions";
+import { fetchUserProfile, updateUserProfile } from "../utilities/profileActions";
+import type { UserProfileUpdate } from "../utilities/profileActions";
 import Link from "next/link";
+import Image from "next/image";
+import defaultImage from "/public/img/default.png"
+import { z } from "zod";
 
-type Profile = {
-	username: string;
-    email: string;
-    picture?: string;
-    age?: string;
-    nationality?: string;
-    tournamentName?: string;
-    bio?: string;
-}
+export const profileSchema = z.object({
+	username: z.string().min(3, "Username must be at least 3 characters long"),
+	email: z.string().email("Invalid email format"),
+	age: z.union([z.number().positive("Age must be a positive number"), z.string().optional()]),
+	nationality: z.string().optional(),
+	tournamentName: z.string().optional(),
+	bio: z.string().max(500, "Bio must not exceed 500 characters").optional(),
+	picture: z.string().optional(),
+});
+
+export type ProfileSchema = z.infer<typeof profileSchema>;
 
 type Match = {
     duelNumber?: number;
@@ -24,10 +30,10 @@ type Match = {
 }
 
 export default function Profile() {
-	const [chartData, setChartData] = useState({});
 	const [alert, setAlert] = useState<{ message: string, type: string } | null>(null);
-	const [profile, setProfile] = useState<Profile | null>(null);
+	const [userProfile, setUserProfile] = useState<UserProfileUpdate | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [chartData, setChartData] = useState({});
 	const [matches, setMatches] = useState<Match[]>([]);
 
 	const [ profileData, profileAction, profilePending ] = useActionState( handleUserProfile, undefined );
@@ -37,12 +43,12 @@ export default function Profile() {
 			try {
 			const profileResults = await fetchUserProfile();
 			
-			setProfile(profileResults);
+			setUserProfile(profileResults);
 			setIsLoading(false);
 
 			} catch (error) {
 				console.error("failed to fetch user profile info");
-				setProfile(null);
+				setUserProfile(null);
 			}
 		}
 			// const matchResults = await fetchUserMatches();
@@ -80,30 +86,25 @@ export default function Profile() {
     }, []);
 
 	async function handleUserProfile(_previousState: unknown, formData: FormData) {
-		const username = formData.get("username") as string;
-		const email = formData.get("email") as string;
-		const picture = formData.get("picture") as string;
-		const age = parseInt(formData.get("age") as string);
-		const nationality = formData.get("nationality") as string;
-		const tournamentName = formData.get("tournamentName") as string;
-		const bio = formData.get("bio") as string;
+		const profileInput ={
+			username: formData.get("username"),
+			email: formData.get("email"),
+			age: formData.get("age") ? Number(formData.get("age")) : undefined,
+			nationality: formData.get("nationality"),
+			tournamentName: formData.get("tournamentName"),
+			bio: formData.get("bio"),
+			picture: formData.get("picture"),
+		}
+
+		const validationResult = profileSchema.safeParse(profileInput);
+
+		if (!validationResult.success) {
+			return { error: String(validationResult.error.format()) };
+		}
 
 		try {
-			// Préparer les données pour l'API
-			const requestData = {
-				email,
-				username,
-				profile: {
-					...(picture ? { picture } : {}),
-					...(age ? { age } : {}),
-					...(nationality ? { nationality } : {}),
-					...(tournamentName ? { tournamentName } : {}),
-					...(bio ? { bio } : {}),
-				}
-			};
-
-			//await updateUserProfile(requestData);
-			setProfile(requestData);
+			await updateUserProfile(validationResult.data);
+			setUserProfile(validationResult.data);
 			setAlert({ message: "Your profile has been successfully updated!", type: "success" });
 
 		} catch (error) {
@@ -111,11 +112,25 @@ export default function Profile() {
 		}
 	}
 
+	//got to change this, not compatible for now
+	const handleFileUpload = async (file: File) => {
+		const formData = new FormData();
+		formData.append("profile_picture", file);
+	
+		await fetch("/api/profile/", {
+			method: "POST",
+			body: formData,
+			headers: {
+				Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+			},
+		});
+	};
+
 	if (isLoading) {
         return <div>Loading profile...</div>; // Affiche un message ou un spinner pendant le chargement
     }
 
-    if (!profile) {
+    if (!userProfile) {
         return <div>Failed to load profile.</div>; // Affiche un message si le profil n'est pas disponible
     }
 
@@ -133,7 +148,7 @@ export default function Profile() {
 			)}
 			<form action={profileAction}>
 				<div className="image-wrapper">
-					<img src={profile.picture} alt='Profile Picture' className='profile-picture' />
+					<Image src={userProfile.profile?.picture || defaultImage.src} width={224} height={224} alt='Profile Picture' className='profile-picture' />
 				</div>
 				<div className="contour-informations">
 					<div className="left-informations">
@@ -141,7 +156,7 @@ export default function Profile() {
 							<label>Username:</label>
 							<input 
 								name="username"
-								defaultValue={profile.username}
+								defaultValue={userProfile.username}
 								/>
 						</div>
 						<div>
@@ -149,7 +164,7 @@ export default function Profile() {
 							<input 
 								type="email"
 								name="email"
-								defaultValue={profile.email}
+								defaultValue={userProfile.email}
 								/>
 						</div>
 						<div>
@@ -157,7 +172,7 @@ export default function Profile() {
 							<input 
 								type="number"
 								name="age"
-								defaultValue={profile.age}
+								defaultValue={userProfile.profile?.age}
 								/>
 						</div>
 						<div>
@@ -165,15 +180,7 @@ export default function Profile() {
 							<input 
 								type="text"
 								name="nationality"
-								defaultValue={profile.nationality}
-								/>
-						</div>
-						<div>
-							<label>Tournament Name:</label>
-							<input
-								type="text"
-								name="tournamentName"
-								defaultValue={profile.tournamentName}
+								defaultValue={userProfile.profile?.nationality}
 								/>
 						</div>
 					</div>
@@ -183,7 +190,7 @@ export default function Profile() {
 							<textarea
 								name="bio"
 								placeholder="Whatever!"
-								defaultValue={profile.bio}
+								defaultValue={userProfile.profile?.bio}
 								/>
 						</div>
 						{/* <div className="match-history">

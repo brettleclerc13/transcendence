@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { isUserLoggedIn } from  "@/app/utilities/userActions"
-import { fetchUserProfile, updateUserProfile, logout } from "@/app/utilities/userActions"
+import { fetchUserProfile, updateUserProfile } from "@/app/utilities/profileActions"
+import { logout } from "@/app/utilities/userActions";
 import { useRouter } from "next/navigation";
 import "./headerComponent.css"
 
