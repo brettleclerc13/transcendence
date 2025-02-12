@@ -136,7 +136,8 @@ export default function GameCanvas () {
                 "paddle_xposition": 0.2,
                 "screen_width": 800,
                 "screen_height": 400,
-                "resolution": 8
+                "resolution": 8,
+                "point_goal": 1
              }}));
         }
     }, [status, playerRole]);

@@ -15,7 +15,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             "player1_position": [],
             "player2_position": [],
             "ball_position": [],
-            "ball_direction": [1, 0],  # Unit Vector for ball direction 0.707 0.707
+            "ball_direction": [0.707, 0.707],  # Unit Vector for ball direction 0.707 0.707
             "ball_speed": 12,
             "score": [0, 0],
             "resolution": [],
@@ -31,6 +31,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             "resolution": 8,
             "screen_width": 800,
             "screen_height": 400,
+            "point_goal": 7,
             "field_width": 100,
             "field_height": 100
         }
@@ -38,7 +39,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.input_queue = Queue()
         self.has_initialize = False
         self.time_per_tick = 0.05 #50 ms
-        self.reflection_bias = 0.8
+        self.reflection_bias = 0.95
         
 
     async def connect(self):
@@ -209,6 +210,10 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 if has_collided:
                     #print(f"collision point: {collision_point[0]} - {collision_point[1]}", flush=True)
                     self.handle_collision(normal, collision_point, paddle)
+                    if self.game_state["score"][0] >= self.game_parametres["point_goal"]:
+                        await self.handle_game_end("player_1", "Player 1 was won")
+                    elif self.game_state["score"][1] >= self.game_parametres["point_goal"]:
+                        await self.handle_game_end("player_2", "Player 2 was won")
                 self.game_state["last_update_time"] = time.time()
                 
                 # Broadcast the updated game state to all players
@@ -393,7 +398,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 
         if self.game_state["ball_direction"][1] == 0:
             if relative_pos == 0:
-                relative_pos == 0.08
+                relative_pos == 0.2
             reflected[1] += self.reflection_bias * relative_pos
             print(f"reflected: {reflected}", flush=True)
             reflected = self.normalize(reflected)
