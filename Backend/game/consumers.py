@@ -157,11 +157,11 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             "message": event["message"],
             "winner": event["winner"]
         }))
-    
+    '''
     async def dispatch(self, message):
         print(f"Dispatching message: {message}", flush=True)
         await super().dispatch(message)
-
+'''
     async def handle_game_end(self, winner: str, msg: str):
         try:
             print("Games Ending TROLLFACE", flush=True)
@@ -185,6 +185,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 
     async def game_loop(self):
         input_queue_key = f"room:{self.room_name}:inputs"
+        input_buffers = {"player_1": [], "player_2": []}
+        buffer_size = 2
 
         try:
             print("The game has begun")
@@ -201,8 +203,19 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                     input_event = json.loads(input_data)
                     player = input_event["player"]
                     direction = input_event["direction"]
-                    if self.has_initialize:
-                        self.update_paddles(player, direction)
+                    
+                    input_buffers[player].append(direction)
+
+                    if len(input_buffers[player]) > buffer_size:
+                        input_buffers[player].pop(0)
+
+                
+                
+                for player in ["player_1", "player_2"]:
+                    if input_buffers[player]:
+                        direction = input_buffers[player].pop(0)
+                        if self.has_initialize:
+                            self.update_paddles(player, direction)
 
                 #handle the game, move the ball handle collisions and scoring
                 self.update_ball_position(self.game_state["ball_position"], self.game_state["ball_direction"], self.game_state["ball_speed"])
@@ -278,15 +291,41 @@ class PongGameConsumer(AsyncWebsocketConsumer):
     def update_paddles(self, player, direction):
         speed = self.game_parametres["paddle_speed"] #for 20 TPS
         paddle_height = self.game_parametres["paddle_height"]
+        paddle_width = self.game_parametres["paddle_width"]
         feild_height = self.game_parametres["field_height"]
+
+        ball_x, ball_y = self.game_state["ball_position"]
+        ball_radius = self.game_parametres["ball_diametre"] / 2
+        
         if player == "player_1":
             old_position = self.game_state["player1_position"][1]
             new_position = self.clamp(old_position + (direction * speed * self.time_per_tick), paddle_height / 2, feild_height - (paddle_height / 2))
-            self.game_state["player1_position"][1] = new_position
         elif player =="player_2":
             old_position = self.game_state["player2_position"][1]
             new_position = self.clamp(old_position + (direction * speed * self.time_per_tick), paddle_height / 2, feild_height - (paddle_height / 2))
+
+        if player == "player_1":
+            closest_x = max(self.game_state["player1_position"][0] - paddle_width / 2, min(ball_x, self.game_state["player1_position"][0] + paddle_width / 2))
+        elif player == "player_2":
+            closest_x = max(self.game_state["player2_position"][0] - paddle_width / 2, min(ball_x, self.game_state["player2_position"][0] + paddle_width / 2))
+        
+        closest_y = max(new_position - paddle_height / 2, min(ball_y, new_position + paddle_height / 2))
+        
+        distance_x = ball_x - closest_x
+        distance_y = ball_y - closest_y
+        distance = math.sqrt(distance_x**2 + distance_y**2)
+
+        if distance <= ball_radius:
+            if direction > 0:
+                new_position = ball_y - ball_radius - paddle_height / 2
+            elif direction <0:
+                new_position = ball_y + ball_radius + paddle_height / 2
+        
+        if player == "player_1":
+            self.game_state["player1_position"][1] = new_position
+        elif player == "player_2":
             self.game_state["player2_position"][1] = new_position
+        
         
     def detect_collisions(self):
         ball_radius = self.game_parametres["ball_diametre"] / 2
@@ -414,7 +453,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             reflected[0] = reflected[0] + (reflected[0] * bias_x * self.reflection_bias)
             reflected[1] = reflected[1] + (reflected[1] * bias_y * self.reflection_bias)
             reflected = self.normalize(reflected)
-        print(f"reflected direction: {reflected[0]}, {reflected[1]}", flush=True)
+        #print(f"reflected direction: {reflected[0]}, {reflected[1]}", flush=True)
         
         self.game_state["ball_direction"] = reflected
 
