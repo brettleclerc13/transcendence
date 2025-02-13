@@ -7,6 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 from .serializer import UserSerializer, MatchSerializer, CustomTokenObtainPairSerializer, MessageSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import UserProfile, Match, Message
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.core.files.storage import default_storage
 
 # Create your views here.
 
@@ -37,6 +39,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class ProfileAPIView(APIView):
 	permission_classes = [IsAuthenticated]
+	parser_classes = (MultiPartParser, FormParser)
     
 	def get(self, request):
 		user = request.user
@@ -47,7 +50,7 @@ class ProfileAPIView(APIView):
             "nationality": profile.nationality,
             "bio": profile.bio,
             "age": profile.age,
-            "profile_picture": profile.profile_picture,
+            "profile_picture": profile.profile_picture.url if profile.profile_picture else None,
             "tournament_name": profile.tournament_name,
             "is_online": profile.is_online,
 		}
@@ -72,7 +75,7 @@ class ProfileAPIView(APIView):
 			user.email = email
 
 		# Validate and update profile fields
-		profile_fields = ["nationality", "bio", "age", "profile_picture", "tournament_name", "is_online"]
+		profile_fields = ["nationality", "bio", "age", "tournament_name", "is_online"]
 		for field in profile_fields:
 			if field in data:
 				value = data[field]
@@ -85,6 +88,17 @@ class ProfileAPIView(APIView):
 		profile.save()
 
 		return Response({"message": "Profile updated successfully."}, status=status.HTTP_200_OK)
+
+	def patch(self, request):
+		user = request.user
+		profile = user.profile
+
+		if "profile_picture" in request.FILES:
+			profile.profile_picture = request.FILES["profile_picture"]
+			profile.save()
+			return Response({"message": "Profile picture updated successfully."}, status=status.HTTP_200_OK)
+
+		return Response({"error": "No profile picture provided."}, status=status.HTTP_400_BAD_REQUEST)
 
 class MatchAPIView(APIView):
     def get(self, request):

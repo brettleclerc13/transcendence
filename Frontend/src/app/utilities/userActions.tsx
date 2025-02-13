@@ -8,20 +8,25 @@ import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.share
 export const AuthContext = createContext({});
 
 export const isUserLoggedIn = () => {
-	const token = localStorage.getItem("accessToken");
+	const accessToken = localStorage.getItem("accessToken");
+	const refreshToken = localStorage.getItem("refreshToken");
 	
-    if (!token) return false;
+    if (!accessToken || !refreshToken) 
+		return false;
 	
-    try {
-		const decoded = jwtDecode(token) as { exp : number};
-        const currentTime = Math.floor(Date.now() / 1000); // current time in seconds
-		
-        // Check if token has expired
-        return decoded.exp > currentTime;
-    } catch (error) {
-		console.error("Token decoding error:", error);
-        return false;
-    }
+	const decodedAccessToken = jwtDecode(accessToken);
+	const decodedRefreshToken = jwtDecode(refreshToken);
+
+	if (!decodedAccessToken || !decodedRefreshToken)
+		return false;
+
+	const currentTime = Math.floor(Date.now() / 1000); // current time in seconds
+	
+	// Check if tokens have expired
+	if ((decodedAccessToken as { exp : number}).exp > currentTime && (decodedRefreshToken as { exp : number}).exp > currentTime)
+		return true;
+	else
+		return false;
 }
 
 type LoginProps = {
@@ -130,9 +135,11 @@ const startTokenRefresh = ( router : AppRouterInstance ) => {
 	const checkInterval = 30 * 1000; // Check every 30 secs
 
 	setInterval(async () => {
+		const accessToken = localStorage.getItem("accessToken");
 		const tokenExpiry = localStorage.getItem("tokenExpiry");
-		if (!tokenExpiry) {
-			console.log("❌ No access token expiry found");
+
+		if (!accessToken || !tokenExpiry) {
+			console.log("❌ No access token found, skipping refresh check");
 			return;
 		}
 
@@ -185,7 +192,9 @@ export const register = async ( requestData : RegisterProps ) => {
 			data.email?.[0] || // Email error
 			data.username?.[0] || // Username error
 			data.non_field_errors?.[0] || // Other validation error
+			console.log(data.non_field_errors?.[0]);
 			"Registration failed";
+			console.log("Error message: ", errorMessage);
 		throw new Error(errorMessage); 
 	} else {
 		return data;

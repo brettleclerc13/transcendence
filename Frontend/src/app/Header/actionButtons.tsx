@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { isUserLoggedIn } from  "@/app/utilities/userActions"
 import { fetchUserProfile, updateUserProfile } from "@/app/utilities/profileActions"
 import { logout } from "@/app/utilities/userActions";
@@ -9,7 +10,7 @@ import { useRouter } from "next/navigation";
 import "./headerComponent.css"
 
 export default function ActionButtons() {
-	const [userProfile, setUserProfile] = useState<{ username: string; profilePicture: string; status: boolean } | null>(null);
+	const [userProfile, setUserProfile] = useState<{ username: string; profilePicture: string | null; status: boolean } | null>(null);
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const router = useRouter();
@@ -20,7 +21,7 @@ export default function ActionButtons() {
 
 			setUserProfile({
 				username: result.username,
-				profilePicture: result.profilePicture || "./img/default.png",
+				profilePicture: result.profile_picture,
 				status: result.is_online,
 			});
 			console.log(userProfile?.status);
@@ -46,6 +47,7 @@ export default function ActionButtons() {
 
 	useEffect(() => {
 		if (isUserLoggedIn()) {
+			console.log("user is logged in check successful")
 			run();		}
     }, []);
 
@@ -105,9 +107,11 @@ export default function ActionButtons() {
 				</div>
 				<label className="logged-name">{userProfile?.username}</label>
 				<button className="profile-button" onClick={toggleDropdown}>
-					<img
-						src={userProfile?.profilePicture || "./img/default.png"}
-						alt="Profile"
+					<Image
+						src={userProfile?.profilePicture ? userProfile.profilePicture : "/img/default.png"}
+						alt="Profile Image in navbar"
+						width={100}
+						height={100}
 						className="profile-picture-header"
 					/>
 				</button>

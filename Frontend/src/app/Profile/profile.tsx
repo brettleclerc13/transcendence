@@ -6,9 +6,8 @@ import "./profile.css";
 import { fetchUserProfile, updateUserProfile } from "../utilities/profileActions";
 import type { UserProfileUpdate } from "../utilities/profileActions";
 import Link from "next/link";
-import Image from "next/image";
-import defaultImage from "/public/img/default.png"
 import { z } from "zod";
+import ProfileImage from "./profileImage"
 
 export const profileSchema = z.object({
 	username: z.string().min(3, "Username must be at least 3 characters long"),
@@ -17,7 +16,6 @@ export const profileSchema = z.object({
 	nationality: z.string().optional(),
 	tournamentName: z.string().optional(),
 	bio: z.string().max(500, "Bio must not exceed 500 characters").optional(),
-	picture: z.string().optional(),
 });
 
 export type ProfileSchema = z.infer<typeof profileSchema>;
@@ -93,7 +91,6 @@ export default function Profile() {
 			nationality: formData.get("nationality"),
 			tournamentName: formData.get("tournamentName"),
 			bio: formData.get("bio"),
-			picture: formData.get("picture"),
 		}
 
 		const validationResult = profileSchema.safeParse(profileInput);
@@ -111,20 +108,6 @@ export default function Profile() {
 			return { error: String(error) };
 		}
 	}
-
-	//got to change this, not compatible for now
-	const handleFileUpload = async (file: File) => {
-		const formData = new FormData();
-		formData.append("profile_picture", file);
-	
-		await fetch("/api/profile/", {
-			method: "POST",
-			body: formData,
-			headers: {
-				Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-			},
-		});
-	};
 
 	if (isLoading) {
         return <div>Loading profile...</div>; // Affiche un message ou un spinner pendant le chargement
@@ -146,10 +129,8 @@ export default function Profile() {
 					{profileData?.error ?? 'An unknown error occurred'}
 				</div>
 			)}
+			<ProfileImage profilePicture={userProfile.profile?.profile_picture ? userProfile.profile?.profile_picture : "/img/default.png" } />
 			<form action={profileAction}>
-				<div className="image-wrapper">
-					<Image src={userProfile.profile?.picture || defaultImage.src} width={224} height={224} alt='Profile Picture' className='profile-picture' />
-				</div>
 				<div className="contour-informations">
 					<div className="left-informations">
 						<div>
