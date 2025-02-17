@@ -2,30 +2,27 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { isUserLoggedIn } from  "@/app/utilities/userActions"
-import { fetchUserProfile, updateUserProfile } from "@/app/utilities/profileActions"
+import { fetchUserProfile, updateUserProfile, UserProfileData } from "@/app/utilities/profileActions"
 import { logout } from "@/app/utilities/userActions";
 import { useRouter } from "next/navigation";
+import Popup from "@/components/popup/popup";
+import Profile from "../Profile/profile";
 import "./headerComponent.css"
 
-export default function ActionButtons() {
-	const [userProfile, setUserProfile] = useState<{ username: string; profilePicture: string | null; status: boolean } | null>(null);
+export default function HeaderConnectButtons() {
+	const [isProfileOpen, setIsProfileOpen] = useState(false);
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+	const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const router = useRouter();
 
 	const run = async () => {
 		try {
-			const result = await fetchUserProfile();
+			const profileResults = await fetchUserProfile();
 
-			setUserProfile({
-				username: result.username,
-				profilePicture: result.profile_picture,
-				status: result.is_online,
-			});
-			console.log(userProfile?.status);
-			console.log(result);
+			setUserProfile(profileResults);
+			console.log(profileResults);
 		} catch (err) {
 			console.error("Error fetching user profile:", err);
 		}
@@ -47,12 +44,11 @@ export default function ActionButtons() {
 
 	useEffect(() => {
 		if (isUserLoggedIn()) {
-			console.log("user is logged in check successful")
-			run();		}
+			run();
+		}
     }, []);
 
 	const toggleDropdown = () => {
-		console.log("Dropdown toggled");
 		setIsDropdownOpen((prev) => !prev);
 	}
 
@@ -63,14 +59,12 @@ export default function ActionButtons() {
 			return;
 		}
 
-        const newStatus = !userProfile.status;
-		
-        try {
-			await updateUserProfile( { profile: { is_online: newStatus }} )
+        const newStatus = !userProfile.is_online;
 
-            setUserProfile((prev) =>
-                prev ? { ...prev, status: newStatus } : prev
-			);
+        try {
+			await updateUserProfile( { is_online: newStatus } )
+
+            setUserProfile( { ...userProfile, is_online: newStatus } );
         } catch (error) {
             console.error("Error updating status:", error);
         }
@@ -100,15 +94,15 @@ export default function ActionButtons() {
 						role="switch"
 						id="flexSwitchCheckChecked"
 						data-bs-toggle="switch"
-						checked={ userProfile?.status ?? false}
+						checked={ userProfile?.is_online ?? false}
 						onChange={handleSwitchToggle}
 					/>
-					<label className="form-check-label" htmlFor="flexSwitchCheckChecked">{(userProfile?.status ? "Online" : "Invisible")}</label>
+					<label className="form-check-label" htmlFor="flexSwitchCheckChecked">{(userProfile?.is_online ? "Online" : "Invisible")}</label>
 				</div>
 				<label className="logged-name">{userProfile?.username}</label>
 				<button className="profile-button" onClick={toggleDropdown}>
-					<Image
-						src={userProfile?.profilePicture ? userProfile.profilePicture : "/img/default.png"}
+					<img
+						src={`/api/${userProfile?.profile_picture}` || "/img/default.png"}
 						alt="Profile Image in navbar"
 						width={100}
 						height={100}
@@ -116,20 +110,23 @@ export default function ActionButtons() {
 					/>
 				</button>
 
-				{isDropdownOpen ? (
+				{ isDropdownOpen ? (
 					<div className="dropdown-menu" ref={dropdownRef}>
-						<Link className="dropdown-item" href="/profile">
+						<button className="dropdown-item" onClick={ () => setIsProfileOpen(true) }>
 							<svg className="icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
 								<path fillRule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clipRule="evenodd"/>
 							</svg> Profile
-						</Link>
+						</button>
 						<button className="dropdown-item logout" onClick={handleLogout}>
 							<svg className="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
 								<path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H8m12 0-4 4m4-4-4-4M9 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h2"/>
 							</svg> Log Out
 						</button>
 					</div>
-				) : null}
+				) : null }
+				<Popup isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)}>
+					<Profile userProfile={userProfile} setUserProfile={setUserProfile} />
+				</Popup>
 			</div>
 		)}
 		</div>

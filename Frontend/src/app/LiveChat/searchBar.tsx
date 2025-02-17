@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 interface UserProfile {
 	id: number;

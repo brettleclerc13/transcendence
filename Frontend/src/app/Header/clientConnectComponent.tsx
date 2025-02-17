@@ -2,12 +2,12 @@
 
 import dynamic from 'next/dynamic';
 
-const ActionButtons = dynamic(() => import('./actionButtons'), {
+const HeaderConnectButtons = dynamic(() => import('./headerConnectButtons'), {
   ssr: false, // disable server-side rendering for this component
 });
 
 export default function ClientConnectComponent() {
 	return (
-		<ActionButtons />
+		<HeaderConnectButtons />
 	);
 }

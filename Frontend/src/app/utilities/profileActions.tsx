@@ -1,3 +1,14 @@
+export type UserProfileData = {
+	email?: string;
+    username?: string;
+	age?: number;
+	nationality?: string;
+	bio?: string;
+	is_online?: boolean;
+	profile_picture?: string | null;
+	tournamentName?: string;
+}
+
 export const fetchUserProfile = async () => {
 	try {
 		const token = localStorage.getItem('accessToken');
@@ -37,21 +48,7 @@ export const fetchUserProfile = async () => {
 	}
 };
 
-export type UserProfileUpdate = {
-    email?: string;
-    username?: string;
-    password?: string;
-    profile?: {
-        age?: number;
-        nationality?: string;
-        bio?: string;
-        is_online?: boolean;
-		profile_picture?: string | null;
-		tournamentName?: string;
-    };
-};
-
-export const updateUserProfile = async (profileData: UserProfileUpdate) => {
+export const updateUserProfile = async (profileData: UserProfileData) => {
 	try {
 		const token = localStorage.getItem('accessToken');
 		if (!token) throw new Error("Access token missing");
@@ -83,7 +80,7 @@ export const updateUserProfile = async (profileData: UserProfileUpdate) => {
 			throw new Error(errorMessage);
 		} else {
 			data = await response.json();
-			console.log("User profile updated successfully. is_online: ", profileData.profile?.is_online);
+			console.log("User profile updated successfully. is_online: ", profileData.is_online);
 			return data;
 		}
 

@@ -122,7 +122,6 @@ const refreshAccessToken = async ( router : AppRouterInstance ) => {
 			localStorage.setItem("tokenExpiry", newExpiresAt.toString());
 			console.log("Access token refreshed");
 		} else {
-			console.error("Failed to refresh access token");
 			logout(router);
 		}
 	} catch (error) {

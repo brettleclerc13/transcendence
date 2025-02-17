@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "@/app/utilities/userActions";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import BootstrapClient from '@/components/bootstrapClient';
 import "./globals.css";
+
 
 export const metadata: Metadata = {
   title: "Transcendence",
@@ -17,6 +20,7 @@ export default function RootLayout({
 			<body>
 				<AuthProvider>
 					{children}
+				<BootstrapClient />
 				</AuthProvider>
 			</body>
 		</html>

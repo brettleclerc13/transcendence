@@ -1,13 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
-import bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import "./carouselBootStrap.css"
-
-// Import dynamique de Bootstrap pour éviter les erreurs côté serveur
-const Bootstrap = dynamic(() => import('bootstrap/dist/js/bootstrap.bundle.min'), { ssr: false });
 
 const MyCarousel = () => {
   const carouselRef = useRef<HTMLDivElement | null>(null);
@@ -16,8 +10,8 @@ const MyCarousel = () => {
   useEffect(() => {
     if (carouselRef.current && isBootstrapLoaded) {
       // Vérification que Bootstrap est bien chargé
-      if (typeof bootstrap !== 'undefined') {
-        const carouselInstance = new bootstrap.Carousel(carouselRef.current, {
+      if (typeof window.bootstrap !== 'undefined') {
+        const carouselInstance = new window.bootstrap.Carousel(carouselRef.current, {
           interval: 2000,
           touch: false,
         });
@@ -34,7 +28,7 @@ const MyCarousel = () => {
 
   useEffect(() => {
     // Ce useEffect est utilisé pour détecter quand Bootstrap est complètement chargé
-    if (typeof bootstrap !== 'undefined') {
+    if (typeof window.bootstrap !== 'undefined') {
       setIsBootstrapLoaded(true);
     }
   }, []);
