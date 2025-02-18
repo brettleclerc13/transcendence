@@ -8,9 +8,17 @@ header {
 	color: white;
 	padding: 1rem;
 	display: flex;
+	flex-basis: auto;
 	justify-content: space-between;
 	align-items: center;
 	z-index: 100;
+}
+
+.menu-main {
+	flex-basis: 15%;
+	display: flex;
+	justify-content: start;
+	align-items: center;
 }
 
 .menu-button {
@@ -18,7 +26,36 @@ header {
 	color: white;
 	display: flex;
 	align-items: center;
-	font-size: 1.25rem; /* text-xl */
+	font-size: 1.25rem;
+}
+
+.menu-links {
+	width: 80%;
+}
+
+.menu-button-select {
+	text-decoration: none;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+	color: white;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-top: 40%;
+	font-size: 1.25rem;
+	padding: 10%;
+	box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+	border-top: 1px solid #1f2937;
+	border-left: 1px solid #1f2937;
+	border-bottom: 1px solid #ccc;
+	border-right: 1px solid #ccc;
+	border-bottom-right-radius: 12px;
+}
+
+.menu-button-select:hover {
+	background-color: #319795;
+	border-top: 1px solid #ccc;
+	border-left: 1px solid #ccc;
+	border-top-left-radius: 12px;
 }
 
 .menu-container {
@@ -40,21 +77,23 @@ header {
 	text-align: center;
 	cursor: pointer;
 }
-  
+
 .menu-button-item:hover {
 	background-color: #374151; /* Slightly lighter gray for hover */
 }
-  
+
 .header-title {
-	font-size: 1.25rem; /* text-xl */
-	font-weight: bold; /* font-bold */
+	font-family: "Bungee Shade";
+	font-size: 2rem;
 	margin: 0 auto; /* mx-auto */
 }
   
 .action-buttons {
+	flex-basis: 15%;
 	display: flex;
+	justify-content: end;
 	align-items: center;
-	gap: 1rem; /* space-x-4 */
+	gap: 1rem;
 }
 
 .logged-name {
@@ -71,6 +110,7 @@ header {
 	text-align: center;
 	box-shadow: 0 4px 6px rgba(56, 178, 172, 0.5); /* shadow-teal-500/50 */
 	cursor: pointer;
+	text-decoration: none;
 }
 
 .login-button:hover,
@@ -156,4 +196,22 @@ header {
     min-width: 60px;
     display: inline-block;
     text-align: left;
+}
+
+.disco-button {
+	position: absolute;
+	top: 20px;
+	left: 20px;
+	background: none;
+	border: none;
+	cursor: pointer;
+	outline: none;
+}
+  
+.disco-icon {
+	transition: transform 0.3s ease-in-out;
+}
+  
+.disco-button:hover .disco-icon {
+	transform: rotate(10deg);
 }

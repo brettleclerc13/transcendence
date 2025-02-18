@@ -32,7 +32,20 @@ class Match(models.Model):
 		return f"Match against {self.opponent} on {self.date}"
 
 class Message(models.Model):
-	sender_id = models.IntegerField()
-	conversation_id = models.IntegerField()
-	text = models.TextField()
-	timestamp = models.DateTimeField(auto_now_add=True)
+    sender_id = models.IntegerField()
+    conversation_id = models.IntegerField()
+    text = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+class FriendRequest(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_requests")
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_requests")
+    status = models.CharField(
+        max_length=10,
+        choices=[("pending", "Pending"), ("accepted", "Accepted"), ("declined", "Declined")],
+        default="pending"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender.username} → {self.receiver.username} ({self.status})"
