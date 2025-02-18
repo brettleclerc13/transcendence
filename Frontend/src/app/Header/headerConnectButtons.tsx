@@ -102,7 +102,7 @@ export default function HeaderConnectButtons() {
 				<label className="logged-name">{userProfile?.username}</label>
 				<button className="profile-button" onClick={toggleDropdown}>
 					<img
-						src={`/api/${userProfile?.profile_picture}` || "/img/default.png"}
+						src={userProfile?.profile_picture ? `/api/${userProfile.profile_picture}` : "/img/default.png"}
 						alt="Profile Image in navbar"
 						width={100}
 						height={100}

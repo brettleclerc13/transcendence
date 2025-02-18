@@ -46,7 +46,7 @@ export default function ProfileImage ({
 			<div className="image-wrapper">
 				<div className="relative w-32 h-32">
 					<img
-						src={`/api/${userProfile?.profile_picture}` || "/img/default.png"} // Fallback to default image
+						src={userProfile?.profile_picture ? `/api/${userProfile.profile_picture}` : "/img/default.png"} // Fallback to default image
 						alt="Profile Picture"
 						className="profile-picture"
 					/>
