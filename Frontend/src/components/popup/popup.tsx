@@ -13,7 +13,9 @@ export default function Popup({ isOpen, onClose, children }: PopupProps) {
 	return (
 		<div className="popup-overlay" onClick={onClose}>
 			<div className="popup-box" onClick={(e) => e.stopPropagation()}>
-				<button className="popup-close" onClick={onClose}>&times;</button>
+				<button className="popup-close" onClick={onClose}>
+					&times;
+				</button>
 				{children}
 			</div>
 		</div>

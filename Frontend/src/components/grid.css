@@ -1,7 +1,8 @@
-body, html {
-    overflow: hidden;
-    width: 100vw;
-    height: 100vh;
+body,
+html {
+	overflow: hidden;
+	width: 100vw;
+	height: 100vh;
 }
 
 .grid-container {
@@ -10,19 +11,19 @@ body, html {
 	width: 100vw;
 	height: 100vh;
 	position: absolute;
-    background-color: black;
+	background-color: black;
 	top: 0;
 	left: 0;
-    overflow: hidden;
+	overflow: hidden;
 }
 
 .cell {
 	width: 48px;
 	height: 48px;
 	background-color: teal;
-    border: 1px solid rgba(49, 97, 93, 0.5);
+	border: 1px solid rgba(49, 97, 93, 0.5);
 	position: relative;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
 }

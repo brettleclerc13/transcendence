@@ -7,7 +7,9 @@ import "./grid.css";
 const cellSize = 48;
 
 export default function Grid() {
-	const [cells, setCells] = useState<{ id: string; state: number, originX: number, rotate: number }[]>([]);
+	const [cells, setCells] = useState<
+		{ id: string; state: number; originX: number; rotate: number }[]
+	>([]);
 
 	useEffect(() => {
 		generateGrid();
@@ -41,7 +43,7 @@ export default function Grid() {
 					};
 				}
 				return cell;
-			})
+			}),
 		);
 	}
 
@@ -51,17 +53,17 @@ export default function Grid() {
 				<motion.div
 					key={id}
 					className="cell"
-					initial={{ }}
+					initial={{}}
 					animate={
 						state === 1
 							? {
-								rotate: rotate,
-								originX: originX,
-								originY: 0
-							  }
+									rotate: rotate,
+									originX: originX,
+									originY: 0,
+								}
 							: state === 2
-							? { y: 100, opacity: 0 }
-							: {}
+								? { y: 100, opacity: 0 }
+								: {}
 					}
 					transition={{ type: "spring", stiffness: 100, duration: 0.5 }}
 					onMouseEnter={() => handleHover(id)}
@@ -178,6 +180,5 @@ export default function Grid() {
 
 // 	return <div ref={containerRef} id="container" className="flex flex-wrap align-top justify-center w-full overflow-hidden"></div>;
 // });
-
 
 // export default Grid;

@@ -1,17 +1,17 @@
 export type UserProfileData = {
 	email?: string;
-    username?: string;
+	username?: string;
 	age?: number;
 	nationality?: string;
 	bio?: string;
 	is_online?: boolean;
 	profile_picture?: string | null;
 	tournamentName?: string;
-}
+};
 
 export const fetchUserProfile = async () => {
 	try {
-		const token = localStorage.getItem('accessToken');
+		const token = localStorage.getItem("accessToken");
 		if (!token) throw new Error("Access token missing");
 
 		const response = await fetch("/api/profile/", {
@@ -31,7 +31,7 @@ export const fetchUserProfile = async () => {
 			} catch {
 				throw new Error(`Unexpected response: ${response.status}`);
 			}
-	
+
 			const errorMessage =
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
@@ -42,7 +42,6 @@ export const fetchUserProfile = async () => {
 			data = await response.json();
 			return data;
 		}
-
 	} catch (error) {
 		throw new Error(String(error) || "Failed to fetch user profile.");
 	}
@@ -50,7 +49,7 @@ export const fetchUserProfile = async () => {
 
 export const updateUserProfile = async (profileData: UserProfileData) => {
 	try {
-		const token = localStorage.getItem('accessToken');
+		const token = localStorage.getItem("accessToken");
 		if (!token) throw new Error("Access token missing");
 
 		const response = await fetch("/api/profile/", {
@@ -71,7 +70,7 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 			} catch {
 				throw new Error(`Unexpected response: ${response.status}`);
 			}
-	
+
 			const errorMessage =
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
@@ -80,25 +79,27 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 			throw new Error(errorMessage);
 		} else {
 			data = await response.json();
-			console.log("User profile updated successfully. is_online: ", profileData.is_online);
+			console.log(
+				"User profile updated successfully. is_online: ",
+				profileData.is_online,
+			);
 			return data;
 		}
-
 	} catch (error) {
 		console.error("updateUserProfileError: ", error);
 		throw new Error(String(error) || "Failed to update profile.");
 	}
 };
 
-export const updateUserProfileImage = async ( formData : FormData ) => {
+export const updateUserProfileImage = async (formData: FormData) => {
 	try {
-		const token = localStorage.getItem('accessToken');
+		const token = localStorage.getItem("accessToken");
 		if (!token) throw new Error("Access token missing");
 
 		const response = await fetch("/api/profile/", {
 			method: "PATCH",
 			headers: {
-				Authorization: `Bearer ${token}`
+				Authorization: `Bearer ${token}`,
 			},
 			body: formData,
 		});
@@ -112,7 +113,7 @@ export const updateUserProfileImage = async ( formData : FormData ) => {
 			} catch {
 				throw new Error(`Unexpected response: ${response.status}`);
 			}
-	
+
 			const errorMessage =
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
@@ -123,9 +124,8 @@ export const updateUserProfileImage = async ( formData : FormData ) => {
 			console.log("User profile image successfully changed");
 			return response;
 		}
-
 	} catch (error) {
 		console.error("updateUserProfileImageError: ", error);
 		throw new Error(String(error) || "Failed to update profile image.");
 	}
-}
+};

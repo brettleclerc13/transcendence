@@ -10,7 +10,7 @@
 	align-items: center;
 	justify-content: center;
 }
-  
+
 .popup-box {
 	background: white;
 	padding: 20px;
@@ -20,12 +20,12 @@
 	position: relative;
 	z-index: 5;
 }
-  
+
 .popup-close {
 	position: absolute;
 	top: 10px;
 	right: 20px;
-	color:darkslategray;
+	color: darkslategray;
 	background: none;
 	border: none;
 	font-size: 1.5rem;

@@ -4,7 +4,11 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import "./headerComponent.css";
 
-export default function DiscoBallButton({ toggleMenu }: { toggleMenu: () => void }) {
+export default function DiscoBallButton({
+	toggleMenu,
+}: {
+	toggleMenu: () => void;
+}) {
 	const [isClicked, setIsClicked] = useState(false);
 
 	const handleClick = () => {

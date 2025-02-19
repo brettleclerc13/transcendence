@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
 import { jwtDecode } from "jwt-decode";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import { useEffect, createContext, ReactNode } from "react";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
@@ -10,44 +10,44 @@ export const AuthContext = createContext({});
 export const isUserLoggedIn = () => {
 	const accessToken = localStorage.getItem("accessToken");
 	const refreshToken = localStorage.getItem("refreshToken");
-	
-    if (!accessToken || !refreshToken) 
-		return false;
-	
+
+	if (!accessToken || !refreshToken) return false;
+
 	const decodedAccessToken = jwtDecode(accessToken);
 	const decodedRefreshToken = jwtDecode(refreshToken);
 
-	if (!decodedAccessToken || !decodedRefreshToken)
-		return false;
+	if (!decodedAccessToken || !decodedRefreshToken) return false;
 
 	const currentTime = Math.floor(Date.now() / 1000); // current time in seconds
-	
+
 	// Check if tokens have expired
-	if ((decodedAccessToken as { exp : number}).exp > currentTime && (decodedRefreshToken as { exp : number}).exp > currentTime)
+	if (
+		(decodedAccessToken as { exp: number }).exp > currentTime &&
+		(decodedRefreshToken as { exp: number }).exp > currentTime
+	)
 		return true;
-	else
-		return false;
-}
+	else return false;
+};
 
 type LoginProps = {
-	email: string,
-	pass: string,
-}
+	email: string;
+	pass: string;
+};
 
-export const login = async ( { email, pass } : LoginProps ) => {
+export const login = async ({ email, pass }: LoginProps) => {
 	const requestData = {
 		username: email,
 		password: pass,
 	};
-	
+
 	const response = await fetch("/api/token/", {
-		method: 'POST',
+		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
 		},
 		body: JSON.stringify(requestData),
 	});
-	
+
 	const data = await response.json();
 
 	if (response.ok) {
@@ -71,7 +71,7 @@ export const login = async ( { email, pass } : LoginProps ) => {
 			"Login failed";
 		throw new Error(errorMessage);
 	}
-}
+};
 
 export async function logout(router: AppRouterInstance) {
 	try {
@@ -82,26 +82,22 @@ export async function logout(router: AppRouterInstance) {
 		const response = await fetch("/api/logout/", {
 			method: "POST",
 			headers: {
-			  "Content-Type": "application/json",
+				"Content-Type": "application/json",
 			},
 		});
 
-		if (response.ok)
-			console.log("Logout successful");
-		else
-			console.error("Logout unsuccessful");
+		if (response.ok) console.log("Logout successful");
+		else console.error("Logout unsuccessful");
 
 		setTimeout(() => {
 			router.push("/");
 		}, 1000);
-
 	} catch (error) {
 		console.error("Error: issue while logging out", error);
 	}
 }
 
-const refreshAccessToken = async ( router : AppRouterInstance ) => {
-
+const refreshAccessToken = async (router: AppRouterInstance) => {
 	const refreshToken = localStorage.getItem("refreshToken");
 	if (!refreshToken) return;
 
@@ -130,7 +126,7 @@ const refreshAccessToken = async ( router : AppRouterInstance ) => {
 	}
 };
 
-const startTokenRefresh = ( router : AppRouterInstance ) => {
+const startTokenRefresh = (router: AppRouterInstance) => {
 	const checkInterval = 30 * 1000; // Check every 30 secs
 
 	setInterval(async () => {
@@ -159,23 +155,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 		startTokenRefresh(router);
 	}, [router]);
 
-	return <AuthContext.Provider value={{ logout }}>{children}</AuthContext.Provider>;
+	return (
+		<AuthContext.Provider value={{ logout }}>{children}</AuthContext.Provider>
+	);
 };
 
-
 type RegisterProps = {
-	email: string,
-	username: string,
-	password: string,
+	email: string;
+	username: string;
+	password: string;
 	profile: {
-		age?: number | undefined,
-		nationality?: string | undefined,
-		bio?: string | undefined,
-		is_online: boolean
-	}
-}
+		age?: number | undefined;
+		nationality?: string | undefined;
+		bio?: string | undefined;
+		is_online: boolean;
+	};
+};
 
-export const register = async ( requestData : RegisterProps ) => {
+export const register = async (requestData: RegisterProps) => {
 	const response = await fetch("/api/register/", {
 		method: "POST",
 		headers: {
@@ -192,10 +189,10 @@ export const register = async ( requestData : RegisterProps ) => {
 			data.username?.[0] || // Username error
 			data.non_field_errors?.[0] || // Other validation error
 			console.log(data.non_field_errors?.[0]);
-			"Registration failed";
-			console.log("Error message: ", errorMessage);
-		throw new Error(errorMessage); 
+		("Registration failed");
+		console.log("Error message: ", errorMessage);
+		throw new Error(errorMessage);
 	} else {
 		return data;
 	}
-}
+};

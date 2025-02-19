@@ -2,7 +2,6 @@ import Title from "@/app/Hero/heroTitle";
 import Grid from "@/components/grid";
 
 export default function Hero() {
-
 	return (
 		<>
 			<Grid />

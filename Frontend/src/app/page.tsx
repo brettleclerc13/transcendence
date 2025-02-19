@@ -3,11 +3,10 @@ import HeaderComponent from "./Header/headerComponent";
 import "./page.css";
 
 export default async function Home() {
-
-    return (
+	return (
 		<div className="app-container">
 			<HeaderComponent />
 			<Hero />
 		</div>
-  	);
+	);
 }

@@ -23,7 +23,7 @@
 //                 const friendList = await FetchFriends();
 //                 if (friendList)
 //                     setFriends(friendList);
-    
+
 //             } catch (error) {
 //                 console.error("Error while fetching user's friend list: ", error);
 //             }
@@ -37,9 +37,9 @@
 // 				{friends.length > 0 ? (
 // 					friends.map((friend) => (
 // 						<li
-// 							key={friend.id} 
-// 							className="list-group-item d-flex align-items-center" 
-// 							style={{ cursor: "pointer" }} 
+// 							key={friend.id}
+// 							className="list-group-item d-flex align-items-center"
+// 							style={{ cursor: "pointer" }}
 // 							onClick={() => onSelectFriend(friend)}
 // 						>
 // 							<img

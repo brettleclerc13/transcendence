@@ -7,16 +7,25 @@ import Game from "../Game/game";
 import LiveChat from "../LiveChat/liveChat";
 import { redirect } from "next/navigation";
 
-export default async function SectionPage(props: { params: Promise<{ section: string }> }) {
-    const  existingSections = ["", "play", "aboutUs", "login", "register", "menu", "liveChat"];
-	
+export default async function SectionPage(props: {
+	params: Promise<{ section: string }>;
+}) {
+	const existingSections = [
+		"",
+		"play",
+		"aboutUs",
+		"login",
+		"register",
+		"menu",
+		"liveChat",
+	];
+
 	const params = await props.params;
-    let section = await Promise.resolve(params.section);
+	let section = await Promise.resolve(params.section);
 
-	if (!existingSections.includes(section))
-		redirect("/");
+	if (!existingSections.includes(section)) redirect("/");
 
-    return (
+	return (
 		<>
 			<div className="app-container">
 				<HeaderComponent />

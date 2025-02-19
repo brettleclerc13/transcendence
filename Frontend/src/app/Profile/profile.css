@@ -2,8 +2,8 @@
 	display: flex;
 	flex-direction: column;
 	align-items: start;
-    justify-items: center; 
-    width: 100%;
+	justify-items: center;
+	width: 100%;
 }
 
 .alert-box {
@@ -20,9 +20,9 @@
 .contour-informations {
 	display: flex;
 	flex-direction: row;
-    justify-content: space-between;
+	justify-content: space-between;
 	gap: 4rem;
-    align-items: center;
+	align-items: center;
 	background-color: #1f2937;
 	border-radius: 12px;
 	padding: 10% 5%;
@@ -32,10 +32,10 @@
 }
 
 .image-wrapper {
-    position: absolute;
-    top: 2rem;
-    left: 8rem;
-    transform: translateX(-50%);
+	position: absolute;
+	top: 2rem;
+	left: 8rem;
+	transform: translateX(-50%);
 	z-index: 6;
 	display: flex;
 	flex-direction: column;
@@ -78,7 +78,8 @@
 	margin-left: 2rem;
 }
 
-input, textarea {
+input,
+textarea {
 	width: 100%;
 	padding: 10px;
 	margin-top: 5px;
@@ -91,7 +92,8 @@ input, textarea {
 	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-input:focus, textarea:focus {
+input:focus,
+textarea:focus {
 	outline: none;
 	border-color: #2c7a7b;
 	background-color: #fff;
@@ -104,31 +106,38 @@ textarea {
 }
 
 .button-container {
-    position: absolute; /* Permet de fixer la position dans le conteneur parent */
-    bottom: 20px; /* Place les boutons à 10px du bas */
-    right: 20px; /* Place les boutons à 10px du côté droit */
-    display: flex; /* Aligne les boutons côte à côte */
-    gap: 15px; /* Ajoute un espace entre les boutons */
+	position: absolute; /* Permet de fixer la position dans le conteneur parent */
+	bottom: 20px; /* Place les boutons à 10px du bas */
+	right: 20px; /* Place les boutons à 10px du côté droit */
+	display: flex; /* Aligne les boutons côte à côte */
+	gap: 15px; /* Ajoute un espace entre les boutons */
 }
 
 .button-container button {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 6px;
-    background-color: #319795;
-    color: #fff;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+	padding: 0.75rem 1.5rem;
+	border: none;
+	border-radius: 6px;
+	background-color: #319795;
+	color: #fff;
+	cursor: pointer;
+	transition:
+		background-color 0.3s ease,
+		transform 0.2s ease;
 }
 
 .button-container button:hover {
-    background-color: #267a6f;
+	background-color: #267a6f;
 	transform: translateY(-2px);
 }
 
 .button-save {
 	color: white;
-	background: linear-gradient(to right, #38b2ac, #319795, #2c7a7b); /* from-teal-400 via-teal-500 to-teal-600 */
+	background: linear-gradient(
+		to right,
+		#38b2ac,
+		#319795,
+		#2c7a7b
+	); /* from-teal-400 via-teal-500 to-teal-600 */
 	font-size: 0.875rem; /* text-sm */
 	border-radius: 0.375rem; /* rounded-lg */
 	text-align: center;
@@ -138,7 +147,12 @@ textarea {
 
 .button-cancel {
 	color: white;
-	background: linear-gradient(to right, #38b2ac, #319795, #2c7a7b); /* from-teal-400 via-teal-500 to-teal-600 */
+	background: linear-gradient(
+		to right,
+		#38b2ac,
+		#319795,
+		#2c7a7b
+	); /* from-teal-400 via-teal-500 to-teal-600 */
 	font-size: 0.875rem; /* text-sm */
 	border-radius: 0.375rem; /* rounded-lg */
 	text-align: center;
@@ -153,36 +167,37 @@ textarea {
 }
 
 .table-container {
-    max-height: 300px;
-    overflow-y: auto;
+	max-height: 300px;
+	overflow-y: auto;
 }
 
 .table {
-    width: 100%;
-    border-collapse: collapse;
+	width: 100%;
+	border-collapse: collapse;
 }
 
-.table th, .table td {
-    padding: 10px;
-    border: 1px solid #ddd;
-    text-align: left;
+.table th,
+.table td {
+	padding: 10px;
+	border: 1px solid #ddd;
+	text-align: left;
 }
 
 .table th {
-    background-color: #f2f2f2;
+	background-color: #f2f2f2;
 }
 
 .match-history {
-    display: flex;
-    flex-direction: column;
+	display: flex;
+	flex-direction: column;
 }
 
 .table-container {
-    max-height: 300px;
-    overflow-y: auto;
+	max-height: 300px;
+	overflow-y: auto;
 }
 
 .win-lose-chart {
-    margin-top: 20px;
-    text-align: center;
+	margin-top: 20px;
+	text-align: center;
 }

@@ -19,9 +19,9 @@
 	text-align: center;
 	justify-content: center;
 	font-size: 1.5rem;
-  	color: #d1d5db;
-  	max-width: 100vw;
-  	line-height: 1.625rem;
+	color: #d1d5db;
+	max-width: 100vw;
+	line-height: 1.625rem;
 	padding-top: 50px;
 	max-width: 66.6667%;
 }
@@ -31,7 +31,4 @@
 	padding-top: 30px;
 	margin-left: auto;
 	margin-right: auto;
-	
 }
-
-

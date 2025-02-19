@@ -1,7 +1,8 @@
 frontend/node_modules/
 Volume/
 __pycache__/
-migrations
 *.pyc
-Backend/media/profile_pictures/*
+Backend/media/profile_pictures
 .vscode
+.next
+node_modules

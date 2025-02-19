@@ -3,7 +3,6 @@ import ClientConnectComponent from "./clientConnectComponent";
 import ClientMenuComponent from "./clientMenuComponent";
 
 export default function HeaderComponent() {
-
 	return (
 		<header>
 			<ClientMenuComponent />

@@ -14,6 +14,19 @@ header {
 	z-index: 100;
 }
 
+.menu-container {
+	position: absolute;
+	top: 4rem; /* top-16 */
+	left: 0;
+	width: 13rem; /* w-52 */
+	height: 100vh; /* h-screen */
+	background-color: #1f2937; /* bg-gray-800 */
+	padding: 1rem; /* p-4 */
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
 .menu-main {
 	flex-basis: 15%;
 	display: flex;
@@ -35,7 +48,8 @@ header {
 
 .menu-button-select {
 	text-decoration: none;
-	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+		"Liberation Mono", "Courier New", monospace;
 	color: white;
 	display: flex;
 	justify-content: center;
@@ -58,18 +72,6 @@ header {
 	border-top-left-radius: 12px;
 }
 
-.menu-container {
-	top: 4rem; /* top-16 */
-	left: 0;
-	width: 13rem; /* w-52 */
-	height: 100vh; /* h-screen */
-	background-color: #1f2937; /* bg-gray-800 */
-	padding: 1rem; /* p-4 */
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-}
-  
 .menu-button-item {
 	border-bottom: 2px solid white; /* border-b-2 */
 	padding: 1rem 0; /* py-4 */
@@ -87,7 +89,7 @@ header {
 	font-size: 2rem;
 	margin: 0 auto; /* mx-auto */
 }
-  
+
 .action-buttons {
 	flex-basis: 15%;
 	display: flex;
@@ -103,7 +105,12 @@ header {
 .login-button,
 .signup-button {
 	color: white;
-	background: linear-gradient(to right, #38b2ac, #319795, #2c7a7b); /* from-teal-400 via-teal-500 to-teal-600 */
+	background: linear-gradient(
+		to right,
+		#38b2ac,
+		#319795,
+		#2c7a7b
+	); /* from-teal-400 via-teal-500 to-teal-600 */
 	font-size: 0.875rem; /* text-sm */
 	padding: 0.625rem 1.25rem; /* px-5 py-2.5 */
 	border-radius: 0.375rem; /* rounded-lg */
@@ -115,7 +122,11 @@ header {
 
 .login-button:hover,
 .signup-button:hover {
-	background: linear-gradient(to bottom right, #319795, #2c7a7b); /* hover:bg-gradient-to-br */
+	background: linear-gradient(
+		to bottom right,
+		#319795,
+		#2c7a7b
+	); /* hover:bg-gradient-to-br */
 }
 
 .dropdown-menu {
@@ -156,7 +167,7 @@ header {
 .logout {
 	color: red !important;
 }
-  
+
 .profile-section {
 	display: flex;
 	align-items: center;
@@ -169,7 +180,7 @@ header {
 	cursor: pointer;
 }
 
-.profile-picture-header{
+.profile-picture-header {
 	aspect-ratio: 1 / 1;
 	width: 2.5rem;
 	height: auto;
@@ -179,13 +190,13 @@ header {
 }
 
 .form-check-input {
-    background-color: #ccc !important;
-    border-color: #ccc !important;
+	background-color: #ccc !important;
+	border-color: #ccc !important;
 }
 
 .form-check-input:checked {
-	background-color : #28a745 !important;
-	border-color : #28a745 !important;
+	background-color: #28a745 !important;
+	border-color: #28a745 !important;
 }
 
 .form-check-input:focus {
@@ -193,9 +204,9 @@ header {
 }
 
 .form-check-label {
-    min-width: 60px;
-    display: inline-block;
-    text-align: left;
+	min-width: 60px;
+	display: inline-block;
+	text-align: left;
 }
 
 .disco-button {
@@ -207,11 +218,11 @@ header {
 	cursor: pointer;
 	outline: none;
 }
-  
+
 .disco-icon {
 	transition: transform 0.3s ease-in-out;
 }
-  
+
 .disco-button:hover .disco-icon {
 	transform: rotate(10deg);
 }

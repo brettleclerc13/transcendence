@@ -1,65 +1,68 @@
-'use client'
+"use client";
 
 import React, { useState, useActionState } from "react";
-import Link from "next/link"
+import Link from "next/link";
 import { login } from "@/app/utilities/userActions";
-import { useRouter } from 'next/navigation';
-
+import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
-	const [alert, setAlert] = useState<{ message: string, type: string } | null>(null);
+	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
+		null,
+	);
 	const router = useRouter();
 
 	const [data, action, isPending] = useActionState(handleSubmit, undefined);
 
 	async function handleSubmit(previousState: unknown, formData: FormData) {
 		const email = formData.get("email") as string;
-		const pass = formData.get("password") as string
+		const pass = formData.get("password") as string;
 
 		if (!email || !pass) {
-			if (!email)
-				return { emailError: "Email is required." };
-			else
-				return { passwordError: "Password is required." };
+			if (!email) return { emailError: "Email is required." };
+			else return { passwordError: "Password is required." };
 		}
 
-		console.log("Login request data: ", { email: email, password: pass, });
+		console.log("Login request data: ", { email: email, password: pass });
 
 		try {
 			await login({ email, pass });
-			setAlert({ message: "Login successful! Redirecting...", type: "success" });
+			setAlert({
+				message: "Login successful! Redirecting...",
+				type: "success",
+			});
 			setTimeout(() => {
-				router.push('/');
+				router.push("/");
 			}, 2000);
-
 		} catch (error) {
 			return { error: String(error), previousValues: { email } };
 		}
-	};
+	}
 
 	return (
 		<div className="fixed inset-0 bg-teal-800 flex justify-center items-center">
 			<div className="bg-white p-8 top-20 rounded-lg shadow-lg w-96">
-				<Link 
-				href="/"
-				className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-3xl font-bold"
+				<Link
+					href="/"
+					className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-3xl font-bold"
 				>
-				&times;
+					&times;
 				</Link>
 
 				{alert && (
-                    <div className={`alert alert-${alert.type} mb-4`} role="alert">
-                        {alert.message}
-                    </div>
-                )}
+					<div className={`alert alert-${alert.type} mb-4`} role="alert">
+						{alert.message}
+					</div>
+				)}
 				{data?.error && (
-                    <div className="alert alert-danger mb-4" role="alert">
-                        {data?.error ?? 'An unknown error occurred'}
-                    </div>
-                )}
+					<div className="alert alert-danger mb-4" role="alert">
+						{data?.error ?? "An unknown error occurred"}
+					</div>
+				)}
 
 				<form action={action}>
-					<label htmlFor="email" className="block text-sm font-medium mb-1">Email<span className="text-red-500 ml-1">*</span></label>
+					<label htmlFor="email" className="block text-sm font-medium mb-1">
+						Email<span className="text-red-500 ml-1">*</span>
+					</label>
 					<input
 						type="email"
 						placeholder="youremail@gmail.com"
@@ -68,8 +71,12 @@ export default function LoginForm() {
 						defaultValue={data?.previousValues?.email}
 						className="border rounded-md p-2 mb-4 w-full"
 					/>
-					{data?.emailError && <p className="text-red-500 text-sm mb-2">{data?.emailError}</p>}
-					<label htmlFor="password" className="block text-sm font-medium mb-1">Password<span className="text-red-500 ml-1">*</span></label>
+					{data?.emailError && (
+						<p className="text-red-500 text-sm mb-2">{data?.emailError}</p>
+					)}
+					<label htmlFor="password" className="block text-sm font-medium mb-1">
+						Password<span className="text-red-500 ml-1">*</span>
+					</label>
 					<input
 						type="password"
 						placeholder="*************"
@@ -77,7 +84,9 @@ export default function LoginForm() {
 						name="password"
 						className="border rounded-md p-2 mb-4 w-full"
 					/>
-					{data?.passwordError && <p className="text-red-500 text-sm mb-2">{data?.passwordError}</p>}
+					{data?.passwordError && (
+						<p className="text-red-500 text-sm mb-2">{data?.passwordError}</p>
+					)}
 					<button
 						type="submit"
 						disabled={isPending}
@@ -89,8 +98,10 @@ export default function LoginForm() {
 				<Link className="link-btn underline mt-4 ml-6" href="/register">
 					Don&apos;t have an account ? Register here
 				</Link>
-				<p className="text-xs mt-4"><span className="text-red-500 mr-1">*</span>: Mandatory information</p>
+				<p className="text-xs mt-4">
+					<span className="text-red-500 mr-1">*</span>: Mandatory information
+				</p>
 			</div>
-    	</div>
+		</div>
 	);
 }
