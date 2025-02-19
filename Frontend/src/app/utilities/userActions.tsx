@@ -1,11 +1,5 @@
-"use client";
-
 import { jwtDecode } from "jwt-decode";
-import { useRouter } from "next/navigation";
-import { useEffect, createContext, ReactNode } from "react";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-
-export const AuthContext = createContext({});
 
 export const isUserLoggedIn = () => {
 	const accessToken = localStorage.getItem("accessToken");
@@ -48,9 +42,25 @@ export const login = async ({ email, pass }: LoginProps) => {
 		body: JSON.stringify(requestData),
 	});
 
-	const data = await response.json();
+	let data;
 
-	if (response.ok) {
+	if (!response.ok) {
+		const text = await response.text();
+		try {
+			data = JSON.parse(text);
+		} catch {
+			throw new Error(`Unexpected response: ${response.status}`);
+		}
+
+		const errorMessage =
+			data.non_field_errors?.[0] || // First item in non_field_errors array
+			data.message || // Fallback to a generic message
+			data.detail || // Another common key for error messages
+			"Failed to login user.";
+		throw new Error(errorMessage);
+	} else {
+		data = await response.json();
+
 		const accessToken = data.access;
 		const refreshToken = data.refresh;
 
@@ -63,13 +73,6 @@ export const login = async ({ email, pass }: LoginProps) => {
 		localStorage.setItem("tokenExpiry", expiresAt.toString());
 
 		return data;
-	} else {
-		const errorMessage =
-			data.non_field_errors?.[0] || // First item in non_field_errors array
-			data.message || // Fallback to a generic message
-			data.detail || // Another common key for error messages
-			"Login failed";
-		throw new Error(errorMessage);
 	}
 };
 
@@ -97,69 +100,6 @@ export async function logout(router: AppRouterInstance) {
 	}
 }
 
-const refreshAccessToken = async (router: AppRouterInstance) => {
-	const refreshToken = localStorage.getItem("refreshToken");
-	if (!refreshToken) return;
-
-	try {
-		const response = await fetch("/api/token/refresh/", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ refresh: refreshToken }),
-		});
-
-		const data = await response.json();
-		if (response.ok) {
-			const newAccessToken = data.access;
-			const tokenPayload = JSON.parse(atob(newAccessToken.split(".")[1]));
-			const newExpiresAt = tokenPayload.exp * 1000;
-
-			localStorage.setItem("accessToken", newAccessToken);
-			localStorage.setItem("tokenExpiry", newExpiresAt.toString());
-			console.log("Access token refreshed");
-		} else {
-			logout(router); //instead of going back to homepage, just return null
-		}
-	} catch (error) {
-		console.error("Error refreshing access token", error);
-		logout(router); //instead of going back to homepage, just return null
-	}
-};
-
-const startTokenRefresh = (router: AppRouterInstance) => {
-	const checkInterval = 30 * 1000; // Check every 30 secs
-
-	setInterval(async () => {
-		const accessToken = localStorage.getItem("accessToken");
-		const tokenExpiry = localStorage.getItem("tokenExpiry");
-
-		if (!accessToken || !tokenExpiry) {
-			console.log("❌ No access token found, skipping refresh check");
-			return;
-		}
-
-		const expiresIn = parseInt(tokenExpiry) - Date.now();
-		console.log(`⏳ Access token expires in: ${expiresIn / 1000} seconds`);
-
-		if (expiresIn < 2 * 60 * 1000) {
-			console.log("🔄 Refreshing access token...");
-			await refreshAccessToken(router);
-		}
-	}, checkInterval);
-};
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-	const router = useRouter();
-
-	useEffect(() => {
-		startTokenRefresh(router);
-	}, [router]);
-
-	return (
-		<AuthContext.Provider value={{ logout }}>{children}</AuthContext.Provider>
-	);
-};
-
 type RegisterProps = {
 	email: string;
 	username: string;
@@ -181,18 +121,23 @@ export const register = async (requestData: RegisterProps) => {
 		body: JSON.stringify(requestData),
 	});
 
-	const data = await response.json();
+	let data;
 
 	if (!response.ok) {
+		const text = await response.text();
+		try {
+			data = JSON.parse(text);
+		} catch {
+			throw new Error(`Unexpected response: ${response.status}`);
+		}
+
 		const errorMessage =
-			data.email?.[0] || // Email error
-			data.username?.[0] || // Username error
-			data.non_field_errors?.[0] || // Other validation error
-			console.log(data.non_field_errors?.[0]);
-		("Registration failed");
-		console.log("Error message: ", errorMessage);
+			data.non_field_errors?.[0] || // First item in non_field_errors array
+			data.message || // Fallback to a generic message
+			data.detail || // Another common key for error messages
+			"Failed to register user.";
 		throw new Error(errorMessage);
 	} else {
-		return data;
+		return await response.json();
 	}
 };

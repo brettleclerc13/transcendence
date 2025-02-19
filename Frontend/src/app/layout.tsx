@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AuthProvider } from "@/app/utilities/userActions";
+import { AuthProvider } from "@/app/utilities/JWTActions";
 import "bootstrap/dist/css/bootstrap.min.css";
 import BootstrapClient from "@/components/bootstrapClient";
 import "./globals.css";

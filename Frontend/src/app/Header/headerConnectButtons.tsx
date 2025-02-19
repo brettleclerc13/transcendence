@@ -173,6 +173,7 @@ export default function HeaderConnectButtons() {
 						<Profile
 							userProfile={userProfile}
 							setUserProfile={setUserProfile}
+							setIsProfileOpen={setIsProfileOpen}
 						/>
 					</Popup>
 				</div>

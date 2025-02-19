@@ -6,15 +6,16 @@ import { UserProfileData } from "../utilities/profileActions";
 export default function ProfileImage({
 	userProfile,
 	setUserProfile,
+	setAlert,
 }: {
 	userProfile: UserProfileData | null;
 	setUserProfile: (profileData: UserProfileData) => void;
+	setAlert: (alertMessage: { message: string; type: string } | null) => void;
 }) {
 	const [loading, setLoading] = useState(false);
-	const [showAlert, setShowAlert] = useState(false);
 
 	const handleFileChange = async (
-		event: React.ChangeEvent<HTMLInputElement>,
+		event: React.ChangeEvent<HTMLInputElement>
 	) => {
 		const file = event.target.files?.[0];
 		if (!file) return;
@@ -34,7 +35,10 @@ export default function ProfileImage({
 					...userProfile,
 					profile_picture: data.profile_picture,
 				});
-				setShowAlert(true);
+				setAlert({
+					message: "Profile picture updated successfully!",
+					type: "success",
+				});
 			}
 		} catch (error) {
 			console.error("Failed to update profile picture:", error);
@@ -81,20 +85,6 @@ export default function ProfileImage({
 						</div>
 					)}
 				</div>
-				{showAlert && (
-					<div
-						className="alert alert-success alert-dismissible fade show"
-						role="alert"
-					>
-						Profile picture updated successfully!
-						<button
-							type="button"
-							className="btn-close"
-							data-bs-dismiss="alert"
-							aria-label="Close"
-						></button>
-					</div>
-				)}
 			</div>
 		</>
 	);

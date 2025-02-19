@@ -4,28 +4,50 @@ import React, { useState, useActionState } from "react";
 import Link from "next/link";
 import { login } from "@/app/utilities/userActions";
 import { useRouter } from "next/navigation";
+import { z } from "zod";
+import "./user.css";
+
+export const loginSchema = z.object({
+	email: z
+		.string()
+		.email("Invalid email format")
+		.max(254, "Email address is too long"),
+	password: z
+		.string()
+		.min(8, "Password must be at least 8 characters long")
+		.max(128, "Password is too long"),
+});
 
 export default function LoginForm() {
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
-		null,
+		null
 	);
 	const router = useRouter();
 
 	const [data, action, isPending] = useActionState(handleSubmit, undefined);
 
-	async function handleSubmit(previousState: unknown, formData: FormData) {
+	async function handleSubmit(_previousState: unknown, formData: FormData) {
 		const email = formData.get("email") as string;
-		const pass = formData.get("password") as string;
+		const password = formData.get("password") as string;
 
-		if (!email || !pass) {
-			if (!email) return { emailError: "Email is required." };
-			else return { passwordError: "Password is required." };
+		const validationResult = loginSchema.safeParse({ email, password });
+
+		if (!validationResult.success) {
+			const emailError = validationResult.error.errors.find(
+				(err) => err.path[0] === "email"
+			);
+			const passwordError = validationResult.error.errors.find(
+				(err) => err.path[0] === "password"
+			);
+			return {
+				previousValues: { email },
+				emailError: emailError ? emailError.message : undefined,
+				passwordError: passwordError ? passwordError.message : undefined,
+			};
 		}
 
-		console.log("Login request data: ", { email: email, password: pass });
-
 		try {
-			await login({ email, pass });
+			await login({ email: email as string, pass: password as string });
 			setAlert({
 				message: "Login successful! Redirecting...",
 				type: "success",
@@ -34,7 +56,8 @@ export default function LoginForm() {
 				router.push("/");
 			}, 2000);
 		} catch (error) {
-			return { error: String(error), previousValues: { email } };
+			setAlert({ message: String(error), type: "danger" });
+			return { previousValues: { email } };
 		}
 	}
 
@@ -51,11 +74,6 @@ export default function LoginForm() {
 				{alert && (
 					<div className={`alert alert-${alert.type} mb-4`} role="alert">
 						{alert.message}
-					</div>
-				)}
-				{data?.error && (
-					<div className="alert alert-danger mb-4" role="alert">
-						{data?.error ?? "An unknown error occurred"}
 					</div>
 				)}
 

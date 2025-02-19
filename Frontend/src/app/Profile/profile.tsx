@@ -14,13 +14,20 @@ import type { UserProfileData } from "../utilities/profileActions";
 type ProfileProps = {
 	userProfile: UserProfileData | null;
 	setUserProfile: (newProfile: UserProfileData) => void;
+	setIsProfileOpen: (isProfileOpen: boolean) => void;
 };
 
 export const profileSchema = z.object({
-	username: z.string().min(3, "Username must be at least 3 characters long"),
-	email: z.string().email("Invalid email format"),
+	username: z
+		.string()
+		.min(3, "Username must be at least 3 characters long")
+		.max(32, "Username is too long"),
+	email: z
+		.string()
+		.email("Invalid email format")
+		.max(254, "Email address is too long"),
 	age: z.number().positive("Age must be a positive number").optional(),
-	nationality: z.string().optional(),
+	nationality: z.string().max(254, "Nationality is too long").optional(),
 	bio: z.string().max(500, "Bio must not exceed 500 characters").optional(),
 });
 
@@ -33,16 +40,22 @@ type Match = {
 	result?: string; // W/L
 };
 
-export default function Profile({ userProfile, setUserProfile }: ProfileProps) {
+export default function Profile({
+	userProfile,
+	setUserProfile,
+	setIsProfileOpen,
+}: ProfileProps) {
 	const modalRef = useRef<HTMLDivElement>(null);
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
-		null,
+		null
 	);
 	const [chartData, setChartData] = useState({});
 	const [matches, setMatches] = useState<Match[]>([]);
 
-	const [profileUpdateData, profileUpdateAction, profileUpdatePending] =
-		useActionState(handleUserProfileUpdate, undefined);
+	const [profileData, profileAction, profilePending] = useActionState(
+		handleUserProfileUpdate,
+		undefined
+	);
 
 	// useEffect(() => {
 	// 	const fetchMatchData = async () => {
@@ -82,7 +95,7 @@ export default function Profile({ userProfile, setUserProfile }: ProfileProps) {
 
 	async function handleUserProfileUpdate(
 		_previousState: unknown,
-		formData: FormData,
+		formData: FormData
 	) {
 		const profileInput = {
 			username: formData.get("username"),
@@ -96,11 +109,30 @@ export default function Profile({ userProfile, setUserProfile }: ProfileProps) {
 		const validationResult = profileSchema.safeParse(profileInput);
 
 		if (!validationResult.success) {
-			const errorMessage = validationResult.error.errors
-				.map((err) => `${err.path.join(".")}: ${err.message}`)
-				.join("\n");
-			setAlert({ message: errorMessage, type: "danger" });
-			return;
+			const emailError = validationResult.error.errors.find(
+				(err) => err.path[0] === "email"
+			);
+			const usernameError = validationResult.error.errors.find(
+				(err) => err.path[0] === "username"
+			);
+			const ageError = validationResult.error.errors.find(
+				(err) => err.path[0] === "age"
+			);
+			const nationalityError = validationResult.error.errors.find(
+				(err) => err.path[0] === "nationality"
+			);
+			const bioError = validationResult.error.errors.find(
+				(err) => err.path[0] === "bio"
+			);
+			return {
+				emailError: emailError ? emailError.message : undefined,
+				usernameError: usernameError ? usernameError.message : undefined,
+				ageError: ageError ? ageError.message : undefined,
+				nationalityError: nationalityError
+					? nationalityError.message
+					: undefined,
+				bioError: bioError ? bioError.message : undefined,
+			};
 		}
 
 		try {
@@ -115,6 +147,7 @@ export default function Profile({ userProfile, setUserProfile }: ProfileProps) {
 				message: `Error updating your profile: ${error}`,
 				type: "danger",
 			});
+			return;
 		}
 	}
 
@@ -137,14 +170,25 @@ export default function Profile({ userProfile, setUserProfile }: ProfileProps) {
 					</button>
 				</div>
 			)}
-			<ProfileImage userProfile={userProfile} setUserProfile={setUserProfile} />
-			<form action={profileUpdateAction}>
+			<ProfileImage
+				userProfile={userProfile}
+				setUserProfile={setUserProfile}
+				setAlert={setAlert}
+			/>
+			<form action={profileAction}>
 				<div className="contour-informations">
 					<div className="left-informations">
 						<div>
 							<label>Username:</label>
-							<input name="username" defaultValue={userProfile.username} />
+							<input
+								type="text"
+								name="username"
+								defaultValue={userProfile.username}
+							/>
 						</div>
+						{profileData?.usernameError && (
+							<p className="input-error">{profileData?.usernameError}</p>
+						)}
 						<div>
 							<label>Email:</label>
 							<input
@@ -153,10 +197,16 @@ export default function Profile({ userProfile, setUserProfile }: ProfileProps) {
 								defaultValue={userProfile.email}
 							/>
 						</div>
+						{profileData?.emailError && (
+							<p className="input-error">{profileData?.emailError}</p>
+						)}
 						<div>
 							<label>Age:</label>
 							<input type="number" name="age" defaultValue={userProfile?.age} />
 						</div>
+						{profileData?.ageError && (
+							<p className="input-error">{profileData?.ageError}</p>
+						)}
 						<div>
 							<label>Nationality:</label>
 							<input
@@ -165,6 +215,9 @@ export default function Profile({ userProfile, setUserProfile }: ProfileProps) {
 								defaultValue={userProfile?.nationality}
 							/>
 						</div>
+						{profileData?.nationalityError && (
+							<p className="input-error">{profileData?.nationalityError}</p>
+						)}
 					</div>
 
 					<div className="separator"></div>
@@ -178,6 +231,9 @@ export default function Profile({ userProfile, setUserProfile }: ProfileProps) {
 								defaultValue={userProfile?.bio}
 							/>
 						</div>
+						{profileData?.bioError && (
+							<p className="input-error">{profileData?.bioError}</p>
+						)}
 						{/* <div className="match-history">
 								<h3>Match History</h3>
 								<div className="table-container">
@@ -212,13 +268,16 @@ export default function Profile({ userProfile, setUserProfile }: ProfileProps) {
 							<button
 								className="button-save"
 								type="submit"
-								disabled={profileUpdatePending}
+								disabled={profilePending}
 							>
 								Save
 							</button>
-							<Link href="/" className="button-cancel">
+							<button
+								className="button-cancel"
+								onClick={() => setIsProfileOpen(false)}
+							>
 								Cancel
-							</Link>
+							</button>
 						</div>
 					</div>
 				</div>
