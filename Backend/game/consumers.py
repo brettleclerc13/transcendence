@@ -15,7 +15,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             "player1_position": [],
             "player2_position": [],
             "ball_position": [],
-            "ball_direction": [0.001, 0.99],  # Unit Vector for ball direction 0.707 0.707
+            "ball_direction": [0.707, 0.707],  # Unit Vector for ball direction 0.707 0.707
             "ball_speed": 12,
             "score": [0, 0],
             "resolution": [],
@@ -288,7 +288,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.game_state["ball_speed"] = self.game_parametres["ball_speed"]
         
         #TEMP
-        self.game_state["ball_position"] = [80, 45]
+        #self.game_state["ball_position"] = [80, 45]
 
     def update_paddles(self, player, direction):
         speed = self.game_parametres["paddle_speed"] #for 20 TPS
@@ -430,11 +430,11 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         if collision_point[0] == 0 or collision_point[0] == self.game_parametres["field_width"]:
             self.init_starting_positions()
             if collision_point[0] == 0:
-                self.game_state["score"][0] += 1
+                self.game_state["score"][1] += 1
                 self.game_state["ball_direction"] = [-0.707, 0.707]
             else:
                 self.game_state["ball_direction"] = [0.707, 0.707]
-                self.game_state["score"][1] += 1
+                self.game_state["score"][0] += 1
             return
         #handle collisions on the top and bottom walls
         if collision_point[1] == 0 or collision_point[1] == self.game_parametres["field_height"]:
