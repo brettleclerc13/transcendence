@@ -226,9 +226,14 @@ class MessageAPIView(APIView):
             return Response({"error": "conversation_id is missing"}, status=400)
         
         conversation = get_object_or_404(Conversation, id=conversation_id)
+        participants = conversation.participants.all()
         
         if request.user not in conversation.participants.all():
             return Response({"error": "You are not part of this conversation"}, status=status.HTTP_403_FORBIDDEN)
+        
+        for participant in conversation.participants.all():
+            if request.user.profile.is_blocked(participant) or participant.profile.is_blocked(request.user):
+                return Response({"error": "You cannot send messages to this user."}, status=status.HTTP_403_FORBIDDEN)
         
         serializer = MessageSerializer(data={
             "sender": request.user.id,
@@ -248,8 +253,9 @@ class MessageAPIView(APIView):
 
         if request.user not in conversation.participants.all():
             return Response({"error": "You are not part of this conversation"}, status=status.HTTP_403_FORBIDDEN)
-
-        messages = Message.objects.filter(conversation=conversation).order_by('timestamp')
+        
+        blocked_users = request.user.profile.blocked_users.all()
+        messages = Message.objects.filter(conversation=conversation).exclude(sender__profile__in=blocked_users).order_by('timestamp')
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
 
@@ -349,3 +355,39 @@ class GetOrCreateConversationAPIView(APIView):
             print(f"Conversation créée avec les participants : {conversation.participants.all()}")
 
         return Response({"id": conversation.id})
+    
+
+class BlockUserAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        user_to_block = get_object_or_404(User, id=user_id)
+        profile = request.user.profile
+
+        if user_to_block.profile in profile.blocked_users.all():
+            return Response({"error": "User is already blocked."}, status=status.HTTP_400_BAD_REQUEST)
+
+        profile.block_user(user_to_block.profile)
+        return Response({"message": f"{user_to_block.username} has been blocked."}, status=status.HTTP_200_OK)
+
+class UnblockUserAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        user_to_unblock = get_object_or_404(User, id=user_id)
+        profile = request.user.profile
+
+        if user_to_unblock.profile not in profile.blocked_users.all():
+            return Response({"error": "User is not blocked."}, status=status.HTTP_400_BAD_REQUEST)
+
+        profile.unblock_user(user_to_unblock.profile)
+        return Response({"message": f"{user_to_unblock.username} has been unblocked."}, status=status.HTTP_200_OK)
+
+class BlockedUsersAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile = request.user.profile
+        blocked_users = profile.blocked_users.all()
+        blocked_list = [{"id": user.user.id, "username": user.user.username} for user in blocked_users]
+        return Response(blocked_list, status=status.HTTP_200_OK)

@@ -13,9 +13,19 @@ class UserProfile(models.Model):
     is_online = models.BooleanField(default=True, blank=True, null=True)
 
     friends = models.ManyToManyField("self", blank=True, symmetrical=True)
+    blocked_users = models.ManyToManyField("self", symmetrical=False, related_name="blocked_by", blank=True)
 
     def __str__(self):
         return f"{self.user.username}'s profile"
+
+    def block_user(self, user_to_block):
+        self.blocked_users.add(user_to_block)
+
+    def unblock_user(self, user_to_unblock):
+        self.blocked_users.remove(user_to_unblock)
+
+    def is_blocked(self, user):
+        return self.blocked_users.filter(id=user.id).exists()
 
 class Match(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="matches")
@@ -52,3 +62,4 @@ class FriendRequest(models.Model):
 
     def __str__(self):
         return f"{self.sender.username} → {self.receiver.username} ({self.status})"
+    

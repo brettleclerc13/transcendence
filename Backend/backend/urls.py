@@ -16,13 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from user.views import RegisterAPIView , MatchAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView
+from user.views import RegisterAPIView , MatchAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
 	path('admin/', admin.site.urls),
-	# path('users/', UserAPIView.as_view(), name="User-get-post"),
-	# path('users/<int:pk>/', UserAPIView.as_view(), name='User-put/patch-delete'),
 	path('api/', include([
 	
 		path('register/', RegisterAPIView.as_view(), name='register'),
@@ -43,5 +41,9 @@ urlpatterns = [
 		path("friends/request/accept/<int:request_id>/", AcceptFriendRequestAPIView.as_view(), name="accept_friend_request"),
 		path("friends/request/decline/<int:request_id>/", DeclineFriendRequestAPIView.as_view(), name="decline_friend_request"),
 		path("friends/request/pending/", PendingFriendRequestsAPIView.as_view(), name="pending_friend_requests"),
+
+		path('block-user/<int:user_id>/', BlockUserAPIView.as_view(), name='block_user'),
+    	path('unblock-user/<int:user_id>/', UnblockUserAPIView.as_view(), name='unblock_user'),
+    	path('blocked-users/', BlockedUsersAPIView.as_view(), name='blocked_users'),
 	])),
 ]

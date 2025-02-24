@@ -22,7 +22,7 @@ interface CurrentChatProps {
 		username: string;
 		email: string;
 		profile_picture: string | null;
-		is_online: boolean; 
+		is_online: boolean;
 	};
 }
 

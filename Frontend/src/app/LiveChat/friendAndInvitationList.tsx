@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { FetchFriends, FetchInvitations, AcceptInvitation, DeclineInvitation } from "../utilities/chatActions";
+import { FetchBlockedUsers, BlockUser, UnblockUser } from "../utilities/blockActions";
 
 interface Friend {
     id: number;
@@ -13,6 +14,7 @@ interface Friend {
 const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => void }> = ({ onSelectFriend }) => {
     const [friends, setFriends] = useState<Friend[]>([]);
     const [invitations, setInvitations] = useState<Friend[]>([]);
+    const [blockedUsers, setBlockedUsers] = useState<Friend[]>([]);
     const [isFriendsTab, setIsFriendsTab] = useState(true);
 
     useEffect(() => {
@@ -23,6 +25,9 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 
                 const invitationList = await FetchInvitations();
                 if (invitationList) setInvitations(invitationList);
+
+                const blockedList = await FetchBlockedUsers();
+                if (blockedList) setBlockedUsers(blockedList.map((user: { id: number }) => user.id));
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
@@ -48,6 +53,16 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 		}
 	};
 
+    const handleBlockUser = async (user: Friend) => {
+        await BlockUser(user.id);
+        setBlockedUsers((prev) => [...prev, user]);
+    };
+
+    const handleUnblockUser = async (userId: number) => {
+        await UnblockUser(userId);
+        setBlockedUsers((prev) => prev.filter((user) => user.id !== userId));
+    };
+
     return (
         <div className="friend-invitation-list">
             <div className="switch-buttons">
@@ -59,9 +74,17 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
                     {isFriendsTab ? (
                         friends.length > 0 ? (
                             friends.map((friend) => (
-                                <li key={friend.id} className="list-group-item d-flex align-items-center" style={{ cursor: "pointer" }} onClick={() => onSelectFriend(friend)}>
-                                    <img src={friend.profile_picture || "./img/default.png"} alt={`${friend.username}'s avatar`} style={{ width: 40, height: 40, borderRadius: '50%', marginRight: 10 }} />
-                                    <span>{friend.username}</span>
+                                <li key={friend.id} className="list-group-item d-flex align-items-center justify-content-between">
+                                    <div onClick={() => onSelectFriend(friend)} style={{ cursor: "pointer", display: "flex", alignItems: "center" }}>
+                                        <img src={friend.profile_picture || "./img/default.png"} alt={`${friend.username}'s avatar`} style={{ width: 40, height: 40, borderRadius: '50%', marginRight: 10 }} />
+                                        <span>{friend.username}</span>
+                                    </div>
+                                    <button 
+                                        className={`btn ${blockedUsers.some(user => user.id === friend.id) ? "btn-danger" : "btn-secondary"}`} 
+                                        onClick={() => blockedUsers.some(user => user.id === friend.id) ? handleUnblockUser(friend.id) : handleBlockUser(friend)}
+                                    >
+                                        {blockedUsers.some(user => user.id === friend.id) ? "Unblock" : "Block"}
+                                    </button>
                                 </li>
                             ))
                         ) : (

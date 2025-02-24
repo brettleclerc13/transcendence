@@ -22,7 +22,7 @@ interface Friend {
 }
 
 interface Message {
-	sender_id: number;
+	sender: number;
 	conversation_id: number;
 	text: string;
 	timestamp: string;
@@ -61,8 +61,32 @@ const LiveChatClient = () => {
 
 	const handleSendMessage = async (text: string) => {
 		if (!selectedFriend || !currentUser) return;
+
+		const accessToken = localStorage.getItem("accessToken");
+    	if (!accessToken) {
+        	console.warn("Aucun token d'accès trouvé. L'utilisateur est peut-être déconnecté.");
+        return;
+    	}
 		
 		try {
+			const blockedUsersResponse = await fetch(`/api/blocked-users/`, {
+				method: "GET",
+				headers: {
+					"Authorization": `Bearer ${accessToken}`,
+				}
+			});
+	
+			if (!blockedUsersResponse.ok) {
+				console.error("Erreur lors de la vérification des utilisateurs bloqués");
+				return;
+			}
+	
+			const blockedUsers = await blockedUsersResponse.json();
+			if (blockedUsers.includes(selectedFriend.id)) {
+				console.warn("Vous avez bloqué cet utilisateur et ne pouvez pas lui envoyer de message.");
+				return;
+			}
+
 			const conversationResponse = await fetch("/api/get_or_create_conversation/", {
 				method: "POST",
 				headers: {
@@ -90,6 +114,11 @@ const LiveChatClient = () => {
 					text,
 				})
 			});
+
+			if (response.status === 403) {  
+            console.warn("Vous avez été bloqué par cet utilisateur et ne pouvez pas lui envoyer de messages.");
+            return;
+        }
 
 			if (response.ok) {
 				let savedMessage = await response.json();
