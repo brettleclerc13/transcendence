@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from user.views import RegisterAPIView , MatchAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView
+from user.views import RegisterAPIView , MatchAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
@@ -34,9 +34,9 @@ urlpatterns = [
 		path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
 		path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-		path('profile/', ProfileAPIView.as_view(), name='profile'),
 		path('friends/', FriendListAPIView.as_view(), name='friend_list'),
-		path('message/', MessageAPIView.as_view(), name='message'),
+		path('messages/', MessageAPIView.as_view(), name='messages'),
+		path('get_or_create_conversation/', GetOrCreateConversationAPIView.as_view(), name='get_or_create_conversation'),
 		path('search/', SearchAPIView.as_view(), name="search"),
 
 		path("friends/request/send/", SendFriendRequestAPIView.as_view(), name="send_friend_request"),

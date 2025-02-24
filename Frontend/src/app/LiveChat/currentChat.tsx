@@ -7,8 +7,8 @@ interface Friend {
 }
 
 interface Message {
-	id: number;
-	senderId: number;
+	sender: number;
+	conversation_id: number;
 	text: string;
 	timestamp: string;
 	senderPicture: string | null;
@@ -17,57 +17,51 @@ interface Message {
 interface CurrentChatProps {
 	friend: Friend;
 	messages: Message[];
+	currentUser: { 
+		id: number, 
+		username: string;
+		email: string;
+		profile_picture: string | null;
+		is_online: boolean; 
+	};
 }
 
-const CurrentChat: React.FC<CurrentChatProps> = ({ friend, messages }) => {
+const CurrentChat: React.FC<CurrentChatProps> = ({ friend, messages, currentUser }) => {
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+	const sortedMessages = [...messages].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+	
+    // useEffect(() => {
+    //     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // }, [messages]);
 
 	return (
 		<div className="current-chat-container" style={{ overflowY: 'scroll', height: 'calc(100vh - 100px)' }}>
 			<ul className="message-list">
-				{messages.map((message) => (
-					<li
-						key={message.id}
-						className={`message ${message.senderId === friend.id ? 'received' : 'sent'}`}
-						style={{
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: message.senderId === friend.id ? 'flex-start' : 'flex-end',
-							marginBottom: 10,
-						}}
-					>
-						{message.senderId === friend.id && (
-							<img
-								src={friend.profile_picture || "./img/default.png"}
-								alt={`${friend.username}'s avatar`}
-								style={{ width: 40, height: 40, borderRadius: '50%', marginRight: 10 }}
-							/>
-						)}
-						<div
-							className="message-bubble"
-							style={{
-								maxWidth: '60%',
-								padding: 10,
-								borderRadius: 10,
-								backgroundColor: message.senderId === friend.id ? '#f1f0f0' : '#0078ff',
-								color: message.senderId === friend.id ? '#000' : '#fff',
-							}}
+				{sortedMessages.map((message) => {
+					const isSent = message.sender !== undefined && message.sender === currentUser.id;
+					return (
+						<li
+							key={`${message.conversation_id}-${message.timestamp}-${Math.random()}`}
+							className={`message ${isSent ? 'sent' : 'received'}`}
 						>
-							{message.text}
-						</div>
-						{message.senderId !== friend.id && (
-							<img
-								src={message.senderPicture || "./img/default.png"}
-								alt="Your avatar"
-								style={{ width: 40, height: 40, borderRadius: '50%', marginLeft: 10 }}
-							/>
-						)}
-					</li>
-				))}
+							{!isSent && (
+								<img
+									src={friend.profile_picture || "./img/default.png"}
+									alt={`${friend.username}'s avatar`}
+								/>
+							)}
+							<div className="message-bubble">
+								{message.text}
+							</div>
+							{isSent && (
+								<img
+									src={currentUser.profile_picture || "./img/default.png"}
+									alt={`Your avatar`}
+								/>
+							)}
+						</li>
+					);
+				})}
 			</ul>
 			<div ref={messagesEndRef}/>
 		</div>

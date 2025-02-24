@@ -7,6 +7,14 @@ import CurrentChat from './currentChat';
 import MessageBar from './messageBar';
 import SearchBar from './searchBar';
 
+interface User {
+	id: number;
+	username: string;
+	email: string;
+	profile_picture: string | null;
+	is_online: boolean;
+}
+
 interface Friend {
 	id: number;
 	username: string;
@@ -14,8 +22,8 @@ interface Friend {
 }
 
 interface Message {
-	id: number;
-	senderId: number;
+	sender_id: number;
+	conversation_id: number;
 	text: string;
 	timestamp: string;
 	senderPicture: string | null;
@@ -23,38 +31,76 @@ interface Message {
 
 const LiveChatClient = () => {
 	const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
+	const [currentUser, setCurrentUser] = useState<User | null>(null);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [loading, setLoading] = useState<boolean>(false);
 	const [viewMode, setViewMode] = useState<"friends" | "invitations">("friends");
 
-	const handleSendMessage = async (text: string) => {
-		if (selectedFriend) {
-			const newMessage = {
-				senderId: 0, // A remplacer par l'id user actuel
-				conversationId: selectedFriend.id, // ID basé sur l'ami sélectionné
-				text,
-				timestamp: new Date().toISOString(),
-				senderPicture: './img/your-profile.png', // a remplacer par l'image de l'user actuel
-			};
-	
+	useEffect(() => {
+		const fetchCurrentUser = async () => {
 			try {
-				const response = await fetch('/api/messages/', {
-					method: 'POST',
+				const response = await fetch('/api/profile/', {
 					headers: {
-						'Content-Type': 'application/json',
+						"Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
+						"Content-Type": "application/json"
 					},
-					body: JSON.stringify(newMessage),
 				});
-	
-				if (response.ok) {
-					const savedMessage = await response.json();
-					setMessages((prevMessages) => [...prevMessages, savedMessage]);
-				} else {
-					console.error('Erreur lors de l\'envoi du message :', response.statusText);
+				if (!response.ok) {
+					console.error("Erreur lors de la récupération de l'utilisateur :", response.statusText);
+					return;
 				}
+				const data = await response.json();
+				setCurrentUser(data);
 			} catch (error) {
-				console.error('Erreur réseau :', error);
+				console.error("Erreur réseau lors de la récupération de l'utilisateur :", error);
 			}
+		};
+	
+		fetchCurrentUser();
+	}, []);	
+
+	const handleSendMessage = async (text: string) => {
+		if (!selectedFriend || !currentUser) return;
+		
+		try {
+			const conversationResponse = await fetch("/api/get_or_create_conversation/", {
+				method: "POST",
+				headers: {
+					"Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({ user_id: selectedFriend.id })
+			});
+
+			if (!conversationResponse.ok) throw new Error("Erreur lors de la récupération de la conversation.");
+
+			const conversationData = await conversationResponse.json();
+			if (!conversationData.id) {
+				return;
+			}
+			const response = await fetch('/api/messages/', {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${localStorage.getItem("accessToken")}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					sender: currentUser.id,
+					conversation: conversationData.id,
+					text,
+				})
+			});
+
+			if (response.ok) {
+				let savedMessage = await response.json();
+
+				savedMessage.senderPicture = currentUser.profile_picture || './img/default.png';
+				setMessages((prevMessages) => [...prevMessages, savedMessage]);
+			} else {
+				console.error("Erreur lors de l'envoi du message :", response.statusText);
+			}
+		} catch (error) {
+			console.error('Erreur réseau :', error);
 		}
 	};
 
@@ -73,16 +119,42 @@ const LiveChatClient = () => {
 	};
 
 	useEffect(() => {
+		if (!selectedFriend || !currentUser) {
+			return;
+		}
+		
 		const fetchMessages = async () => {
-			if (!selectedFriend) return;
 			setLoading(true);
+
 			try {
-				const response = await fetch(`/api/messages/?conversation_id=${selectedFriend.id}`);
+				const conversationResponse = await fetch("/api/get_or_create_conversation/", {
+					method: "POST",
+					headers: {
+						"Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
+						"Content-Type": "application/json"
+					},
+					body: JSON.stringify({ user_id: selectedFriend.id })
+				});
+		
+				if (!conversationResponse.ok) {
+					console.error("Erreur lors de la récupération de la conversation :", conversationResponse.statusText);
+					return;
+				}
+		
+				const conversationData = await conversationResponse.json();
+				const conversationId = conversationData.id;
+
+				const response = await fetch(`/api/messages?conversation_id=${conversationId}`, {
+					headers: {
+						"Authorization": `Bearer ${localStorage.getItem("accessToken")}`
+					}
+				});
+
 				if (response.ok) {
 					const data = await response.json();
 					setMessages(data);
 				} else {
-					console.error('Erreur lors du chargement des messages : ${response.statusText}');
+					console.error(`Erreur lors du chargement des messages : ${response.statusText}`);
 				}
 			} catch (error) {
 				console.error('Erreur réseau :', error);
@@ -90,9 +162,11 @@ const LiveChatClient = () => {
 				setLoading(false);
 			}
 		};
-	
 		fetchMessages();
-	}, [selectedFriend]);
+
+		const interval = setInterval(fetchMessages, 3000);
+		return () => clearInterval(interval);
+	}, [selectedFriend, currentUser]);
 
 	return (
 		<div className="livechat-container">
@@ -105,12 +179,12 @@ const LiveChatClient = () => {
 				</div>
 
 				<div className="current-chat">
-					{selectedFriend ? (
+					{currentUser && selectedFriend ? (
 						<>
 							{loading ? (
 								<p className="text-center text-muted">Loading...</p>
 							) : (
-								<CurrentChat friend={selectedFriend} messages={messages} />
+								<CurrentChat friend={selectedFriend} messages={messages} currentUser={currentUser} />
 							)}
 							<MessageBar
 								onSendMessage={handleSendMessage}

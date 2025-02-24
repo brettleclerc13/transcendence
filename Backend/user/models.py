@@ -28,9 +28,15 @@ class Match(models.Model):
     def __str__(self):
         return f"Match against {self.opponent} on {self.date}"
     
+class Conversation(models.Model):
+    participants = models.ManyToManyField(User)
+
+    def __str__(self):
+        return f"Conversation {self.id} entre {', '.join([p.username for p in self.participants.all()])}"
+
 class Message(models.Model):
-    sender_id = models.IntegerField()
-    conversation_id = models.IntegerField()
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True, blank=True)
     text = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 

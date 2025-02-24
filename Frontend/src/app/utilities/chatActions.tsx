@@ -95,16 +95,16 @@ export const AcceptInvitation = async (id: number) => {
 export const DeclineInvitation = async (id: number) => {
     const token = localStorage.getItem('accessToken');
         if (!token) throw new Error("Access token missing");
-    
+
     try {
-        const response = await fetch(`/api/friends/request/decline/${id}`, {
+        const response = await fetch(`/api/friends/request/decline/${id}/`, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
             }
         });
-    
+
         const data = await response.json();
         
         if (!response.ok) {

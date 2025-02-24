@@ -3,10 +3,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import logout
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from .serializer import UserSerializer, MatchSerializer, CustomTokenObtainPairSerializer, MessageSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .models import UserProfile, Match, Message, FriendRequest
+from .models import UserProfile, Match, Message, FriendRequest, Conversation
 
 # Create your views here.
 
@@ -45,6 +46,7 @@ class ProfileAPIView(APIView):
 		user = request.user
 		profile = user.profile
 		profile_data = {
+            "id": user.id,
 			"username": user.username,
 			"email": user.email,
             "nationality": profile.nationality,
@@ -215,20 +217,45 @@ class FriendListAPIView(APIView):
         
 
 class MessageAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
-        serializer = MessageSerializer(data=request.data)
+        conversation_id = request.data.get("conversation")
+
+        if not conversation_id:
+            return Response({"error": "conversation_id is missing"}, status=400)
+        
+        conversation = get_object_or_404(Conversation, id=conversation_id)
+        
+        if request.user not in conversation.participants.all():
+            return Response({"error": "You are not part of this conversation"}, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = MessageSerializer(data={
+            "sender": request.user.id,
+            "conversation": conversation.id,
+            "text": request.data.get("text")
+        })
+
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        print("Erreurs du serializer :", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
-        messages = Message.objects.filter(conversation_id=request.query_params.get('conversation_id')).order_by('timestamp')
+        conversation_id = request.query_params.get("conversation_id")
+        conversation = get_object_or_404(Conversation, id=conversation_id)
+
+        if request.user not in conversation.participants.all():
+            return Response({"error": "You are not part of this conversation"}, status=status.HTTP_403_FORBIDDEN)
+
+        messages = Message.objects.filter(conversation=conversation).order_by('timestamp')
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
 
 
 class SearchAPIView(APIView):
+
     def get(self, request):
         query = request.query_params.get("query", "").strip()
         if not query:
@@ -287,6 +314,8 @@ class AcceptFriendRequestAPIView(APIView):
         return Response({"message": "Friend request accepted"}, status=status.HTTP_200_OK)
 
 class DeclineFriendRequestAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, request_id):
         try:
             friend_request = FriendRequest.objects.get(id=request_id, receiver=request.user, status="pending")
@@ -301,3 +330,22 @@ class PendingFriendRequestsAPIView(APIView):
     def get(self, request):
         requests = FriendRequest.objects.filter(receiver=request.user, status="pending").values("id", "sender__username")
         return Response(list(requests), status=status.HTTP_200_OK)
+
+class GetOrCreateConversationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        if not request.user.is_authenticated:
+            return Response({"error": "User not authenticated"}, status=401)
+        other_user_id = request.data.get("user_id")
+        other_user = get_object_or_404(User, id=other_user_id)
+
+        conversation = Conversation.objects.filter(participants=request.user).filter(participants=other_user).first()
+
+        if not conversation:
+            conversation = Conversation.objects.create()
+            conversation.participants.add(request.user, other_user)
+            print(f"Conversation créée avec les participants : {conversation.participants.all()}")
+
+        return Response({"id": conversation.id})
