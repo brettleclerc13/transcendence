@@ -19,8 +19,35 @@ const refreshAccessToken = async (router: AppRouterInstance) => {
 			body: JSON.stringify({ refresh: refreshToken }),
 		});
 
-		const data = await response.json();
-		if (response.ok) {
+		let data;
+
+		if (!response.ok) {
+			const text = await response.text();
+			try {
+				data = JSON.parse(text);
+			} catch {
+				throw new Error(`Unexpected response: ${response.status}`);
+			}
+
+			if (data.non_field_errors?.[0] === "User does not exist") {
+				console.warn(
+					"Refresh token refers to a non-existent user. Logging out..."
+				);
+				localStorage.removeItem("refreshToken");
+				localStorage.removeItem("accessToken");
+				localStorage.removeItem("tokenExpiry");
+				return;
+			}
+
+			const errorMessage =
+				data.non_field_errors?.[0] || // First item in non_field_errors array
+				data.message || // Fallback to a generic message
+				data.detail || // Another common key for error messages
+				"Failed to refresh JWT access token.";
+			throw new Error(errorMessage);
+		} else {
+			const data = await response.json();
+
 			const newAccessToken = data.access;
 			const tokenPayload = JSON.parse(atob(newAccessToken.split(".")[1]));
 			const newExpiresAt = tokenPayload.exp * 1000;
