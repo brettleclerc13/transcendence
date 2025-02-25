@@ -26,7 +26,14 @@ export const profileSchema = z.object({
 		.string()
 		.email("Invalid email format")
 		.max(254, "Email address is too long"),
-	age: z.number().positive("Age must be a positive number").optional(),
+	age: z
+		.number()
+		.positive("Age must be a positive number")
+		.max(
+			123,
+			"The oldest human, Jeanne Calment, lived till the age of 122 years"
+		)
+		.optional(),
 	nationality: z.string().max(254, "Nationality is too long").optional(),
 	bio: z.string().max(500, "Bio must not exceed 500 characters").optional(),
 });

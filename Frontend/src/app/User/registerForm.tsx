@@ -24,7 +24,14 @@ export const registerSchema = z.object({
 			/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#?_])[a-zA-Z0-9!@#?_]+$/,
 			"Password must contain at least one uppercase character, one number, and one special character (e.g., ! @ # ? _)"
 		),
-	age: z.number().positive("Age must be a positive number").optional(),
+	age: z
+		.number()
+		.positive("Age must be a positive number")
+		.max(
+			123,
+			"The oldest human, Jeanne Calment, lived till the age of 122 years"
+		)
+		.optional(),
 	nationality: z.string().max(254, "Nationality is too long").optional(),
 	bio: z.string().max(500, "Bio must not exceed 500 characters").optional(),
 });
@@ -152,6 +159,7 @@ export default function RegisterForm() {
 						Username<span className="text-red-500 ml-1">*</span>
 					</label>
 					<input
+						type="text"
 						placeholder="JohnDoe"
 						id="username"
 						name="username"
@@ -179,6 +187,7 @@ export default function RegisterForm() {
 						Age
 					</label>
 					<input
+						type="number"
 						placeholder="77"
 						id="age"
 						name="age"
@@ -193,6 +202,7 @@ export default function RegisterForm() {
 						Nationality
 					</label>
 					<input
+						type="text"
 						placeholder="French"
 						id="nationality"
 						name="nationality"
@@ -206,6 +216,7 @@ export default function RegisterForm() {
 						Bio
 					</label>
 					<input
+						type="text"
 						placeholder="Hi there ! I'm John Doe the greatest"
 						id="bio"
 						name="bio"

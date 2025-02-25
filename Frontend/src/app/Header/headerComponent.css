@@ -183,6 +183,7 @@ header {
 .profile-picture-header {
 	aspect-ratio: 1 / 1;
 	width: 2.5rem;
+	min-width: 2.5rem;
 	height: auto;
 	object-fit: cover;
 	border-radius: 50%;

@@ -28,12 +28,10 @@ const refreshAccessToken = async (router: AppRouterInstance) => {
 			localStorage.setItem("accessToken", newAccessToken);
 			localStorage.setItem("tokenExpiry", newExpiresAt.toString());
 			console.log("Access token refreshed");
-		} else {
-			logout(router); //instead of going back to homepage, just return null
 		}
 	} catch (error) {
-		console.error("Error refreshing access token", error);
-		logout(router); //instead of going back to homepage, just return null
+		console.log("Error refreshing access token", error);
+		return;
 	}
 };
 
@@ -47,14 +45,14 @@ const startTokenRefresh = (router: AppRouterInstance) => {
 		if (!accessToken || !tokenExpiry) {
 			console.log("❌ No access token found, skipping refresh check");
 			return;
-		}
+		} else {
+			const expiresIn = parseInt(tokenExpiry) - Date.now();
+			console.log(`⏳ Access token expires in: ${expiresIn / 1000} seconds`);
 
-		const expiresIn = parseInt(tokenExpiry) - Date.now();
-		console.log(`⏳ Access token expires in: ${expiresIn / 1000} seconds`);
-
-		if (expiresIn < 2 * 60 * 1000) {
-			console.log("🔄 Refreshing access token...");
-			await refreshAccessToken(router);
+			if (expiresIn < 2 * 60 * 1000) {
+				console.log("🔄 Refreshing access token...");
+				await refreshAccessToken(router);
+			}
 		}
 	}, checkInterval);
 };
