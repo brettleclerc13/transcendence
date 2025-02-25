@@ -5,3 +5,4 @@ migrations
 *.pyc
 Backend/media/profile_pictures/*
 .vscode
+dump.rdb
