@@ -94,7 +94,7 @@ export const DeclineInvitation = async (id: number) => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch(`/api/friends/request/decline/${id}`, {
+		const response = await fetch(`/api/friends/request/decline/${id}/`, {
 			method: "POST",
 			headers: {
 				Authorization: `Bearer ${token}`,

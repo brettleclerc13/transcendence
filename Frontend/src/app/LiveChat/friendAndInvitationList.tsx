@@ -7,6 +7,11 @@ import {
 	AcceptInvitation,
 	DeclineInvitation,
 } from "../utilities/chatActions";
+import {
+	FetchBlockedUsers,
+	BlockUser,
+	UnblockUser,
+} from "../utilities/blockActions";
 
 interface Friend {
 	id: number;
@@ -20,6 +25,7 @@ const FriendAndInvitationList: React.FC<{
 }> = ({ onSelectFriend }) => {
 	const [friends, setFriends] = useState<Friend[]>([]);
 	const [invitations, setInvitations] = useState<Friend[]>([]);
+	const [blockedUsers, setBlockedUsers] = useState<Friend[]>([]);
 	const [isFriendsTab, setIsFriendsTab] = useState(true);
 
 	useEffect(() => {
@@ -30,6 +36,10 @@ const FriendAndInvitationList: React.FC<{
 
 				const invitationList = await FetchInvitations();
 				if (invitationList) setInvitations(invitationList);
+
+				const blockedList = await FetchBlockedUsers();
+				if (blockedList)
+					setBlockedUsers(blockedList.map((user: { id: number }) => user.id));
 			} catch (error) {
 				console.error("Error fetching data:", error);
 			}
@@ -41,7 +51,7 @@ const FriendAndInvitationList: React.FC<{
 		try {
 			await AcceptInvitation(id);
 			setInvitations((prevInvites) =>
-				prevInvites.filter((invite) => invite.id !== id),
+				prevInvites.filter((invite) => invite.id !== id)
 			);
 		} catch (error) {
 			console.error("Error accepting invitation:", error);
@@ -52,11 +62,21 @@ const FriendAndInvitationList: React.FC<{
 		try {
 			await DeclineInvitation(id);
 			setInvitations((prevInvites) =>
-				prevInvites.filter((invite) => invite.id !== id),
+				prevInvites.filter((invite) => invite.id !== id)
 			);
 		} catch (error) {
 			console.error("Error declining invitation:", error);
 		}
+	};
+
+	const handleBlockUser = async (user: Friend) => {
+		await BlockUser(user.id);
+		setBlockedUsers((prev) => [...prev, user]);
+	};
+
+	const handleUnblockUser = async (userId: number) => {
+		await UnblockUser(userId);
+		setBlockedUsers((prev) => prev.filter((user) => user.id !== userId));
 	};
 
 	return (
@@ -85,21 +105,44 @@ const FriendAndInvitationList: React.FC<{
 							friends.map((friend) => (
 								<li
 									key={friend.id}
-									className="list-group-item d-flex align-items-center"
-									style={{ cursor: "pointer" }}
-									onClick={() => onSelectFriend(friend)}
+									className="list-group-item d-flex align-items-center justify-content-between"
 								>
-									<img
-										src={friend.profile_picture || "./img/default.png"}
-										alt={`${friend.username}'s avatar`}
+									<div
+										onClick={() => onSelectFriend(friend)}
 										style={{
-											width: 40,
-											height: 40,
-											borderRadius: "50%",
-											marginRight: 10,
+											cursor: "pointer",
+											display: "flex",
+											alignItems: "center",
 										}}
-									/>
-									<span>{friend.username}</span>
+									>
+										<img
+											src={friend.profile_picture || "./img/default.png"}
+											alt={`${friend.username}'s avatar`}
+											style={{
+												width: 40,
+												height: 40,
+												borderRadius: "50%",
+												marginRight: 10,
+											}}
+										/>
+										<span>{friend.username}</span>
+									</div>
+									<button
+										className={`btn ${
+											blockedUsers.some((user) => user.id === friend.id)
+												? "btn-danger"
+												: "btn-secondary"
+										}`}
+										onClick={() =>
+											blockedUsers.some((user) => user.id === friend.id)
+												? handleUnblockUser(friend.id)
+												: handleBlockUser(friend)
+										}
+									>
+										{blockedUsers.some((user) => user.id === friend.id)
+											? "Unblock"
+											: "Block"}
+									</button>
 								</li>
 							))
 						) : (
