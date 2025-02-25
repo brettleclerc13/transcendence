@@ -1,135 +1,24 @@
-from django.shortcuts import render
-from .models import User, Match 
-
-import logging
-logger = logging.getLogger(__name__)
-
-import sys
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.authtoken.models import Token
-
-from rest_framework.renderers import JSONRenderer
-
-from . serializer import UserSerializer, MatchSerializer, LoginSerializer
+from django.contrib.auth import logout
+from django.contrib.auth.models import User
+from rest_framework.permissions import IsAuthenticated
+from .serializer import UserSerializer, MatchSerializer, CustomTokenObtainPairSerializer, MessageSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .models import UserProfile, Match, Message
 
 # Create your views here.
 
-def validate_request_data_user(data):
-    allowed_fields = {'user', 'nationality', 'age', 'tournament_name'}
-    for key in data.keys():
-        if key not in allowed_fields:
-            raise ValueError(f"Invalid field: {key}")
-        
-def validate_request_data_match(data):
-    allowed_fields = {'user', 'opponent', 'date', 'result'}
-    for key in data.keys():
-        if key not in allowed_fields:
-            raise ValueError(f"Invalid field: {key}")
-
-class ListUserAPIView(APIView):
-
-    renderer_classes = [JSONRenderer]  # Désactiver l'interface HTML
-
-    def get(self, request):
-        users = User.objects.all()  # Récupère tous les utilisateurs
-        user_data = [
-            {
-                'id': user.id,
-                'username': user.user,
-                'email': user.email,
-            }
-            for user in users
-        ]
-        return Response(user_data, status=status.HTTP_200_OK)
-
-class LoginAPIView(APIView):
-
+class RegisterAPIView(APIView):  # User registration and management
     def post(self, request):
-        print("Goodbye cruel world!", file=sys.stderr)
-        print(f"data : {request.data}", file=sys.stderr)
-        serializer = LoginSerializer(data=request.data)
-        print("Check 2", file=sys.stderr)
+        serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.validated_data['user']
-            # Générer un token d'authentification
-            # token, _ = Token.objects.get_or_create(user=user)
-            return Response({'message': 'Login successful', 'user': user.id}, status=status.HTTP_200_OK)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        print("Errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        #     return Response({"token": token.key}, status=status.HTTP_200_OK)
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class UserAPIView(APIView): # Allow to register a new User
-    
-    def get(self, request):
-        try:
-            if request.body:
-                data = request.query_params
-                validate_request_data_user(data)
-                user = data.get('user', None)
-                nationality = data.get('nationality', None)
-                age = data.get('age', None)
-                tournament_name = data.get('tournament_name', None)
-
-                queryset = User.objects.all()
-                if user:
-                    queryset = queryset.filter(user=user)
-                if age:
-                    queryset = queryset.filter(age=age)
-                if nationality:
-                    queryset = queryset.filter(nationality=nationality)
-                if tournament_name:
-                    queryset = queryset.filter(tournament_name=tournament_name)
-            else:
-                queryset = User.objects.all()
-            
-            serializer = UserSerializer(queryset, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    def post(self, request):
-        try:
-            logger.info("Received POST request with data: %s", request.data)
-            serializer = UserSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                logger.info("User created successfully: %s", serializer.data)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            logger.warning("Validation errors: %s", serializer.errors)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            logger.error("Error in POST request: %s", str(e), exc_info=True)
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    def put(self, request, pk=None):
-        try:
-            user = User.objects.get(pk=pk)
-            serializer = UserSerializer(user, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
-    def patch(self, request, pk=None):
-        try:
-            user = User.objects.get(pk=pk)
-            serializer = UserSerializer(user, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
     def delete(self, request, pk=None):
         try:
             user = User.objects.get(pk=pk)
@@ -137,12 +26,67 @@ class UserAPIView(APIView): # Allow to register a new User
             return Response({"message": "User deleted successfully"}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+class LogoutAPIView(APIView):
+    def post(self, request):
+        logout(request)
+        return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+	serializer_class = CustomTokenObtainPairSerializer
+
+class ProfileAPIView(APIView):
+	permission_classes = [IsAuthenticated]
+    
+	def get(self, request):
+		user = request.user
+		profile = user.profile
+		profile_data = {
+			"username": user.username,
+			"email": user.email,
+            "nationality": profile.nationality,
+            "bio": profile.bio,
+            "age": profile.age,
+            "profile_picture": profile.profile_picture,
+            "tournament_name": profile.tournament_name,
+            "is_online": profile.is_online,
+		}
+		return Response(profile_data, status=status.HTTP_200_OK)
+    
+	def post(self, request):
+		user = request.user
+		profile = user.profile
+		data = request.data
+
+		# Validate and update user fields
+		username = data.get("username")
+		if username and username != user.username:
+			if User.objects.filter(username=username).exists():
+				return Response({"error": "Username already exists."}, status=status.HTTP_400_BAD_REQUEST)
+			user.username = username
+
+		email = data.get("email")
+		if email and email != user.email:
+			if User.objects.filter(email=email).exists():
+				return Response({"error": "Email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+			user.email = email
+
+		# Validate and update profile fields
+		profile_fields = ["nationality", "bio", "age", "profile_picture", "tournament_name", "is_online"]
+		for field in profile_fields:
+			if field in data:
+				value = data[field]
+				if field == "age" and (not isinstance(value, int) or value < 0):
+					return Response({"error": "Age must be a positive integer."}, status=status.HTTP_400_BAD_REQUEST)
+				setattr(profile, field, value)
+
+		# Save updated data
+		user.save()
+		profile.save()
+
+		return Response({"message": "Profile updated successfully."}, status=status.HTTP_200_OK)
 
 class MatchAPIView(APIView):
-
     def get(self, request):
         try:
             if request.body:
@@ -215,20 +159,66 @@ class MatchAPIView(APIView):
             return Response({"error": "Match not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)  
+
+# API made for the management of the friend list of the user
+class FriendListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+     
+    def get(self, request):
+        user = request.user
+        profile = user.profile
+        friends = profile.friends.all()
+
+        friends_data = [
+            {
+                "id": friend.user.id,
+                "username": friend.user.username,
+                "profile_picture": friend.profile_picture,
+            }
+            for friend in friends
+        ]
+
+        return Response(friends_data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        user = request.user
+        profile = user.profile
+        friend_id = request.data.get("friend_id")
+
+        try:
+            friend_profile = UserProfile.objects.get(user_id=friend_id)
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        if friend_profile == profile:
+            return Response({"error": "You cannot add yourself as a friend."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        profile.friends.add(friend_profile)
+        return Response({"message": "Friend added successfully."}, status=status.HTTP_200_OK)
+    
+    def delete(self, request):
+        user = request.user
+        profile = user.profile
+        friend_id = request.data.get("friend_id")
+
+        try:
+            friend_profile = UserProfile.objects.get(user_id=friend_id)
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        profile.friends.remove(friend_profile)
+        return Response({"message": "Friend removed successfully."}, status=status.HTTP_200_OK)
     
 
-#USERS
-#	details (map):
-#		email -> email
-#		age -> number
-#		nationality -> string
-#		bio -> string
-#		profile_pic -> string (png path)
-#
-#	game_stats (map):
-#	tournament_name -> string (default required)
-#	match_history (map)
-#		adversary -> string
-#		date -> date
-#		win -> number
-#		loss -> number
+class MessageAPIView(APIView):
+    def post(self, request):
+        serializer = MessageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        messages = Message.objects.filter(conversation_id=request.query_params.get('conversation_id')).order_by('timestamp')
+        serializer = MessageSerializer(messages, many=True)
+        return Response(serializer.data)

@@ -1,41 +1,78 @@
-import sys
-
 from rest_framework import serializers
-
-from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from django.contrib.auth.hashers import make_password
-from .models import *
+from .models import Match, UserProfile, Message
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth import authenticate
 
-from authentication.backends import EmailBackend
-
-class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
-
-    def validate(self, data):
-        user = EmailBackend.authenticate(self, request=self.context.get('request'), user_email=data['email'], password=data['password'])
-        if not user:
-            raise serializers.ValidationError("Invalid email or password.")
-        return {'user': user}
+class UserProfileSerializer(serializers.ModelSerializer):
+     class Meta:
+        model = UserProfile
+        fields = ['nationality', 'bio', 'age', 'profile_picture', 'tournament_name', 'is_online']
 
 class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-            model = User
-            fields = ['id', 'user', 'email', 'password', 'nationality', 'bio', 'age', 'profile_picture', 'tournament_name']
-            extra_kwargs = {
-                  'id' : {'required': False},
-                  'password': {'write_only': True},
-                  'nationality' : {'required': False},
-                  'bio' : {'required': False},
-                  'age' : {'required': False},
-                  'profile_picture' : {'required': False},
-                  'tournament_name' : {'required': False},
-            }
-    
-    def create(self, validated_data): # Hash the password before saving
-        validated_data['password'] = make_password(validated_data['password'])
-        return super().create(validated_data)
+	profile = UserProfileSerializer(required=False)
+	class Meta:
+		model = User
+		fields = ['username', 'email', 'password', 'profile']
+		extra_kwargs = {
+			'password': {'write_only': True},
+		}
+
+	def validate(self, data):
+		# Check for duplicate email
+		if User.objects.filter(email=data.get('email')).exists():
+			raise serializers.ValidationError({"email": "A user with this email already exists."})
+        
+		# Check for duplicate username
+		if User.objects.filter(username=data.get('username')).exists():
+			raise serializers.ValidationError({"username": "A user with this username already exists."})
+
+		return data
+
+	def create(self, validated_data):
+		profile_data = validated_data.pop('profile', {})
+		user = User.objects.create_user(
+			username=validated_data['username'],
+			email=validated_data['email'],
+            password=validated_data['password'] #create_user hashes the password internally, (default: PBKDF2 with a SHA256 hash)
+		)
+		UserProfile.objects.create(user=user, **profile_data)
+		return user
+
+	# def update(self, instance, validated_data):
+	# 	profile_data = validated_data.pop('profile', {})
+	# 	profile = instance.profile
+
+	# 	instance.username = validated_data.get('username', instance.username)
+	# 	instance.email = validated_data.get('email', instance.email)
+	# 	if 'password' in validated_data:
+	# 		instance.set_password(validated_data['password'])
+	# 	instance.save()
+
+	# 	profile.nationality = profile_data.get('nationality', profile.nationality)
+	# 	profile.bio = profile_data.get('bio', profile.bio)
+	# 	profile.age = profile_data.get('age', profile.age)
+	# 	profile.profile_picture = profile_data.get('profile_picture', profile.profile_picture)
+	# 	profile.tournament_name = profile_data.get('tournament_name', profile.tournament_name)
+	# 	profile.save()
+
+	# 	return instance
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+	def validate(self, attrs):
+		email = attrs.get("username")  # `username` is the default field; treat it as `email`
+		password = attrs.get("password")
+
+		user = authenticate(username=email, password=password)
+
+		if not user:
+			raise serializers.ValidationError("Invalid email or password")
+
+		# Pass validated user to parent serializer
+		data = super().validate(attrs)
+		data.update({"user_id": user.id, "email": user.email})
+
+		return data
 
 class MatchSerializer(serializers.ModelSerializer):
     class Meta:
@@ -49,3 +86,8 @@ class MatchSerializer(serializers.ModelSerializer):
         if not User.objects.filter(user=data['user']).exists():
             raise serializers.ValidationError("User does not exist.")
         return data
+	
+class MessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Message
+        fields = '__all__'

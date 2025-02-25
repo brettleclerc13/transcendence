@@ -9,7 +9,7 @@ import "./grid.css"
 const Grid = forwardRef(function Grid() {
 	const gridRef = useRef<{ resetGrid: () => void } | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
-	const cellSize = 50;
+	const cellSize = 48;
 	// const titleHeight = 200;
 
 	// const handleClick = useCallback((cell: HoverableDiv) => {
@@ -103,7 +103,7 @@ const Grid = forwardRef(function Grid() {
 	// 	}
 	// };
 
-	return <div ref={containerRef} id="container" className="flex flex-wrap w-full overflow-hidden"></div>;
+	return <div ref={containerRef} id="container" className="flex flex-wrap align-top justify-center w-full overflow-hidden"></div>;
 });
 
 export default Grid;

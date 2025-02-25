@@ -1,232 +1,235 @@
 "use client"
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useActionState } from "react";
 import { Doughnut } from "react-chartjs-2";
 import "./profile.css";
+import { fetchUserProfile, updateUserProfile } from "../utilities/profileActions";
+import type { UserProfileUpdate } from "../utilities/profileActions";
+import Link from "next/link";
+import Image from "next/image";
+import defaultImage from "/public/img/default.png"
+import { z } from "zod";
 
-interface Profile {
-    picture: string;
-    username: string;
-    email: string;
-    age: string;
-    nationality: string;
-    tournamentName: string;
-    bio: string;
-}
+export const profileSchema = z.object({
+	username: z.string().min(3, "Username must be at least 3 characters long"),
+	email: z.string().email("Invalid email format"),
+	age: z.union([z.number().positive("Age must be a positive number"), z.string().optional()]),
+	nationality: z.string().optional(),
+	tournamentName: z.string().optional(),
+	bio: z.string().max(500, "Bio must not exceed 500 characters").optional(),
+	picture: z.string().optional(),
+});
 
-interface Match {
-    duelNumber: number;
-    adversary: string;
-    date: string;
-    result: string; // W/L
+export type ProfileSchema = z.infer<typeof profileSchema>;
+
+type Match = {
+    duelNumber?: number;
+    adversary?: string;
+    date?: string;
+    result?: string; // W/L
 }
 
 export default function Profile() {
-	const [profile, setProfile] = useState<Profile | null>(null);
-	const [tempProfile, setTempProfile] = useState<Profile | null>(null);
-	const [loading, setLoading] = useState(true);
+	const [alert, setAlert] = useState<{ message: string, type: string } | null>(null);
+	const [userProfile, setUserProfile] = useState<UserProfileUpdate | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
+	const [chartData, setChartData] = useState({});
 	const [matches, setMatches] = useState<Match[]>([]);
 
-	useEffect(() => {
-        fetch("/users/")
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Failed to fetch profile data");
-                }
-                return response.json();
-            })
-            .then((data) => {
-                setProfile(data);
-                setTempProfile(data);
-				setLoading(false);
-            })
-            .catch((error) => {
-                console.error("Error fetching profile data:", error);
-				setLoading(false);
-            });
+	const [ profileData, profileAction, profilePending ] = useActionState( handleUserProfile, undefined );
 
-		fetch("/matches/")
-            .then((response) => response.json())
-            .then((data) => {
-                setMatches(data);
-            })
-            .catch((error) => {
-                console.error("Error fetching match data:", error);
-            });
+	useEffect(() => {
+		const fetchData = async () => {
+			try {
+			const profileResults = await fetchUserProfile();
+			
+			setUserProfile(profileResults);
+			setIsLoading(false);
+
+			} catch (error) {
+				console.error("failed to fetch user profile info");
+				setUserProfile(null);
+			}
+		}
+			// const matchResults = await fetchUserMatches();
+
+			// if (matchResults.success) {
+			// 	// Calcul des statistiques Win/Lose
+			// 	const totalMatches = matches.length;
+			// 	const wins = matches.filter(match => match.result === "W").length;
+			// 	const losses = totalMatches - wins;
+
+			// 	// Données pour la roue
+			// 	setChartData({
+			// 		labels: ["Wins", "Losses"],
+			// 		datasets: [
+			// 			{
+			// 				data: [wins, losses],
+			// 				backgroundColor: ["#4caf50", "#f44336"], // Couleurs pour Win et Lose
+			// 				borderWidth: 1,
+			// 			},
+			// 		],
+			// 	});
+
+			// 	const chartOptions = {
+			// 		cutout: "70%", // Taille du "trou" au centre de l'anneau
+			// 		plugins: {
+			// 			legend: {
+			// 				display: true,
+			// 				position: "bottom",
+			// 			},
+			// 		},
+			// 	};
+			// 	setMatches(matches);
+			// }
+			fetchData();
     }, []);
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-		if (tempProfile) {
-            const { name, value } = e.target;
-            setTempProfile({
-                ...tempProfile,
-                [name]: value,
-            });
-        }
-	};
+	async function handleUserProfile(_previousState: unknown, formData: FormData) {
+		const profileInput ={
+			username: formData.get("username"),
+			email: formData.get("email"),
+			age: formData.get("age") ? Number(formData.get("age")) : undefined,
+			nationality: formData.get("nationality"),
+			tournamentName: formData.get("tournamentName"),
+			bio: formData.get("bio"),
+			picture: formData.get("picture"),
+		}
 
-	const handleSave = () => {
-        fetch("/users/${profile.id}/", {
-            method: "PUT", // Utilisez POST ou PUT selon votre API
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(tempProfile),
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Failed to save profile data");
-                }
-                return response.json();
-            })
-            .then((data) => {
-                setProfile(data); // Met à jour les données avec la réponse du serveur
-                console.log("Profile saved successfully:", data);
-            })
-            .catch((error) => {
-                console.error("Error saving profile data:", error);
-            });
-    };
-	
-	const handleCancel = () => {
-		setTempProfile(profile);
+		const validationResult = profileSchema.safeParse(profileInput);
+
+		if (!validationResult.success) {
+			return { error: String(validationResult.error.format()) };
+		}
+
+		try {
+			await updateUserProfile(validationResult.data);
+			setUserProfile(validationResult.data);
+			setAlert({ message: "Your profile has been successfully updated!", type: "success" });
+
+		} catch (error) {
+			return { error: String(error) };
+		}
 	}
 
-	// Calcul des statistiques Win/Lose
-	const totalMatches = matches.length;
-	const wins = matches.filter(match => match.result === "W").length;
-	const losses = totalMatches - wins;
-
-	// Données pour la roue
-	const chartData = {
-		labels: ["Wins", "Losses"],
-		datasets: [
-			{
-				data: [wins, losses],
-				backgroundColor: ["#4caf50", "#f44336"], // Couleurs pour Win et Lose
-				borderWidth: 1,
+	//got to change this, not compatible for now
+	const handleFileUpload = async (file: File) => {
+		const formData = new FormData();
+		formData.append("profile_picture", file);
+	
+		await fetch("/api/profile/", {
+			method: "POST",
+			body: formData,
+			headers: {
+				Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
 			},
-		],
+		});
 	};
 
-	const chartOptions = {
-		cutout: "70%", // Taille du "trou" au centre de l'anneau
-		plugins: {
-			legend: {
-				display: true,
-				position: "bottom",
-			},
-		},
-	};
-
-	if (loading) {
+	if (isLoading) {
         return <div>Loading profile...</div>; // Affiche un message ou un spinner pendant le chargement
     }
 
-    if (!profile || !tempProfile) {
+    if (!userProfile) {
         return <div>Failed to load profile.</div>; // Affiche un message si le profil n'est pas disponible
     }
 
 	return (
 		<div className="profile-container">
-			<div className="image-wrapper">
-				<img src={profile.picture} alt='Profile Picture' className='profile-picture' />
-			</div>
-			<div className="contour-informations">
-				<div className="left-informations">
-					<div>
-						<label>Username:</label>
-						<input 
-							type="text"
-							name="username"
-							value={tempProfile.username}
-							onChange={handleChange}
-							/>
-					</div>
-					<div>
-						<label>Email:</label>
-						<input 
-							type="email"
-							name="email"
-							value={tempProfile.email}
-							onChange={handleChange}
-							/>
-					</div>
-					<div>
-						<label>Age:</label>
-						<input 
-							type="number"
-							name="age"
-							value={tempProfile.age}
-							onChange={handleChange}
-							/>
-					</div>
-					<div>
-						<label>Nationality:</label>
-						<input 
-							type="text"
-							name="nationality"
-							value={tempProfile.nationality}
-							onChange={handleChange}
-							/>
-					</div>
-					<div>
-						<label>Tournament Name:</label>
-						<input
-							type="text"
-							name="tournamentName"
-							value={tempProfile.tournamentName}
-							onChange={handleChange}
-							/>
-					</div>
+			{alert && (
+				<div className={`alert alert-${alert.type} mb-4`} role="alert">
+					{alert.message}
 				</div>
-				<div className="right-informations">
-					<div>
-						<label>Bio:</label>
-						<textarea
-							name="bio"
-							placeholder="Whatever!"
-							value={tempProfile.bio}
-							onChange={handleChange}
-							/>
-					</div>
-					<div className="match-history">
-						<h3>Match History</h3>
-						<div className="table-container">
-							<table className="table">
-								<thead>
-									<tr>
-										<th scope="col">Duel #</th>
-										<th scope="col">Adversary</th>
-										<th scope="col">Date</th>
-										<th scope="col">W/L</th>
-									</tr>
-								</thead>
-								<tbody>
-									{/* Afficher les matchs */}
-									{matches.map((match) => (
-										<tr key={match.duelNumber}>
-											<th scope="row">{match.duelNumber}</th>
-											<td>{match.adversary}</td>
-											<td>{match.date}</td>
-											<td>{match.result}</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
+			)}
+			{profileData?.error && (
+				<div className="alert alert-danger mb-4" role="alert">
+					{profileData?.error ?? 'An unknown error occurred'}
+				</div>
+			)}
+			<form action={profileAction}>
+				<div className="image-wrapper">
+					<Image src={userProfile.profile?.picture || defaultImage.src} width={224} height={224} alt='Profile Picture' className='profile-picture' />
+				</div>
+				<div className="contour-informations">
+					<div className="left-informations">
+						<div>
+							<label>Username:</label>
+							<input 
+								name="username"
+								defaultValue={userProfile.username}
+								/>
+						</div>
+						<div>
+							<label>Email:</label>
+							<input 
+								type="email"
+								name="email"
+								defaultValue={userProfile.email}
+								/>
+						</div>
+						<div>
+							<label>Age:</label>
+							<input 
+								type="number"
+								name="age"
+								defaultValue={userProfile.profile?.age}
+								/>
+						</div>
+						<div>
+							<label>Nationality:</label>
+							<input 
+								type="text"
+								name="nationality"
+								defaultValue={userProfile.profile?.nationality}
+								/>
 						</div>
 					</div>
-					<div className="win-lose-chart">
-						<h3>Win/Loss Ratio</h3>
-						{/* <Doughnut data={chartData} options={chartOptions} /> */}
-						<Doughnut data={chartData} />
-					</div>
-					<div className="button-container">
-						<button className="button-save" onClick={handleSave}>Save</button>
-						<button className="button-cancel" onClick={handleCancel}>Cancel</button>
+					<div className="right-informations">
+						<div>
+							<label>Bio:</label>
+							<textarea
+								name="bio"
+								placeholder="Whatever!"
+								defaultValue={userProfile.profile?.bio}
+								/>
+						</div>
+						{/* <div className="match-history">
+							<h3>Match History</h3>
+							<div className="table-container">
+								<table className="table">
+									<thead>
+										<tr>
+											<th scope="col">Duel #</th>
+											<th scope="col">Adversary</th>
+											<th scope="col">Date</th>
+											<th scope="col">W/L</th>
+										</tr>
+									</thead>
+									<tbody>
+										{matches.map((match) => (
+											<tr key={match.duelNumber}>
+												<th scope="row">{match.duelNumber}</th>
+												<td>{match.adversary}</td>
+												<td>{match.date}</td>
+												<td>{match.result}</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						</div>
+						<div className="win-lose-chart">
+							<h3>Win/Loss Ratio</h3>
+							<Doughnut data={chartData} options={chartOptions} />
+							<Doughnut data={chartData} />
+						</div> */}
+						<div className="button-container">
+							<button className="button-save" type="submit" disabled={profilePending}>Save</button>
+							<Link href="/" className="button-cancel">Cancel</Link>
+						</div>
 					</div>
 				</div>
-			</div>
+			</form>
 		</div>
 	);
 }
