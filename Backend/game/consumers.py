@@ -38,9 +38,9 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.players = set()  # Track connected players in the room
         self.input_queue = Queue()
         self.has_initialize = False
-        self.time_per_tick = 0.05 #50 ms
+        self.time_per_tick = 0.016 #16.6 ms or 60FPS
         self.reflection_bias = 0.50    #DO NOT INCREASE beyond 0.5 at least without increasing ball speed.   
-        self.max_speed = 10 # best not set too high
+        self.max_speed = 1000 # best not set too high
 
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']

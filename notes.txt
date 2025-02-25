@@ -17,3 +17,31 @@ SELECT au.username, au.email, up.is_online, up.age, up.nationality, up.bio
 FROM auth_user au
 JOIN user_userprofile up ON au.id = up.user_id;
 
+
+PROFILE
+- alias name for tournament
+
+LIVE CHAT
+- invite game: have an invitation_game boolean in versusMatch API to hide game from other users
+- GET /friends/request/pending 404 in 32ms when opening livechat
+
+LOBBY
+- create 1v1 game
+- create tournament
+- game available list
+- game join button for each available game
+
+
+WAITING ROOM
+- announcing the fight through a countdown 10 sec
+
+
+users can leave game screen but game starts without them. only tournament mode warns user by chat.
+if user cicks on game in menu, as per user's game status, user is redirected to concerned screen.
+
+game screens:
+- lobby
+- waiting room
+- gameCanvas with countdown before game starts
+
+

@@ -55,7 +55,7 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 		state.ball_position[1] * state.resolution, // Y-center
 		1 * state.resolution, // Radius (10 pixels)
 		0,
-		Math.PI * 2,
+		Math.PI * 2
 	);
 	ctx.fill();
 
@@ -69,10 +69,10 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 
 export default function GameCanvas() {
 	const [status, setStatus] = useState<"waiting" | "ready" | "playing">(
-		"waiting",
+		"waiting"
 	);
 	const [playerRole, setPlayerRole] = useState<"player_1" | "player_2" | null>(
-		null,
+		null
 	);
 	const [socket, setSocket] = useState<WebSocket | null>(null);
 	const [gameState, setGameState] = useState<GameState | null>(null);
@@ -133,17 +133,17 @@ export default function GameCanvas() {
 					type: "initialize",
 					game_parametres: {
 						ball_diametre: 1,
-						paddle_speed: 10,
+						paddle_speed: 20,
 						paddle_height: 8,
 						paddle_width: 2,
-						ball_speed: 5,
+						ball_speed: 20,
 						paddle_xposition: 0.2,
 						screen_width: 800,
 						screen_height: 400,
 						resolution: 8,
 						point_goal: 10,
 					},
-				}),
+				})
 			);
 		}
 	}, [status, playerRole]);
@@ -195,7 +195,7 @@ export default function GameCanvas() {
 							player: playerRole,
 							direction: newDirection,
 							timestamp: Date.now(),
-						}),
+						})
 					);
 				}, 50); // Send every 50ms
 			}
@@ -213,7 +213,7 @@ export default function GameCanvas() {
 							player: playerRole,
 							direction: 0,
 							timestamp: Date.now(),
-						}),
+						})
 					); // Send "stop" message
 				}
 			}

@@ -352,6 +352,8 @@ class DeclineFriendRequestAPIView(APIView):
         return Response({"message": "Friend request declined"}, status=status.HTTP_200_OK)
 
 class PendingFriendRequestsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         requests = FriendRequest.objects.filter(receiver=request.user, status="pending").values("id", "sender__username")
         return Response(list(requests), status=status.HTTP_200_OK)

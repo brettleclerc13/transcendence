@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Match, UserProfile, Message
+from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from django.contrib.auth import authenticate
 
@@ -63,8 +64,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class CustomTokenRefreshSerializer(TokenRefreshSerializer):
 	def validate(self, attrs):
 		try:
-			data = super().validate(attrs)
-			user_id = self.token.payload.get("user_id")
+			data = super().validate(attrs) # Calls the default TokenRefreshSerializer validation
+
+			# Decode the refresh token manually
+			refresh_token = attrs["refresh"]
+			decoded_token = UntypedToken(refresh_token)  # This will raise an error if the token is invalid
+
+			user_id = decoded_token.payload.get("user_id")
 
 			if user_id and not User.objects.filter(id=user_id).exists():
 				raise serializers.ValidationError("User does not exist")
