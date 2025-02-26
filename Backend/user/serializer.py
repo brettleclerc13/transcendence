@@ -81,19 +81,6 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
 			raise serializers.ValidationError("User does not exist")
 		except Exception as e:
 			raise serializers.ValidationError(str(e))
-
-class MatchSerializer(serializers.ModelSerializer):
-    class Meta:
-            model = Match
-            fields = ['id', 'user', 'opponent', 'date', 'score', 'opponent_score', 'result']
-
-    def validate(self, data):
-        #so far Primary key is "id". here we using user to check.
-        #it's best if either we move primary key to user or change this line to use id.
-        # this should be decided intandem with frontend
-        if not User.objects.filter(user=data['user']).exists():
-            raise serializers.ValidationError("User does not exist.")
-        return data
 	
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
