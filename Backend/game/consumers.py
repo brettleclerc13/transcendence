@@ -15,7 +15,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             "player1_position": [],
             "player2_position": [],
             "ball_position": [],
-            "ball_direction": [0.707, 0.707],  # Unit Vector for ball direction 0.707 0.707
+            "ball_direction": [1, 0],  # Unit Vector for ball direction 0.707 0.707
             "ball_speed": 12,
             "score": [0, 0],
             "resolution": [],
@@ -38,9 +38,13 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.players = set()  # Track connected players in the room
         self.input_queue = Queue()
         self.has_initialize = False
+        #variables to change the feel of the game
         self.time_per_tick = 0.05 #50 ms
-        self.reflection_bias = 0.50    #DO NOT INCREASE beyond 0.5 at least without increasing ball speed.   
-        self.max_speed = 10 # best not set too high
+        self.sub_tick_amount = 3
+        self.reflection_bias = 0.95    
+        self.max_speed = 10000 # best not set too high
+        self.directional_limit = 0.1
+        self.dir_correction_rate = 0.12
 
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
@@ -190,7 +194,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         try:
             print("The game has begun")
             while True:
-                
+                loop_start = time.perf_counter()
                 #active_tasks = asyncio.all_tasks()  # Get all running tasks
                 #print(f"Active tasks: {[task.get_name() for task in active_tasks]}", flush=True)
                 
@@ -214,18 +218,19 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                     if input_buffers[player]:
                         direction = input_buffers[player].pop(0)
                         if self.has_initialize:
+                            #print(f"Updating for {player} thats moving {direction}", flush=True)
                             self.update_paddles(player, direction)
 
                 #handle the game, move the ball handle collisions and scoring
-                self.update_ball_position(self.game_state["ball_position"], self.game_state["ball_direction"], self.game_state["ball_speed"])
-                has_collided, normal, collision_point, paddle = self.detect_collisions()
-                if has_collided:
-                    #print(f"collision point: {collision_point[0]} - {collision_point[1]}", flush=True)
-                    self.handle_collision(normal, collision_point, paddle)
-                    if self.game_state["score"][0] >= self.game_parametres["point_goal"]:
-                        await self.handle_game_end("player_1", "Player 1 was won")
-                    elif self.game_state["score"][1] >= self.game_parametres["point_goal"]:
-                        await self.handle_game_end("player_2", "Player 2 was won")
+                for i in range(self.sub_tick_amount):
+                    self.update_ball_position(self.game_state["ball_position"], self.game_state["ball_direction"], self.game_state["ball_speed"])
+                    has_collided, normal, collision_point, paddle = self.detect_collisions()
+                    if has_collided:
+                        self.handle_collision(normal, collision_point, paddle)
+                        if self.game_state["score"][0] >= self.game_parametres["point_goal"]:
+                            await self.handle_game_end("player_1", "Player 1 was won")
+                        elif self.game_state["score"][1] >= self.game_parametres["point_goal"]:
+                            await self.handle_game_end("player_2", "Player 2 was won")
                 self.game_state["last_update_time"] = time.time()
                 
                 # Broadcast the updated game state to all players
@@ -238,9 +243,12 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                         "game_state": self.game_state,
                     }
                 )
-
+                loop_end = time.perf_counter()  # End time
+                #loop_duration = (loop_end - loop_start) * 1000  # Convert to ms
+                #print(f"🕒 Game loop execution time: {loop_duration:.2f} ms", flush=True)
                 # Wait for the next tick
-                await asyncio.sleep(0.05)  # 20 TPS
+                remaining_time = max(0, self.time_per_tick - (loop_end - loop_start))
+                await asyncio.sleep(remaining_time)
         except asyncio.CancelledError:
             print("Game Loop Ended", flush=True)
             # Gracefully exit the game loop if the task is canceled
@@ -251,12 +259,13 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             await self.redis.delete(game_running_key)
     
     def update_ball_position(self, ball_position, ball_direction, ball_speed):
-        deltaX = ball_speed * self.time_per_tick * ball_direction[0]
-        deltaY = ball_speed * self.time_per_tick * ball_direction[1]
+        deltaX = (ball_speed * self.time_per_tick * ball_direction[0]) / self.sub_tick_amount
+        deltaY = (ball_speed * self.time_per_tick * ball_direction[1]) / self.sub_tick_amount
         field_height = self.game_parametres["field_height"] 
         field_width = self.game_parametres["field_width"]
         ball_diametre = self.game_parametres["ball_diametre"]
 
+        #print(f"deltaX calc: {ball_speed} * {self.time_per_tick} * {ball_direction[0]}", flush=True)
         new_x = self.clamp(ball_position[0] + deltaX, ball_diametre / 2, (field_width - (ball_diametre / 2)))
         new_y = self.clamp(ball_position[1] + deltaY, ball_diametre / 2, (field_height - (ball_diametre / 2)))
 
@@ -289,7 +298,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         
         #TEMP
         #self.game_state["player2_position"] = [80, 42]
-        #self.game_state["ball_position"] = [78.8, 2]
+        #self.game_state["ball_position"] = [78.4, 37]
+        #self.game_state["ball_position"] = [56, 25]
 
     def update_paddles(self, player, direction):
         speed = self.game_parametres["paddle_speed"] #for 20 TPS
@@ -323,6 +333,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         
         if distance <= ball_radius:
             if ball_x >= paddle_left and ball_x <= paddle_right:
+                #print("MOVEMENT EXCEPTION top-bot", flush=-True)
                 if direction > 0:
                     new_position = ball_y - ball_radius - paddle_height / 2
                     if ball_vy < 0:
@@ -332,6 +343,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                     if ball_vy > 0:
                         self.game_state["ball_direction"] = self.reflect((ball_vx, ball_vy), (0, -1))
             elif ball_y >= paddle_top - ball_radius or ball_y <= paddle_bottom + ball_radius:
+                #print("MOVEMENT EXCEPTION corrners", flush=-True)
                 corner_x = paddle_left if ball_x < paddle_left else paddle_right
             
                 dx = ball_x - corner_x
@@ -353,6 +365,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 
                 self.game_state["ball_direction"] = self.reflect((ball_vx, ball_vy), (dx/distance, dy/distance))
             else:
+                #print("MOVEMENT EXCEPTION Side", flush=-True)
                 delta_x = (ball_radius - abs(closest_x - ball_x))
                 if ball_x < paddle_x:
                     delta_x *= -1
@@ -361,9 +374,9 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 new_y = ball_y + delta_y
                 #print(f"UPDATING POSITION TO: {new_x} {new_y}", flush=True)
                 self.game_state["ball_position"] = [new_x, new_y]
-                if ball_x < paddle_x:
+                if ball_x < paddle_x and self.game_state["ball_direction"][0] >= 0:
                     self.game_state["ball_direction"] = self.reflect((ball_vx, ball_vy), (-1, 0))
-                else:
+                elif ball_x > paddle_x and self.game_state["ball_direction"][0] <= 0:
                     self.game_state["ball_direction"] = self.reflect((ball_vx, ball_vy), (1, 0))
                 
         
@@ -396,6 +409,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 normal_vector = (0, 0)
             else:
                 normal_vector = (distance_x / distance, distance_y / distance)
+            self.correct_ball_pos(collision_point, paddle1[0])
             return True, normal_vector, collision_point, "paddle1"
         
         closest_x = max(paddle2[0] - half_width, min(ball_pos[0], paddle2[0] + half_width))
@@ -413,6 +427,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 normal_vector = (0, 0)
             else:
                 normal_vector = (distance_x / distance, distance_y / distance)
+            self.correct_ball_pos(collision_point, paddle2[0])
             return True, normal_vector, collision_point, "paddle2"
         
         if ball_pos[0] == ball_radius or ball_pos[0] == field_width - ball_radius:
@@ -485,15 +500,16 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         #print(f"calling reflect with: {self.game_state['ball_direction']} and {normal}", flush=True)
         
         reflected = self.reflect(self.game_state['ball_direction'], normal)
-        
+        #print(f"reflected to: {reflected}", flush=True)
         #print(f"GAME STATE: {self.game_state}", flush=True)
+        
 
         if self.game_state["ball_direction"][1] == 0:
             if relative_pos == 0:
                 relative_pos == 0.2
             reflected[1] += self.reflection_bias * relative_pos
             #print(f"reflected: {reflected}", flush=True)
-            reflected = self.normalize(reflected)
+            reflected =  self.normalize(reflected)
         elif self.game_state["ball_direction"][1] > 0:
             bias_x = max(0, relative_pos)
             bias_y = max(0, -relative_pos)
@@ -508,7 +524,35 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             reflected = self.normalize(reflected)
         #print(f"reflected direction: {reflected[0]}, {reflected[1]}", flush=True)
         #print(f" previous vector: {self.game_state['ball_direction']} reflected vector: {reflected}", flush=True)
-        self.game_state["ball_direction"] = reflected
+        self.game_state["ball_direction"] = self.correct_ball_dir(reflected)
+
+    def correct_ball_pos(self, collision_point, paddle_x):
+        ball_x, ball_y = self.game_state["ball_position"]
+        ball_vx, ball_vy = self.game_state["ball_direction"]
+        ball_radius = self.game_parametres["ball_diametre"] / 2
+
+        delta_x = (ball_radius - abs(collision_point[0] - ball_x))
+        if ball_x < paddle_x:
+            delta_x *= -1
+        delta_y = delta_x * (ball_vy / ball_vx)
+        new_x = ball_x + delta_x
+        new_y = ball_y + delta_y
+        #print(f"*CORRECTION* UPDATING POSITION TO: {new_x} {new_y}", flush=True)
+        self.game_state["ball_position"] = [new_x, new_y]
+
+    def correct_ball_dir(self, direction):
+        Vx, Vy = direction
+        if Vx >= 0 and Vx <= self.directional_limit:
+            return self.normalize([Vx + self.dir_correction_rate, Vy])
+        if Vx >= (-1 * self.directional_limit) and Vx < 0:
+            return self.normalize([Vx - self.dir_correction_rate, Vy])
+
+        if Vy >= 0 and Vy <= self.directional_limit:
+            return self.normalize([Vx , Vy + self.dir_correction_rate])
+        if Vy >= (-1 * self.directional_limit) and Vy < 0:
+            return self.normalize([Vx, Vy - self.dir_correction_rate])
+        return [Vx, Vy]
+        
 
     def reflect(self, direction, normal):
         dx, dy = direction
