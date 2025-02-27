@@ -18,7 +18,8 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import path
 from django.conf.urls.static import static
-from user.views import RegisterAPIView, MatchAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView
+from user.views import RegisterAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView
+from match.views import MatchAPIView
 
 urlpatterns = [
 	path('admin/', admin.site.urls),
@@ -27,8 +28,7 @@ urlpatterns = [
 	path('logout/', LogoutAPIView.as_view(), name='logout'),
 	path('profile/', ProfileAPIView.as_view(), name='profile'),
 
-	path('matches/', MatchAPIView.as_view(), name="Match-get-post"),
-	path('matches/<int:pk>/', MatchAPIView.as_view(), name="Match-put/patch-delete"),
+	path('matches/', MatchAPIView.as_view(), name="Match-get-post-patch"),
 
 	path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
 	path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),

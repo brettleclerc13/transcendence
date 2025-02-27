@@ -5,12 +5,10 @@ from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from .serializer import UserSerializer, MatchSerializer, CustomTokenObtainPairSerializer, CustomTokenRefreshSerializer, MessageSerializer
+from .serializer import UserSerializer, CustomTokenObtainPairSerializer, CustomTokenRefreshSerializer, MessageSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .models import UserProfile, Match, Message
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from django.core.files.storage import default_storage
-from .models import UserProfile, Match, Message, FriendRequest, Conversation
+from .models import UserProfile, Message, FriendRequest, Conversation
 
 # Create your views here.
 

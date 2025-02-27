@@ -33,7 +33,10 @@ class MatchAPIView(generics.ListCreateAPIView):
 		# Apply filters dynamically
 		for key, value in filter_params.items():
 			if value is not None:
-				queryset = queryset.filter(**{key: value})
+				if key == 'player2' and value == '':
+					queryset = queryset.filter(player2__isnull=True)
+				else:
+					queryset = queryset.filter(**{key: value})
 
 		return queryset
 
