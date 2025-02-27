@@ -17,4 +17,4 @@ export type MenuProps = {
 		profilePicture: string;
 		status: "Online" | "Invisible";
 	};
-}
+};

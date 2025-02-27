@@ -577,3 +577,31 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         if magnitude == 0:
             raise ValueError("Zero Vector")
         return (x / magnitude, y / magnitude)
+
+### CHAT GPT stuff ###
+# from django.db import transaction
+# from django.contrib.auth import get_user_model
+# from .models import Match
+
+# User = get_user_model()
+
+# async def update_match_in_db(room_name, winner_username, looser_username, score1, score2):
+#     try:
+#         player1 = await database_sync_to_async(User.objects.get)(username=winner_username)
+#         player2 = await database_sync_to_async(User.objects.get)(username=looser_username)
+#         match = await database_sync_to_async(Match.objects.get)(id=room_name)
+
+#         if not match.is_finished:
+#             with transaction.atomic():
+#                 match.score_player1 = score1
+#                 match.score_player2 = score2
+#                 match.is_finished = True
+#                 match.is_ongoing = False
+#                 match.winner = player1
+#                 match.looser = player2
+#                 match.save()
+                
+#     except Exception as e:
+#         print(f"Error updating match: {e}", flush=True)
+
+# await update_match_in_db(self.room_name, winner, looser, self.game_state["score"][0], self.game_state["score"][1])

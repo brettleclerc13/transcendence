@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
 import React, { useEffect, useState } from "react";
-import "./aboutUs.css"
+import "./aboutUs.css";
 
 export default function AboutUsTitle() {
-	const [displayedText, setDisplayedText] = useState('');
+	const [displayedText, setDisplayedText] = useState("");
 	const textAboutUs = "About us:";
 	const typingSpeed = 150;
 
@@ -21,7 +21,5 @@ export default function AboutUsTitle() {
 		return () => clearInterval(intervalId);
 	}, []);
 
-	return (
-		<h1 className="aboutus-title">{displayedText}</h1>
-	);
+	return <h1 className="aboutus-title">{displayedText}</h1>;
 }

@@ -1,14 +1,12 @@
 import Hero from "./Hero/hero";
 import HeaderComponent from "./Header/headerComponent";
 import "./page.css";
-import { redirect } from "next/navigation";
 
 export default async function Home() {
-
-    return (
+	return (
 		<div className="app-container">
-			<HeaderComponent section="" />
+			<HeaderComponent />
 			<Hero />
 		</div>
-  	);
+	);
 }

@@ -1,19 +1,25 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Match, UserProfile, Message
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import UntypedToken
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from django.contrib.auth import authenticate
 
 class UserProfileSerializer(serializers.ModelSerializer):
-     class Meta:
+    user = serializers.SerializerMethodField()
+
+    class Meta:
         model = UserProfile
-        fields = ['nationality', 'bio', 'age', 'profile_picture', 'tournament_name', 'is_online']
+        fields = ['user' ,'nationality', 'bio', 'age', 'profile_picture', 'tournament_name', 'is_online']
+
+    def get_user(self, obj):
+        return {"id": obj.user.id, "username": obj.user.username}
 
 class UserSerializer(serializers.ModelSerializer):
 	profile = UserProfileSerializer(required=False)
 	class Meta:
 		model = User
-		fields = ['username', 'email', 'password', 'profile']
+		fields = ['id', 'username', 'email', 'password', 'profile']
 		extra_kwargs = {
 			'password': {'write_only': True},
 		}
@@ -39,25 +45,6 @@ class UserSerializer(serializers.ModelSerializer):
 		UserProfile.objects.create(user=user, **profile_data)
 		return user
 
-	# def update(self, instance, validated_data):
-	# 	profile_data = validated_data.pop('profile', {})
-	# 	profile = instance.profile
-
-	# 	instance.username = validated_data.get('username', instance.username)
-	# 	instance.email = validated_data.get('email', instance.email)
-	# 	if 'password' in validated_data:
-	# 		instance.set_password(validated_data['password'])
-	# 	instance.save()
-
-	# 	profile.nationality = profile_data.get('nationality', profile.nationality)
-	# 	profile.bio = profile_data.get('bio', profile.bio)
-	# 	profile.age = profile_data.get('age', profile.age)
-	# 	profile.profile_picture = profile_data.get('profile_picture', profile.profile_picture)
-	# 	profile.tournament_name = profile_data.get('tournament_name', profile.tournament_name)
-	# 	profile.save()
-
-	# 	return instance
-
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 	def validate(self, attrs):
 		email = attrs.get("username")  # `username` is the default field; treat it as `email`
@@ -74,18 +61,26 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 		return data
 
-class MatchSerializer(serializers.ModelSerializer):
-    class Meta:
-            model = Match
-            fields = ['id', 'user', 'opponent', 'date', 'score', 'opponent_score', 'result']
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+	def validate(self, attrs):
+		try:
+			data = super().validate(attrs) # Calls the default TokenRefreshSerializer validation
 
-    def validate(self, data):
-        #so far Primary key is "id". here we using user to check.
-        #it's best if either we move primary key to user or change this line to use id.
-        # this should be decided intandem with frontend
-        if not User.objects.filter(user=data['user']).exists():
-            raise serializers.ValidationError("User does not exist.")
-        return data
+			# Decode the refresh token manually
+			refresh_token = attrs["refresh"]
+			decoded_token = UntypedToken(refresh_token)  # This will raise an error if the token is invalid
+
+			user_id = decoded_token.payload.get("user_id")
+
+			if user_id and not User.objects.filter(id=user_id).exists():
+				raise serializers.ValidationError("User does not exist")
+
+			return data
+
+		except User.DoesNotExist:
+			raise serializers.ValidationError("User does not exist")
+		except Exception as e:
+			raise serializers.ValidationError(str(e))
 	
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:

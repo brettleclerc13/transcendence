@@ -12,7 +12,9 @@
 	color: white;
 }
 
-.hero-section, .game-section, .about-us-section {
+.hero-section,
+.game-section,
+.about-us-section {
 	padding: 20px;
 	text-align: center;
 }

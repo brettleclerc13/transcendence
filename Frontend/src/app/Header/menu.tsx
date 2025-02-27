@@ -1,57 +1,66 @@
-"use client"
+"use client";
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import "./headerComponent.css"
+import "./headerComponent.css";
 import { isUserLoggedIn } from "../utilities/userActions";
+import lottie from "lottie-web";
+import { defineElement } from "@lordicon/element";
 
 export default function Menu() {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
+		defineElement(lottie.loadAnimation);
+	}, []);
+
+	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-				setTimeout(() =>setIsMenuOpen(false), 100);
+				setTimeout(() => setIsMenuOpen(false), 100);
 			}
 		};
 
 		document.addEventListener("mousedown", handleClickOutside);
 		return () => {
-		document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("mousedown", handleClickOutside);
 		};
 	}, []);
 
 	return (
-		<>
-			<button
-					onClick={() => setIsMenuOpen(!isMenuOpen)}
-					className="menu-button"
-					aria-label="Toggle menu"
-				>
-					&#9776; {/* Icon for burger menu */}
-			</button>
+		<div className="menu-main">
+			<lord-icon
+				trigger="hover"
+				src="/img/wired-gradient-1062-disco-ball-hover-pinch.json"
+				style={{ width: "60px", height: "60px", cursor: "pointer" }}
+				onClick={() => setIsMenuOpen(!isMenuOpen)}
+			></lord-icon>
 
 			{isMenuOpen && (
-                <div ref={menuRef} className="menu-container">
-                    <nav className="menu-links">
-                        <Link href="/" className="menu-button">
-                            Home
-                        </Link>
-                        <Link key="play" href="/play" className="menu-button">
-                            Game
-                        </Link>
-                        <Link key="aboutUs" href="/aboutUs" className="menu-button">
-                            About Us
-                        </Link>
-                        {isUserLoggedIn() && (
-                            <Link key="liveChat" href="/liveChat" className="menu-button">
-                                Live Chat
-                            </Link>
-                        )}
-                    </nav>
-                </div>
-            )}
-		</>
+				<div ref={menuRef} className="menu-container">
+					<nav className="menu-links">
+						<Link href="/" className="menu-button-select">
+							Home
+						</Link>
+						<Link key="play" href="/play" className="menu-button-select">
+							Game
+						</Link>
+						<Link key="aboutUs" href="/aboutUs" className="menu-button-select">
+							About Us
+						</Link>
+						{isUserLoggedIn() && (
+							<Link
+								key="liveChat"
+								href="/liveChat"
+								className="menu-button-select"
+							>
+								Live Chat
+							</Link>
+						)}
+					</nav>
+				</div>
+			)}
+		</div>
 	);
 }

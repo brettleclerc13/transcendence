@@ -52,7 +52,6 @@ services:
     networks:
       - app-network
 
-
 networks:
   app-network:
     driver: bridge
@@ -61,18 +60,18 @@ volumes:
   db-data:
     driver: local
     driver_opts:
-      type: 'none'
-      o: 'bind'
+      type: "none"
+      o: "bind"
       device: "./Volume/postgresql"
   front-data:
     driver: local
     driver_opts:
-      type: 'none'
-      o: 'bind'
+      type: "none"
+      o: "bind"
       device: "./Frontend"
   back-data:
     driver: local
     driver_opts:
-      type: 'none'
-      o: 'bind'
+      type: "none"
+      o: "bind"
       device: "./Backend"

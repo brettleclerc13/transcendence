@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
 import { useState, useEffect } from "react";
 
-export default function Title () {
-	const [displayedText, setDisplayedText] = useState('');
+export default function Title() {
+	const [displayedText, setDisplayedText] = useState("");
 	const [showCursor, setShowCursor] = useState(true);
 	const [isFirstTypingComplete, setIsFirstTypingComplete] = useState(false);
 	const [isFinalTypingComplete, setIsFinalTypingComplete] = useState(false);
@@ -20,7 +20,7 @@ export default function Title () {
 		const intervalId = setInterval(() => {
 			if (index <= fullTextDance.length) {
 				setDisplayedText(fullTextDance.slice(0, index + 1));
-        		index++;
+				index++;
 			} else {
 				clearInterval(intervalId);
 				setIsFirstTypingComplete(true);
@@ -34,12 +34,11 @@ export default function Title () {
 	useEffect(() => {
 		if (isFirstTypingComplete) {
 			const blinkInterval = setInterval(() => {
-				setShowCursor(prev => !prev);
+				setShowCursor((prev) => !prev);
 			}, cursorBlinkSpeed);
 
 			return () => clearInterval(blinkInterval);
 		} else {
-
 			setShowCursor(true);
 		}
 	}, [isFirstTypingComplete]);
@@ -49,7 +48,7 @@ export default function Title () {
 		if (isFirstTypingComplete) {
 			setTimeout(() => {
 				let index = fullTextDance.length;
-	
+
 				const deleteInterval = setInterval(() => {
 					if (index > fullText.indexOf("d")) {
 						setDisplayedText(fullTextDance.slice(0, index - 1));
@@ -59,7 +58,7 @@ export default function Title () {
 						setIsFinalTypingComplete(true);
 					}
 				}, deleteSpeed);
-	
+
 				return () => clearInterval(deleteInterval);
 			}, 700);
 		}
@@ -69,7 +68,7 @@ export default function Title () {
 	useEffect(() => {
 		if (isFinalTypingComplete) {
 			let index = fullText.indexOf("d"); // Start typing from the "d"
-			
+
 			const finalTypingInterval = setInterval(() => {
 				if (index <= fullText.length) {
 					setDisplayedText(fullText.slice(0, index + 1));
@@ -86,7 +85,10 @@ export default function Title () {
 	return (
 		<h1 className="text-5xl text-white font-mono">
 			{displayedText}
-			<span className="inline-block w-1 h-9" style={{ backgroundColor: showCursor ? 'white' : 'transparent' }} />
+			<span
+				className="inline-block w-1 h-9"
+				style={{ backgroundColor: showCursor ? "white" : "transparent" }}
+			/>
 		</h1>
 	);
 }

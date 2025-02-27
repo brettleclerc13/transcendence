@@ -1,0 +1,8 @@
+frontend/node_modules/
+Volume/
+__pycache__/
+*.pyc
+Backend/media/profile_pictures
+.vscode
+.next
+node_modules

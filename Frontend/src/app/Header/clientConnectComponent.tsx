@@ -1,13 +1,11 @@
 "use client";
 
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 
-const ActionButtons = dynamic(() => import('./actionButtons'), {
-  ssr: false, // disable server-side rendering for this component
+const HeaderConnectButtons = dynamic(() => import("./headerConnectButtons"), {
+	ssr: false, // disable server-side rendering for this component
 });
 
 export default function ClientConnectComponent() {
-	return (
-		<ActionButtons />
-	);
+	return <HeaderConnectButtons />;
 }

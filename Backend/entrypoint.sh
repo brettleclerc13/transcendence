@@ -8,7 +8,7 @@ done
 echo "PostgreSQL is up and running."
 
 redis-server --daemonize yes
-redis-cli -h 127.0.0.1 -p 6379 keys "room:*:*" | xargs redis-cli del
+redis-cli -h 127.0.0.1 -p 6379 keys "room:*:*" | xargs -r redis-cli del
 
 python manage.py makemigrations user
 python manage.py migrate
