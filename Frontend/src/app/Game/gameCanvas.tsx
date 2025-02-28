@@ -11,6 +11,7 @@ type GameState = {
 	score: [number, number];
 	paddle_speed: number;
 	resolution: number;
+	collision_point: [number, number];
 	last_update_time: number;
 };
 
@@ -79,10 +80,7 @@ export default function GameCanvas() {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const [currentDirection, setCurrentDirection] = useState(0); // 1 for up, -1 for down, 0 for no movement
 
-	useEffect(() => {
-		const roomName = "defaultRoom"; // Example room name
-		const ws = new WebSocket(`wss://transcendence.fr/game/${roomName}/`);
-
+	
     useEffect(() => {
         const roomName = "defaultRoom"; // Example room name
         const ws = new WebSocket(`wss://transcendence.fr/game/${roomName}/`);
@@ -125,31 +123,7 @@ export default function GameCanvas() {
 		drawGame(gameState, canvasRef.current as HTMLCanvasElement);
 	}, [gameState]);
 
-	useEffect(() => {
-		if (status === "ready" && playerRole) {
-			console.log("sending initializer data");
-			socket?.send(
-				JSON.stringify({
-					type: "initialize",
-					game_parametres: {
-						ball_diametre: 1,
-						paddle_speed: 20,
-						paddle_height: 8,
-						paddle_width: 2,
-						ball_speed: 20,
-						paddle_xposition: 0.2,
-						screen_width: 800,
-						screen_height: 400,
-						resolution: 8,
-						point_goal: 10,
-					},
-				})
-			);
-		}
-	}, [status, playerRole]);
-
-    }, [gameState])
-
+	
     useEffect(() => {
         if (status === "ready" && playerRole) {
             console.log("sending initializer data");
@@ -208,7 +182,6 @@ export default function GameCanvas() {
 			}
 
 			if (!inputInterval && newDirection !== 0) {
-				inputInterval = window.setInterval(() => {
 					socket?.send(
 						JSON.stringify({
 							type: "input",
@@ -217,7 +190,6 @@ export default function GameCanvas() {
 							timestamp: Date.now(),
 						})
 					);
-				}, 50); // Send every 50ms
 			}
 		};
 

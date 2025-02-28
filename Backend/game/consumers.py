@@ -19,6 +19,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             "ball_speed": 12,
             "score": [0, 0],
             "resolution": [],
+            "collision_point": [],
             "last_update_time": time.time(),
         }
         self.game_parametres = {
@@ -38,6 +39,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.players = set()  # Track connected players in the room
         self.input_queue = Queue()
         self.has_initialize = False
+        self.did_colide = False
         #variables to change the feel of the game
         self.time_per_tick = 0.05 #50 ms
         self.sub_tick_amount = 3
@@ -50,38 +52,52 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = f"pong_{self.room_name}"
 
-        # Add the player to the room's player set
+        # Detect User-Agent to differentiate between CLI and browser users
+        headers = dict(self.scope["headers"])
+        user_agent = headers.get(b"user-agent", b"").decode("utf-8")  # Decode bytes to string
+
         try:
             self.redis = await RedisManager.get_redis()
             print(f"Redis connected for {self.channel_name}", flush=True)
 
-            players_key = f"room:{self.room_name}:players"
-            current_players = await self.redis.lrange(players_key, 0, -1)
+            if "Mozilla" in user_agent:  # Browser connection
+                print(f"🌐 Web user connected: {self.channel_name}", flush=True)
 
-            if len(current_players) >= 2:
-                print("Room Full", flush=True)
-                await self.close(code=4000)
-                return
+                players_key = f"room:{self.room_name}:players"
+                current_players = await self.redis.lrange(players_key, 0, -1)
 
-            await self.accept() 
-            await self.redis.rpush(players_key, self.channel_name)
+                if len(current_players) >= 2:
+                    print("Room Full", flush=True)
+                    await self.close(code=4000)
+                    return
 
-            player_number = f"player_{len(current_players) + 1}"
+                await self.accept()
+                await self.redis.rpush(players_key, self.channel_name)
 
+                player_number = f"player_{len(current_players) + 1}"
 
-            await self.send(text_data=json.dumps({
-                "type": "initializer_pack",
-                "player_role": player_number
-            }))
+                await self.send(text_data=json.dumps({
+                    "type": "initializer_pack",
+                    "player_role": player_number
+                }))
 
-            # Join the room group
-            await self.channel_layer.group_add(
-                self.room_group_name,
-                self.channel_name
-            )
+                # Join the room group
+                await self.channel_layer.group_add(
+                    self.room_group_name,
+                    self.channel_name
+                )
+
+            else:  # CLI connection
+                print(f"🖥️ CLI user connected: {self.channel_name}", flush=True)
+
+                await self.accept()
+                await self.handle_cli_request()
+                await self.close()
+
         except Exception as e:
             print(f"Error connecting to redis: {e}", flush=True)
             await self.close()
+
         
     async def disconnect(self, close_code):
         try:    
@@ -137,7 +153,26 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 "player": data["player"],
                 "direction": data["direction"]
             }))
-        
+    
+    async def handle_cli_request(self):
+        try:
+            players_key = f"room:{self.room_name}:players"
+            game_state_key = f"room:{self.room_name}:state"
+            
+            raw_players = await self.redis.lrange(players_key, 0, -1)
+            number_of_players = [player.decode("utf-8") for player in raw_players]
+            game_state = await RedisManager.get_json(game_state_key)
+
+            response = {
+                "type": "CLI_Response",
+                "game_state": game_state,
+                "number_of_players": number_of_players,
+            }
+
+            await self.send(text_data=json.dumps(response))
+            print(f"CLI request serviced, disconnecting: {self.channel_name}", flush=True)
+        except Exception as e:
+            print(f"Error handling CLI request: {e}", flush=True)
 
     async def start_game(self, event):
     # Notify the WebSocket client that the game is starting
@@ -188,6 +223,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 
     async def game_loop(self):
         input_queue_key = f"room:{self.room_name}:inputs"
+        game_state_key = f"room:{self.room_name}:state"
         input_buffers = {"player_1": [], "player_2": []}
         buffer_size = 2
 
@@ -234,7 +270,10 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 self.game_state["last_update_time"] = time.time()
                 
                 # Broadcast the updated game state to all players
-                
+                if self.did_colide == False:
+                    self.game_state["collision_point"] = None
+                else:
+                    self.did_colide = False
 
                 await self.channel_layer.group_send(
                     self.room_group_name,
@@ -243,6 +282,9 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                         "game_state": self.game_state,
                     }
                 )
+
+                await self.redis.execute("SET", game_state_key, json.dumps(self.game_state))
+
                 loop_end = time.perf_counter()  # End time
                 #loop_duration = (loop_end - loop_start) * 1000  # Convert to ms
                 #print(f"🕒 Game loop execution time: {loop_duration:.2f} ms", flush=True)
@@ -332,6 +374,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         
         
         if distance <= ball_radius:
+            self.did_colide = True
             if ball_x >= paddle_left and ball_x <= paddle_right:
                 #print("MOVEMENT EXCEPTION top-bot", flush=-True)
                 if direction > 0:
@@ -342,6 +385,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                     new_position = ball_y + ball_radius + paddle_height / 2
                     if ball_vy > 0:
                         self.game_state["ball_direction"] = self.reflect((ball_vx, ball_vy), (0, -1))
+                self.game_state["collision_point"] = [ball_x, ball_y]
             elif ball_y >= paddle_top - ball_radius or ball_y <= paddle_bottom + ball_radius:
                 #print("MOVEMENT EXCEPTION corrners", flush=-True)
                 corner_x = paddle_left if ball_x < paddle_left else paddle_right
@@ -364,6 +408,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 distance = math.sqrt(dx**2 + dy**2)
 
                 self.game_state["ball_direction"] = self.reflect((ball_vx, ball_vy), (dx/distance, dy/distance))
+                self.game_state["collision_point"] = [ball_x, ball_y]
             else:
                 #print("MOVEMENT EXCEPTION Side", flush=-True)
                 delta_x = (ball_radius - abs(closest_x - ball_x))
@@ -374,6 +419,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 new_y = ball_y + delta_y
                 #print(f"UPDATING POSITION TO: {new_x} {new_y}", flush=True)
                 self.game_state["ball_position"] = [new_x, new_y]
+                self.game_state["collision_point"] = [new_x, new_y]
                 if ball_x < paddle_x and self.game_state["ball_direction"][0] >= 0:
                     self.game_state["ball_direction"] = self.reflect((ball_vx, ball_vy), (-1, 0))
                 elif ball_x > paddle_x and self.game_state["ball_direction"][0] <= 0:
@@ -410,6 +456,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             else:
                 normal_vector = (distance_x / distance, distance_y / distance)
             self.correct_ball_pos(collision_point, paddle1[0])
+            self.game_state["collision_point"] = self.game_state["ball_position"]
             return True, normal_vector, collision_point, "paddle1"
         
         closest_x = max(paddle2[0] - half_width, min(ball_pos[0], paddle2[0] + half_width))
@@ -428,6 +475,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             else:
                 normal_vector = (distance_x / distance, distance_y / distance)
             self.correct_ball_pos(collision_point, paddle2[0])
+            self.game_state["collision_point"] = self.game_state["ball_position"]
             return True, normal_vector, collision_point, "paddle2"
         
         if ball_pos[0] == ball_radius or ball_pos[0] == field_width - ball_radius:
@@ -437,6 +485,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             else:
                 collision_point = (field_width, ball_pos[1])
                 normal_vector = (-1, 0)
+            self.game_state["collision_point"] = self.game_state["ball_position"]
             return True, normal_vector, collision_point, None
         
         if ball_pos[1] == ball_radius or ball_pos[1] == field_height - ball_radius:
@@ -446,6 +495,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             else:
                 collision_point = (ball_pos[0], field_height)
                 normal_vector = (0, -1)
+            self.game_state["collision_point"] = self.game_state["ball_position"]
             return True, normal_vector, collision_point, None
 
         return False, None, None, None
@@ -460,6 +510,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         #    print(f"player: {player}, normal: {normal}, collision_point: {collision_point}", flush=True)
 
         #handle collisions on the left and right walls
+        self.did_colide = True
         if collision_point[0] == 0 or collision_point[0] == self.game_parametres["field_width"]:
             self.init_starting_positions()
             if collision_point[0] == 0:

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Match, UserProfile, Message
+from .models import  UserProfile, Message
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from django.contrib.auth import authenticate

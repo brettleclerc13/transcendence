@@ -1,4 +1,5 @@
 import aioredis
+import json
 
 class RedisManager:
     _redis_pool = None
@@ -55,3 +56,18 @@ class RedisManager:
                 await redis.delete(*keys)
         
         print(f"deleted room: {room_name}", flush=True)
+
+    @classmethod
+    async def get_json(cls, key):
+        try:
+            redis = await cls.get_redis()  
+            json_data = await redis.execute("GET", key)
+
+            if json_data is not None:
+                return json.loads(json_data.decode("utf-8"))
+            else:
+                return {"error": "Data not found"}
+
+        except Exception as e:
+            print(f"Error retrieving JSON from Redis: {e}", flush=True)
+            return {"message": "Error retrieving data"}
