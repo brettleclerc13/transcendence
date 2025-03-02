@@ -16,7 +16,7 @@ type GameState = {
 };
 
 function drawGame(state: GameState, canvas: HTMLCanvasElement) {
-	console.log("Drawing game state:", state);
+	//console.log("Drawing game state:", state);
 
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
@@ -88,7 +88,8 @@ export default function GameCanvas() {
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
 
-			console.log("data type sent in:", data.type);
+			if (data.type === "game_end")
+				console.log("data type sent in:", data.type);
 
 			if (data.type === "initializer_pack") {
 				console.log("player name:", data.player_role);
@@ -119,7 +120,7 @@ export default function GameCanvas() {
 
 	useEffect(() => {
 		if (!gameState || !canvasRef.current) return;
-		console.log("Drawing game state: ", gameState);
+		//console.log("Drawing game state: ", gameState);
 		drawGame(gameState, canvasRef.current as HTMLCanvasElement);
 	}, [gameState]);
 

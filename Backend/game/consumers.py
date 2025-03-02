@@ -83,7 +83,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 await self.redis.rpush(players_key, self.channel_name)
 
                 player_number = f"player_{len(current_players) + 1}"
-
+                self.temp_player = player_number
                 await self.send(text_data=json.dumps({
                     "type": "initializer_pack",
                     "player_role": player_number
@@ -113,7 +113,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 
             # Stop game loop if all players leave
             print(f"in disconect: len of players {len(current_players)}", flush=True)
-            if hasattr(self, "game_task") and len(current_players) < 2:
+            if len(current_players) < 2:
                 await self.handle_game_end("No Winner", "Game ended due to a disconnection")
         except Exception as e:
             print(f"Error during disconnect: {e}", flush=True)
@@ -149,6 +149,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                             "type": "start_game",
                         }
                     )
+                    print(f"Starting the game task by {self.temp_player}", flush=True)
                     self.game_task = asyncio.create_task(self.game_loop(), name=f"GameLoop-{self.room_name}")
         elif data["type"] == "input":
             await self.redis.rpush(input_queue_key, json.dumps({
@@ -218,7 +219,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 self.room_group_name,
                 self.channel_name
             )
-            self.game_task.cancel()
+            if hasattr(self, "game_task"):
+                self.game_task.cancel()
         except Exception as e:
             print(f"Error handling game end: {e}", flush=True)
      
