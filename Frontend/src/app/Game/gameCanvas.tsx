@@ -133,7 +133,7 @@ export default function GameCanvas() {
                 "paddle_height": 8,
                 "paddle_width": 2,
                 "ball_speed": 20,
-                "paddle_xposition": 0.2,
+                "paddle_xposition": 0.01,
                 "screen_width": 800,
                 "screen_height": 400,
                 "resolution": 8,
