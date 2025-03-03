@@ -12,6 +12,7 @@ import {
 	BlockUser,
 	UnblockUser,
 } from "../utilities/blockActions";
+import { data } from "framer-motion/client";
 
 interface Friend {
 	id: number;
@@ -32,10 +33,16 @@ const FriendAndInvitationList: React.FC<{
 		const fetchData = async () => {
 			try {
 				const friendList = await FetchFriends();
-				if (friendList) setFriends(friendList);
+				if (friendList && friendList.length === 0) {
+					console.log("No friends in the list.");
+				}
+				else if (friendList) setFriends(friendList);
 
 				const invitationList = await FetchInvitations();
-				if (invitationList) setInvitations(invitationList);
+				if (invitationList && invitationList.length === 0) {
+					console.log("No invitation pending.");
+				}
+				else if (invitationList) setInvitations(invitationList);
 
 				const blockedList = await FetchBlockedUsers();
 				if (blockedList)
@@ -116,7 +123,7 @@ const FriendAndInvitationList: React.FC<{
 										}}
 									>
 										<img
-											src={friend.profile_picture || "./img/default.png"}
+											src={`${friend.profile_picture}` || "/img/default.png"}
 											alt={`${friend.username}'s avatar`}
 											style={{
 												width: 40,
@@ -156,7 +163,7 @@ const FriendAndInvitationList: React.FC<{
 							>
 								<div className="d-flex align-items-center">
 									<img
-										src={invite.profile_picture || "./img/default.png"}
+										src={`${invite.profile_picture}` || "./img/default.png"}
 										alt={`${invite.sender__username}'s avatar`}
 										style={{
 											width: 40,

@@ -1,12 +1,13 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Match, UserProfile, Message
+from .models import Match, UserProfile
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from django.contrib.auth import authenticate
 
 class UserProfileSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
+    profile_picture = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
@@ -14,6 +15,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_user(self, obj):
         return {"id": obj.user.id, "username": obj.user.username}
+	
 
 class UserSerializer(serializers.ModelSerializer):
 	profile = UserProfileSerializer(required=False)
@@ -94,8 +96,8 @@ class MatchSerializer(serializers.ModelSerializer):
         if not User.objects.filter(user=data['user']).exists():
             raise serializers.ValidationError("User does not exist.")
         return data
-	
-class MessageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Message
-        fields = '__all__'
+
+# class MessageSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Message
+#         fields = '__all__'
