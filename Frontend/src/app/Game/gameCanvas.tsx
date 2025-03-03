@@ -27,8 +27,8 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 	ctx.scale(1, -1);
 
 	// Convert paddle dimensions from "units" to pixels temporarry hard coded.
-	const paddleWidth = 2 * state.resolution; // Convert from 0-100 to pixels
-	const paddleHeight = 8 * state.resolution; // Convert from 0-100 to pixels
+	const paddleWidth = 1.5 * state.resolution; 
+	const paddleHeight = 12 * state.resolution; 
 
 	// Player 1's paddle
 	const player1XCenter = state.player1_position[0] * state.resolution; // Convert X-center to pixels
@@ -54,7 +54,7 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 	ctx.arc(
 		state.ball_position[0] * state.resolution, // X-center
 		state.ball_position[1] * state.resolution, // Y-center
-		1 * state.resolution, // Radius (10 pixels)
+		1.5 * state.resolution, // Radius (10 pixels)
 		0,
 		Math.PI * 2
 	);
@@ -83,7 +83,7 @@ export default function GameCanvas() {
 	
     useEffect(() => {
         const roomName = "defaultRoom"; // Example room name
-        const ws = new WebSocket(`wss://transcendence.fr/game/${roomName}/`);
+        const ws = new WebSocket(`wss://127.0.0.1:8080/game/${roomName}/`);
 
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
@@ -129,14 +129,14 @@ export default function GameCanvas() {
         if (status === "ready" && playerRole) {
             console.log("sending initializer data");
             socket?.send(JSON.stringify({ type: "initialize", game_parametres: {
-                "ball_diametre": 1,
-                "paddle_speed": 10,
-                "paddle_height": 8,
-                "paddle_width": 2,
-                "ball_speed": 20,
-                "paddle_xposition": 0.01,
+                "ball_diametre": 1.5,
+                "paddle_speed": 40,
+                "paddle_height": 12,
+                "paddle_width": 1.5,
+                "ball_speed": 55,
+                "paddle_xposition": 0.007,
                 "screen_width": 800,
-                "screen_height": 400,
+                "screen_height": 592,
                 "resolution": 8,
                 "point_goal": 10
              }}));
@@ -230,7 +230,7 @@ export default function GameCanvas() {
 				<canvas
 					ref={canvasRef}
 					width={800}
-					height={400}
+					height={592}
 					style={{ backgroundColor: "black", display: "block" }}
 				/>
 			)}

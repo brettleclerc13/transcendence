@@ -9,7 +9,7 @@ ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
 
 # Base URL for the backend API
-BASE_URL_DATA = "wss://transcendence.fr/game"
+BASE_URL_DATA = "wss://127.0.0.1:8080/game"
 
 def list_games():
     print("🚧 Under Construction 🚧")
@@ -22,8 +22,8 @@ async def get_game_state():
             game_data = json.loads(response)
 
             # Check if the response contains an error message
-            if "error" in game_data:
-                print(f"❌ Error: {game_data['error']}, the game has not started yet!")
+            if "error" in game_data['game_state']:
+                print(f"❌ Error: {game_data['game_state']['error']}, the game has not started yet!")
                 return
 
             print(f"\n📊 Game State for {room_name}:")
