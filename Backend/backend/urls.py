@@ -18,8 +18,7 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import path
 from django.conf.urls.static import static
-from user.views import RegisterAPIView, MatchAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView,   BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView
-from chat.views import FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView
+from user.views import RegisterAPIView, MatchAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView,   BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView
 
 urlpatterns = [
 	path('admin/', admin.site.urls),

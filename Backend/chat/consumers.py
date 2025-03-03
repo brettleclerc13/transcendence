@@ -23,6 +23,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "type": "chat_message",
                 "message": message,
                 "sender": sender,
+                "conversation_id": self.conversation_id,
             }
         )
 
@@ -30,6 +31,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             "message": event["message"],
             "sender": event["sender"],
+            "conversation_id": event["conversation_id"],
         }))
         
 class ContactConsumer(AsyncWebsocketConsumer):

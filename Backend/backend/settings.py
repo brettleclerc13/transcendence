@@ -43,7 +43,8 @@ INSTALLED_APPS = [
 	'django_extensions',
     'game',
     'channels',
-	'chat'
+	'chat',
+    "daphne"
 ]
 
 MIDDLEWARE = [

@@ -160,37 +160,82 @@ const LiveChatClient = () => {
 
 	useEffect(() => {
 		if (!selectedFriend || !currentUser) return;
-
-		const conversationId = `${selectedFriend.id}-${currentUser.id}`; 
-		const ws = new WebSocket(`wss://127.0.0.1:8001/ws/chat/${conversationId}/`);
-
-		ws.onmessage = (event) => {
-			const data = JSON.parse(event.data);
-			setMessages((prevMessages) => [
-				...prevMessages,
-				{
-					sender: data.sender,
-					conversation_id: selectedFriend.id,
-					text: data.message,
-					timestamp: new Date().toISOString(),
-					senderPicture: `${selectedFriend.profile_picture}` || "./img/default.png",
-				},
-			]);
+	
+		const fetchConversationId = async () => {
+			try {
+				const response = await fetch("/api/get_or_create_conversation/", {
+					method: "POST",
+					headers: {
+						Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ user_id: selectedFriend.id }),
+				});
+	
+				if (!response.ok) {
+					console.error("Erreur lors de la récupération de la conversation.");
+					return;
+				}
+	
+				const conversationData = await response.json();
+				if (!conversationData.id) {
+					console.error("Aucune conversation trouvée ou créée.");
+					return;
+				}
+	
+				const ws = new WebSocket(
+					`wss://127.0.0.1:8080/ws/chat/${conversationData.id}/`
+				);
+	
+				ws.onopen = () => {
+					console.log("WebSocket connecté avec succès !");
+					setSocket(ws);
+				};
+	
+				ws.onmessage = (event) => {
+					const data = JSON.parse(event.data);
+					setMessages((prevMessages: Message[]) => [
+						...prevMessages,
+						{
+							sender: data.sender,
+							conversation_id: conversationData.id,
+							text: data.message,
+							timestamp: new Date().toISOString(),
+							senderPicture:
+								selectedFriend.profile_picture || "./img/default.png",
+						},
+					]);
+				};
+	
+				ws.onerror = (error) => {
+					console.error("Erreur WebSocket :", error);
+				};
+	
+				ws.onclose = () => {
+					console.log("WebSocket fermé.");
+				};
+	
+				return () => {
+					ws.close();
+				};
+			} catch (error) {
+				console.error("Erreur réseau :", error);
+			}
 		};
-
-		setSocket(ws);
-
-		return () => {
-			ws.close();
-		};
+	
+		fetchConversationId();
 	}, [selectedFriend, currentUser]);
+	
 
-	const handleSendMessage = (text: string) => {
-		if (!socket) return;
+	const handleSendMessage = (message: string) => {
+		if (!socket || socket.readyState !== WebSocket.OPEN) {
+			console.error("WebSocket n' est pas encore pret.");
+			return;
+		}
 
 		socket.send(
 			JSON.stringify({
-				message: text,
+				message,
 			})
 		);
 	};
