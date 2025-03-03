@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AuthProvider } from "@/app/utilities/JWTActions";
+import RefreshAccessToken from "@/app/utilities/JWTActions";
 import "bootstrap/dist/css/bootstrap.min.css";
 import BootstrapClient from "@/components/bootstrapClient";
 import "./globals.css";
@@ -27,10 +27,9 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<body>
-				<AuthProvider>
-					{children}
-					<BootstrapClient />
-				</AuthProvider>
+				{children}
+				<RefreshAccessToken />
+				<BootstrapClient />
 			</body>
 		</html>
 	);

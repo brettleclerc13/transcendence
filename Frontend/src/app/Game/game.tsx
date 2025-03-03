@@ -1,5 +1,7 @@
+"use client";
+
 import GameCanvas from "./gameCanvas";
-import { isUserLoggedIn } from "../utilities/userActions";
+import { isUserLoggedIn } from "../utilities/userClientActions";
 import Link from "next/link";
 
 export default function Game() {
@@ -12,19 +14,12 @@ export default function Game() {
 				</div>
 			) : (
 				<div className="flex flex-col gap-4 justify-center items-center h-full w-full">
-					<p>
-						Please register or log in before starting a game. It won't even take
-						a minute!
+					<p className="text-lg">
+						Please log in before starting a game. It won't even take a minute!
 					</p>
-					<div className="flex gap-6">
-						<Link className="standard-button" href="/register">
-							Register
-						</Link>
-						<Link className="standard-button" href="/login">
-							Login
-						</Link>
-						{/* Once logged in, should be redirected back to game page */}
-					</div>
+					<Link className="secondary-button" href="/login">
+						Connect
+					</Link>
 				</div>
 			)}
 		</div>

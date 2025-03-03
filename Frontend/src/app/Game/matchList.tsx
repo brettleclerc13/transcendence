@@ -13,14 +13,18 @@ export default function MatchList() {
 
 	useEffect(() => {
 		const fetchMatchesAsync = async () => {
-			const filters = {
-				is_ongoing: false,
-				is_finished: false,
-				player2: null,
-			};
-			const data = await fetchMatches(filters);
-			setMatches(data);
-			setLoading(false);
+			try {
+				const filters = {
+					is_ongoing: false,
+					is_finished: false,
+					player2: null,
+				};
+				const data = await fetchMatches(filters);
+				setMatches(data);
+				setLoading(false);
+			} catch (error) {
+				console.error("Failed to fetch matches in match list", error);
+			}
 		};
 		fetchMatchesAsync();
 	}, []);

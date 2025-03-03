@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pencil } from "lucide-react";
-import { updateUserProfileImage } from "../utilities/profileActions";
+import { updateUserProfileImage } from "../utilities/profileClientActions";
 import { UserProfileData } from "../utilities/profileActions";
 
 export default function ProfileImage({

@@ -12,6 +12,7 @@
 	"dependencies": {
 		"@lordicon/element": "^1.10.1",
 		"bootstrap": "^5.3.3",
+		"cookies-next": "^5.1.0",
 		"framer-motion": "^12.4.4",
 		"jwt-decode": "^4.0.0",
 		"lottie-web": "^5.12.2",

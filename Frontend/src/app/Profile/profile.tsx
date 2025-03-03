@@ -35,10 +35,12 @@ export const profileSchema = z.object({
 		)
 		.optional(),
 	nationality: z.string().max(254, "Nationality is too long").optional(),
+	tournament_name: z
+		.string()
+		.min(3, "Alias must be at least 3 characters long")
+		.max(32, "Alias is too long"),
 	bio: z.string().max(500, "Bio must not exceed 500 characters").optional(),
 });
-
-export type ProfileSchema = z.infer<typeof profileSchema>;
 
 type Match = {
 	duelNumber?: number;
@@ -109,7 +111,7 @@ export default function Profile({
 			email: formData.get("email"),
 			age: formData.get("age") ? Number(formData.get("age")) : undefined,
 			nationality: formData.get("nationality"),
-			tournamentName: formData.get("tournamentName"),
+			tournament_name: formData.get("tournamentName"),
 			bio: formData.get("bio"),
 		};
 
@@ -128,6 +130,9 @@ export default function Profile({
 			const nationalityError = validationResult.error.errors.find(
 				(err) => err.path[0] === "nationality"
 			);
+			const tournamentNameError = validationResult.error.errors.find(
+				(err) => err.path[0] === "tournament_name"
+			);
 			const bioError = validationResult.error.errors.find(
 				(err) => err.path[0] === "bio"
 			);
@@ -137,6 +142,9 @@ export default function Profile({
 				ageError: ageError ? ageError.message : undefined,
 				nationalityError: nationalityError
 					? nationalityError.message
+					: undefined,
+				tournamentNameError: tournamentNameError
+					? tournamentNameError
 					: undefined,
 				bioError: bioError ? bioError.message : undefined,
 			};
@@ -230,6 +238,17 @@ export default function Profile({
 					<div className="separator"></div>
 
 					<div className="right-informations">
+						<div>
+							<label>Alias (Tournament name):</label>
+							<input
+								type="text"
+								name="tournamentName"
+								defaultValue={userProfile?.tournamentName}
+							/>
+						</div>
+						{profileData?.nationalityError && (
+							<p className="input-error">{profileData?.nationalityError}</p>
+						)}
 						<div>
 							<label>Bio:</label>
 							<textarea

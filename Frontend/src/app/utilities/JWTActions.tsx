@@ -1,15 +1,18 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, ReactNode } from "react";
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { logout } from "./userActions";
-import { createContext } from "react";
+import { useEffect } from "react";
+import { setCookie, deleteCookie, getCookie } from "cookies-next/client";
 
-export const AuthContext = createContext({});
+export default function RefreshAccessToken() {
+	useEffect(() => {
+		startTokenRefresh();
+	}, []);
 
-const refreshAccessToken = async (router: AppRouterInstance) => {
-	const refreshToken = localStorage.getItem("refreshToken");
+	return <></>;
+}
+
+const refreshAccessToken = async () => {
+	const refreshToken = getCookie("refreshToken");
 	if (!refreshToken) return;
 
 	try {
@@ -29,22 +32,22 @@ const refreshAccessToken = async (router: AppRouterInstance) => {
 				throw new Error(`Unexpected response: ${response.status}`);
 			}
 
-			if (data.non_field_errors?.[0] === "User does not exist") {
-				console.warn(
-					"Refresh token refers to a non-existent user. Logging out..."
-				);
-				localStorage.removeItem("refreshToken");
-				localStorage.removeItem("accessToken");
-				localStorage.removeItem("tokenExpiry");
-				return;
-			}
-
 			const errorMessage =
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
 				"Failed to refresh JWT access token.";
-			throw new Error(errorMessage);
+			deleteCookie("accessToken");
+			deleteCookie("refreshToken");
+			deleteCookie("tokenExpiry");
+			if (errorMessage === "User does not exist") {
+				console.warn(
+					"Refresh token refers to a non-existent user. Removing tokens ..."
+				);
+				return;
+			} else {
+				throw new Error(errorMessage);
+			}
 		} else {
 			const data = await response.json();
 
@@ -52,8 +55,8 @@ const refreshAccessToken = async (router: AppRouterInstance) => {
 			const tokenPayload = JSON.parse(atob(newAccessToken.split(".")[1]));
 			const newExpiresAt = tokenPayload.exp * 1000;
 
-			localStorage.setItem("accessToken", newAccessToken);
-			localStorage.setItem("tokenExpiry", newExpiresAt.toString());
+			setCookie("accessToken", newAccessToken);
+			setCookie("tokenExpiry", newExpiresAt.toString());
 			console.log("Access token refreshed");
 		}
 	} catch (error) {
@@ -62,12 +65,12 @@ const refreshAccessToken = async (router: AppRouterInstance) => {
 	}
 };
 
-const startTokenRefresh = (router: AppRouterInstance) => {
+export const startTokenRefresh = async () => {
 	const checkInterval = 30 * 1000; // Check every 30 secs
 
 	setInterval(async () => {
-		const accessToken = localStorage.getItem("accessToken");
-		const tokenExpiry = localStorage.getItem("tokenExpiry");
+		const accessToken = getCookie("accessToken");
+		const tokenExpiry = getCookie("tokenExpiry");
 
 		if (!accessToken || !tokenExpiry) {
 			console.log("❌ No access token found, skipping refresh check");
@@ -78,20 +81,8 @@ const startTokenRefresh = (router: AppRouterInstance) => {
 
 			if (expiresIn < 2 * 60 * 1000) {
 				console.log("🔄 Refreshing access token...");
-				await refreshAccessToken(router);
+				await refreshAccessToken();
 			}
 		}
 	}, checkInterval);
-};
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-	const router = useRouter();
-
-	useEffect(() => {
-		startTokenRefresh(router);
-	}, [router]);
-
-	return (
-		<AuthContext.Provider value={{ logout }}>{children}</AuthContext.Provider>
-	);
 };

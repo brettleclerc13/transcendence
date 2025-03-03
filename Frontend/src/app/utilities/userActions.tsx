@@ -1,27 +1,6 @@
-import { jwtDecode } from "jwt-decode";
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+"use server";
 
-export const isUserLoggedIn = () => {
-	const accessToken = localStorage.getItem("accessToken");
-	const refreshToken = localStorage.getItem("refreshToken");
-
-	if (!accessToken || !refreshToken) return false;
-
-	const decodedAccessToken = jwtDecode(accessToken);
-	const decodedRefreshToken = jwtDecode(refreshToken);
-
-	if (!decodedAccessToken || !decodedRefreshToken) return false;
-
-	const currentTime = Math.floor(Date.now() / 1000); // current time in seconds
-
-	// Check if tokens have expired
-	if (
-		(decodedAccessToken as { exp: number }).exp > currentTime &&
-		(decodedRefreshToken as { exp: number }).exp > currentTime
-	)
-		return true;
-	else return false;
-};
+import { cookies } from "next/headers";
 
 type LoginProps = {
 	email: string;
@@ -33,8 +12,7 @@ export const login = async ({ email, pass }: LoginProps) => {
 		username: email,
 		password: pass,
 	};
-
-	const response = await fetch("/api/token/", {
+	const response = await fetch("http://backend:8001/token/", {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -68,21 +46,25 @@ export const login = async ({ email, pass }: LoginProps) => {
 		const tokenPayload = JSON.parse(atob(accessToken.split(".")[1]));
 		const expiresAt = tokenPayload.exp * 1000; // Convert to milliseconds
 
-		localStorage.setItem("accessToken", accessToken);
-		localStorage.setItem("refreshToken", refreshToken);
-		localStorage.setItem("tokenExpiry", expiresAt.toString());
+		const cookieStore = await cookies();
+
+		cookieStore.set("accessToken", accessToken);
+		cookieStore.set("refreshToken", refreshToken);
+		cookieStore.set("tokenExpiry", expiresAt.toString());
 
 		return data;
 	}
 };
 
-export async function logout(router: AppRouterInstance) {
+export async function backendLogout() {
 	try {
-		localStorage.removeItem("accessToken");
-		localStorage.removeItem("refreshToken");
-		localStorage.removeItem("tokenExpiry");
+		const cookieStore = await cookies();
 
-		const response = await fetch("/api/logout/", {
+		cookieStore.delete("accessToken");
+		cookieStore.delete("refreshToken");
+		cookieStore.delete("tokenExpiry");
+
+		const response = await fetch("http://backend:8001/logout/", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -92,11 +74,10 @@ export async function logout(router: AppRouterInstance) {
 		if (response.ok) console.log("Logout successful");
 		else console.error("Logout unsuccessful");
 
-		setTimeout(() => {
-			router.push("/");
-		}, 1000);
+		return response.ok;
 	} catch (error) {
 		console.error("Error: issue while logging out", error);
+		return false;
 	}
 }
 
@@ -113,7 +94,7 @@ type RegisterProps = {
 };
 
 export const register = async (requestData: RegisterProps) => {
-	const response = await fetch("/api/register/", {
+	const response = await fetch("http://backend:8001/register/", {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",

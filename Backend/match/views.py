@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from .models import Match
-from .serializers import MatchSerializer
+from .serializer import MatchSerializer
 
 class MatchAPIView(generics.ListCreateAPIView):
 	"""
@@ -18,7 +18,8 @@ class MatchAPIView(generics.ListCreateAPIView):
 		Allow filtering matches based on query params (e.g., user, winner, looser, match ID).
 		"""
 		queryset = Match.objects.all()
-		user = self.request.user
+		if not queryset.exists():
+			return Match.objects.none()
 
 		filter_params = {
 			'id': self.request.query_params.get('id'),
@@ -40,11 +41,18 @@ class MatchAPIView(generics.ListCreateAPIView):
 
 		return queryset
 
+	def post(self, request, *args, **kwargs):
+		print(f"Authenticated user: {request.user}")  # Check if user is authenticated
+		print(f"Headers: {request.headers}")  # See headers received
+		print(f"Body: {request.data}")  # Debug request data
+		return self.create(request, *args, **kwargs)
+
 	def perform_create(self, serializer):
 		"""
 		Creates a match with the authenticated user as player1.
         Also allows setting `invite_game` flag.
 		"""
+		print("Received POST request with data:", self.request.data)
 		invite_game = self.request.data.get('invite_game', False)
 		match = serializer.save(player1=self.request.user, invite_game=invite_game)
 

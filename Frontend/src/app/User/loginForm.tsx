@@ -53,7 +53,7 @@ export default function LoginForm() {
 				type: "success",
 			});
 			setTimeout(() => {
-				router.push("/");
+				router.push("/lobby");
 			}, 2000);
 		} catch (error) {
 			setAlert({ message: String(error), type: "danger" });

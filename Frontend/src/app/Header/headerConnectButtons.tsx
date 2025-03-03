@@ -2,17 +2,17 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { isUserLoggedIn } from "@/app/utilities/userActions";
+import { isUserLoggedIn } from "@/app/utilities/userClientActions";
 import {
 	fetchUserProfile,
 	updateUserProfile,
 	UserProfileData,
 } from "@/app/utilities/profileActions";
-import { logout } from "@/app/utilities/userActions";
-import { useRouter } from "next/navigation";
+import { backendLogout } from "@/app/utilities/userActions";
 import Popup from "@/components/popup/popup";
 import Profile from "../Profile/profile";
 import "./headerComponent.css";
+import { useRouter } from "next/navigation";
 
 export default function HeaderConnectButtons() {
 	const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -34,6 +34,12 @@ export default function HeaderConnectButtons() {
 	};
 
 	useEffect(() => {
+		if (isUserLoggedIn()) {
+			run();
+		}
+	}, []);
+
+	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (
 				dropdownRef.current &&
@@ -47,12 +53,6 @@ export default function HeaderConnectButtons() {
 		return () => {
 			document.removeEventListener("mousedown", handleClickOutside);
 		};
-	}, []);
-
-	useEffect(() => {
-		if (isUserLoggedIn()) {
-			run();
-		}
 	}, []);
 
 	const toggleDropdown = () => {
@@ -77,7 +77,9 @@ export default function HeaderConnectButtons() {
 	};
 
 	const handleLogout = async () => {
-		await logout(router);
+		const logoutStatus = await backendLogout();
+		if (logoutStatus) router.push("/");
+		else console.error("Error logging out backend side");
 	};
 
 	return (
