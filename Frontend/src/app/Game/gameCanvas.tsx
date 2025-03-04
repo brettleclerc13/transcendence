@@ -99,7 +99,7 @@ export default function GameCanvas() {
 			}
 
 			if (data.type === "start_game") {
-				console.log("recived start game");
+				console.log("received start game");
 				setStatus("playing");
 			}
 

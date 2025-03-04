@@ -89,6 +89,7 @@ export const createSimpleMatch = async (invite_game?: boolean) => {
 					`Unexpected response concerning simple match creation: ${response.status}`
 				);
 			}
+			console.log("Match API return data: ", data);
 
 			const errorMessage =
 				data.non_field_errors?.[0] || // First item in non_field_errors array

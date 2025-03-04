@@ -16,6 +16,9 @@ class MatchSerializer(serializers.ModelSerializer):
 			'invite_game', 'created_at'
 		]
 		read_only_fields = ['id', 'created_at', 'winner', 'looser']
+	def create(self, validated_data):
+		validated_data['player1'] = self.context['request'].user
+		return super().create(validated_data)
 
 	def validate(self, data):
 		"""
@@ -23,7 +26,7 @@ class MatchSerializer(serializers.ModelSerializer):
 		- player1 and player2 cannot be the same user
 		- score values cannot be negative
 		"""
-		player1 = self.instance.player1 if self.instance else data.get('player1')
+		player1 = self.context['request'].user  # Always use the authenticated user
 		player2 = data.get('player2', self.instance.player2 if self.instance else None)
 
 		if player1 and player2 and player1 == player2:

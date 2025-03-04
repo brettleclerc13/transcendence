@@ -55,7 +55,6 @@ class MatchAPIView(generics.ListCreateAPIView):
 		print("Received POST request with data:", self.request.data)
 		invite_game = self.request.data.get('invite_game', False)
 		match = serializer.save(player1=self.request.user, invite_game=invite_game)
-
 		return Response({'match_id': match.id}, status=status.HTTP_201_CREATED)
 
 	def patch(self, request, *args, **kwargs):

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { fetchMatches } from "../utilities/matchActions";
+import "./match.css";
 
 type Match = {
 	id: number;
@@ -30,12 +31,12 @@ export default function MatchList() {
 	}, []);
 
 	return (
-		<div>
+		<div className="matches-container">
 			<h2>Available Matches</h2>
 			{loading ? (
 				<p>Loading...</p>
 			) : (
-				<table>
+				<table className="matches-table">
 					<thead>
 						<tr>
 							<th>Created At</th>
@@ -51,7 +52,7 @@ export default function MatchList() {
 								<td>1v1</td>
 								<td>1/2</td>
 								<td>
-									<button>Join</button>
+									<button className="join-btn">Join</button>
 								</td>
 							</tr>
 						))}
@@ -59,9 +60,9 @@ export default function MatchList() {
 				</table>
 			)}
 			{matches.length > 5 && (
-				<div>
+				<div className="load-more-container">
 					<p>More matches available...</p>
-					<button>Load More</button>
+					<button className="load-more-btn">Load More</button>
 				</div>
 			)}
 		</div>

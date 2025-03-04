@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { isUserLoggedIn } from "../utilities/userClientActions";
 import Link from "next/link";
 import { createSimpleMatch } from "../utilities/matchActions";
-import "./game.css";
+import "./match.css";
 
 export const profileSchema = z.object({
 	tournamentName: z
@@ -118,11 +118,12 @@ export default function Lobby() {
 						</div>
 					)}
 					<div className="lobby-sub-container">
-						<div className="basis-2">
+						<div className="basis-3/5">
 							<MatchList />
 						</div>
-						<div className="basis-1">
+						<div className="basis-2/5">
 							<form action={gameAction}>
+								<h3>Tournament alias name</h3>
 								<input
 									type="text"
 									name="tournamentName"
