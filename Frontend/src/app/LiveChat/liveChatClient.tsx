@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./liveChat.css";
 import FriendAndInvitationList from "./friendAndInvitationList";
 import CurrentChat from "./currentChat";
@@ -33,6 +33,7 @@ const LiveChatClient = () => {
 	const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
 	const [currentUser, setCurrentUser] = useState<User | null>(null);
 	const [messages, setMessages] = useState<Message[]>([]);
+	const wsRef = useRef<WebSocket | null>(null);
 	// const [loading, setLoading] = useState<boolean>(false);
 	// const [viewMode, setViewMode] = useState<"friends" | "invitations">(
 		// "friends"
@@ -159,8 +160,9 @@ const LiveChatClient = () => {
 	// };
 
 	useEffect(() => {
+		console.log("test select current : ", selectedFriend," ", currentUser);
 		if (!selectedFriend || !currentUser) return;
-	
+
 		const fetchConversationId = async () => {
 			try {
 				const response = await fetch("/api/get_or_create_conversation/", {
@@ -178,22 +180,40 @@ const LiveChatClient = () => {
 				}
 	
 				const conversationData = await response.json();
+				console.log ("conversationData.id :", conversationData.id);
 				if (!conversationData.id) {
 					console.error("Aucune conversation trouvée ou créée.");
 					return;
 				}
+
+				// const messagesRetrieve = await fetch(`/api/messages/`, {
+				// 	headers: {
+				// 		Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+				// 		"Content-Type": "application/json",
+				// 	},
+				// });
+				// if (!messagesRetrieve.ok) {
+				// 	console.error("Erreur lors de la récupération des messages.");
+				// 	return;
+				// }
+				// const messagesData = await messagesRetrieve.json();
+				// setMessages(messagesData.messages);
 	
-				const ws = new WebSocket(
-					`wss://127.0.0.1:8080/ws/chat/${conversationData.id}/`
+				wsRef.current = new WebSocket(
+					`ws://127.0.0.1:8001/ws/chat/${conversationData.id}/` // ${conversationData.id}
 				);
-	
-				ws.onopen = () => {
+
+				wsRef.current.onopen = () => {
 					console.log("WebSocket connecté avec succès !");
-					setSocket(ws);
+					setSocket(wsRef.current);
+					console.log("setSocket exécuté !");
+					console.log("📡 ReadyState après ouverture :", wsRef.current.readyState);
 				};
 	
-				ws.onmessage = (event) => {
+				wsRef.current.onmessage = (event: MessageEvent) => {
+					console.log("websocket message recu : ", event.data);
 					const data = JSON.parse(event.data);
+					console.log("data in the front after JSON.parse : ", data);
 					setMessages((prevMessages: Message[]) => [
 						...prevMessages,
 						{
@@ -201,22 +221,19 @@ const LiveChatClient = () => {
 							conversation_id: conversationData.id,
 							text: data.message,
 							timestamp: new Date().toISOString(),
-							senderPicture:
-								selectedFriend.profile_picture || "./img/default.png",
+							senderPicture: selectedFriend.profile_picture || "./img/default.png",
 						},
 					]);
 				};
-	
-				ws.onerror = (error) => {
+
+				console.log("sender in the front : ", messages.sender);
+
+				wsRef.current.onerror = (error: Event) => {
 					console.error("Erreur WebSocket :", error);
 				};
 	
-				ws.onclose = () => {
-					console.log("WebSocket fermé.");
-				};
-	
-				return () => {
-					ws.close();
+				wsRef.current.onclose = (event: CloseEvent) => {
+					console.warn("⚠️ WebSocket fermé :", event.code, event.reason);
 				};
 			} catch (error) {
 				console.error("Erreur réseau :", error);
@@ -224,20 +241,36 @@ const LiveChatClient = () => {
 		};
 	
 		fetchConversationId();
+		return () => {
+			wsRef.current?.close();
+		};
 	}, [selectedFriend, currentUser]);
-	
+
 
 	const handleSendMessage = (message: string) => {
-		if (!socket || socket.readyState !== WebSocket.OPEN) {
-			console.error("WebSocket n' est pas encore pret.");
+		if (!wsRef.current) {
+			console.error("❌ WebSocket non initialisé !");
 			return;
 		}
 
-		socket.send(
-			JSON.stringify({
-				message,
-			})
-		);
+		if (wsRef.current.readyState === WebSocket.CONNECTING) {
+			console.warn("⌛ WebSocket en cours de connexion... Attends un peu !");
+			return;
+		}
+
+		if (wsRef.current.readyState !== WebSocket.OPEN) {
+			console.error("❌ WebSocket fermé. Impossible d'envoyer un message.");
+			return;
+		}
+
+		// console.log("📤 Envoi du message WebSocket :", messageData);
+		// socket.send(JSON.stringify({message: "Test", sender: 1 }));
+		
+		// console.log("📨 Envoi du message :", message);
+		wsRef.current.send(JSON.stringify({ 
+			message,
+			sender: currentUser?.id
+		}));
 	};
 
 	const handleProfileClick = () => {

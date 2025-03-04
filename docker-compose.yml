@@ -15,6 +15,7 @@ services:
     build:
       context: ./Backend
     environment:
+      - DJANGO_SETTINGS_MODULE=backend.settings
       - DATABASE_HOST=db
       - DATABASE_NAME=transcendence
       - DATABASE_USER=postgres
