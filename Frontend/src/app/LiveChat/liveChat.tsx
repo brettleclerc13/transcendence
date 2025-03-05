@@ -1,5 +1,5 @@
 import "./liveChat.css";
-import LiveChatClient from "./liveChatClient";
+import ClientChatComponents from "./clientChatComponents";
 
 export default function LiveChat() {
 	return (
@@ -8,7 +8,7 @@ export default function LiveChat() {
 				<span style={{ color: "#fff" }}>LIVE</span>
 				<span style={{ color: "#319795" }}>CHAT</span>
 			</h1>
-			<LiveChatClient />
+			<ClientChatComponents />
 		</div>
 	);
 }

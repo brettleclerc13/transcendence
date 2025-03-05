@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { SearchFriend } from "../utilities/chatActions"; 
 
 type UserResult = {
 	username: string;
@@ -19,15 +20,52 @@ const SearchBar = () => {
 		setQuery(searchValue);
 
 		if (searchValue.trim().length > 0) {
-			try {
-				const response = await fetch(`/api/search?query=${searchValue}`);
-				const data: UserResult[] = await response.json();
-				setResults(data.slice(0, 3));
+			const response = await SearchFriend(searchValue);
+			if (response.status === true) {
+				setResults(response.data.slice(0, 3));
 				setShowDropdown(true);
-			} catch (error) {
-				console.error("Erreur lors de la recherche :", error);
+			} else {
 				setResults([]);
+				setShowDropdown(false);
 			}
+			// try {
+			// 	console.log("TRY 3");
+			// 	const response = await fetch(`/api/search?query=${searchValue}`, {
+			// 		method: "GET",
+			// 		headers: {
+			// 			"Content-Type": "application/json",
+			// 		},
+			// 	});
+			// 	console.log("TRY 4");
+			// 	let data;
+			// 	const text = await response.text();
+			// 	console.log("TEXT:", text);
+			// 		try {
+			// 			data = JSON.parse(text);
+						
+			// 		} catch {
+			// 			console.log("ON TEST 2");
+			// 			throw new Error(`Unexpected response: ${response.status}`);
+			// 		}
+			// 	if (!response.ok) {
+			// 		const errorMessage =
+			// 			data.non_field_errors?.[0] || // First item in non_field_errors array
+			// 			data.message || // Fallback to a generic message
+			// 			data.detail || // Another common key for error messages
+			// 			"Failed to search for users.";
+			// 		throw new Error(errorMessage);
+			// 	} else {
+			// 		setResults(data.slice(0, 3));
+			// 		setShowDropdown(true);
+			// 		return;
+			// 	}
+			// 	// const data: UserResult[] = JSON.parse(text);
+			// 	// const data: UserResult[] = await response.json();
+			// } catch (error) {
+			// 	console.log("TRY 5");
+			// 	console.error("Erreur lors de la recherche :", error);
+			// 	setResults([]);
+			// }
 		} else {
 			setResults([]);
 			setShowDropdown(false);

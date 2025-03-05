@@ -1,19 +1,24 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import  UserProfile, Message
+from .models import  UserProfile, Message, Match
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from django.contrib.auth import authenticate
 
 class UserProfileSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
+    profile_picture = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
         fields = ['user' ,'nationality', 'bio', 'age', 'profile_picture', 'tournament_name', 'is_online']
 
+    def get_profile_picture(self, obj):
+        return obj.profile_picture.url if obj.profile_picture else None
+		
     def get_user(self, obj):
         return {"id": obj.user.id, "username": obj.user.username}
+
 
 class UserSerializer(serializers.ModelSerializer):
 	profile = UserProfileSerializer(required=False)
@@ -81,7 +86,20 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
 			raise serializers.ValidationError("User does not exist")
 		except Exception as e:
 			raise serializers.ValidationError(str(e))
-	
+
+class MatchSerializer(serializers.ModelSerializer):
+    class Meta:
+            model = Match
+            fields = ['id', 'user', 'opponent', 'date', 'score', 'opponent_score', 'result']
+
+    def validate(self, data):
+        #so far Primary key is "id". here we using user to check.
+        #it's best if either we move primary key to user or change this line to use id.
+        # this should be decided intandem with frontend
+        if not User.objects.filter(user=data['user']).exists():
+            raise serializers.ValidationError("User does not exist.")
+        return data
+
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message

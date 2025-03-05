@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./liveChat.css";
 import FriendAndInvitationList from "./friendAndInvitationList";
 import CurrentChat from "./currentChat";
@@ -33,10 +33,12 @@ const LiveChatClient = () => {
 	const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
 	const [currentUser, setCurrentUser] = useState<User | null>(null);
 	const [messages, setMessages] = useState<Message[]>([]);
-	const [loading, setLoading] = useState<boolean>(false);
-	const [viewMode, setViewMode] = useState<"friends" | "invitations">(
-		"friends"
-	);
+	const wsRef = useRef<WebSocket | null>(null);
+	// const [loading, setLoading] = useState<boolean>(false);
+	// const [viewMode, setViewMode] = useState<"friends" | "invitations">(
+		// "friends"
+	// );
+	const [socket, setSocket] = useState<WebSocket | null>(null);
 
 	useEffect(() => {
 		const fetchCurrentUser = async () => {
@@ -67,94 +69,208 @@ const LiveChatClient = () => {
 		fetchCurrentUser();
 	}, []);
 
-	const handleSendMessage = async (text: string) => {
+	// const handleSendMessage = async (text: string) => {
+	// 	if (!selectedFriend || !currentUser) return;
+
+	// 	const accessToken = localStorage.getItem("accessToken");
+	// 	if (!accessToken) {
+	// 		console.warn(
+	// 			"Aucun token d'accès trouvé. L'utilisateur est peut-être déconnecté."
+	// 		);
+	// 		return;
+	// 	}
+
+	// 	try {
+	// 		const blockedUsersResponse = await fetch(`/api/blocked-users/`, {
+	// 			method: "GET",
+	// 			headers: {
+	// 				Authorization: `Bearer ${accessToken}`,
+	// 			},
+	// 		});
+
+	// 		if (!blockedUsersResponse.ok) {
+	// 			console.error(
+	// 				"Erreur lors de la vérification des utilisateurs bloqués"
+	// 			);
+	// 			return;
+	// 		}
+
+	// 		const blockedUsers = await blockedUsersResponse.json();
+	// 		if (blockedUsers.includes(selectedFriend.id)) {
+	// 			console.warn(
+	// 				"Vous avez bloqué cet utilisateur et ne pouvez pas lui envoyer de message."
+	// 			);
+	// 			return;
+	// 		}
+
+	// 		const conversationResponse = await fetch(
+	// 			"/api/get_or_create_conversation/",
+	// 			{
+	// 				method: "POST",
+	// 				headers: {
+	// 					Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+	// 					"Content-Type": "application/json",
+	// 				},
+	// 				body: JSON.stringify({ user_id: selectedFriend.id }),
+	// 			}
+	// 		);
+
+	// 		if (!conversationResponse.ok)
+	// 			throw new Error("Erreur lors de la récupération de la conversation.");
+
+	// 		const conversationData = await conversationResponse.json();
+	// 		if (!conversationData.id) {
+	// 			return;
+	// 		}
+	// 		const response = await fetch("/api/messages/", {
+	// 			method: "POST",
+	// 			headers: {
+	// 				Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+	// 				"Content-Type": "application/json",
+	// 			},
+	// 			body: JSON.stringify({
+	// 				sender: currentUser.id,
+	// 				conversation: conversationData.id,
+	// 				text,
+	// 			}),
+	// 		});
+
+	// 		if (response.status === 403) {
+	// 			console.warn(
+	// 				"Vous avez été bloqué par cet utilisateur et ne pouvez pas lui envoyer de messages."
+	// 			);
+	// 			return;
+	// 		}
+
+	// 		if (response.ok) {
+	// 			let savedMessage = await response.json();
+
+	// 			savedMessage.senderPicture =
+	// 				currentUser.profile_picture || "./img/default.png";
+	// 			setMessages((prevMessages) => [...prevMessages, savedMessage]);
+	// 		} else {
+	// 			console.error(
+	// 				"Erreur lors de l'envoi du message :",
+	// 				response.statusText
+	// 			);
+	// 		}
+	// 	} catch (error) {
+	// 		console.error("Erreur réseau :", error);
+	// 	}
+	// };
+
+	useEffect(() => {
+		console.log("test select current : ", selectedFriend," ", currentUser);
 		if (!selectedFriend || !currentUser) return;
 
-		const accessToken = localStorage.getItem("accessToken");
-		if (!accessToken) {
-			console.warn(
-				"Aucun token d'accès trouvé. L'utilisateur est peut-être déconnecté."
-			);
-			return;
-		}
-
-		try {
-			const blockedUsersResponse = await fetch(`/api/blocked-users/`, {
-				method: "GET",
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-				},
-			});
-
-			if (!blockedUsersResponse.ok) {
-				console.error(
-					"Erreur lors de la vérification des utilisateurs bloqués"
-				);
-				return;
-			}
-
-			const blockedUsers = await blockedUsersResponse.json();
-			if (blockedUsers.includes(selectedFriend.id)) {
-				console.warn(
-					"Vous avez bloqué cet utilisateur et ne pouvez pas lui envoyer de message."
-				);
-				return;
-			}
-
-			const conversationResponse = await fetch(
-				"/api/get_or_create_conversation/",
-				{
+		const fetchConversationId = async () => {
+			try {
+				const response = await fetch("/api/get_or_create_conversation/", {
 					method: "POST",
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
 						"Content-Type": "application/json",
 					},
 					body: JSON.stringify({ user_id: selectedFriend.id }),
+				});
+	
+				if (!response.ok) {
+					console.error("Erreur lors de la récupération de la conversation.");
+					return;
 				}
-			);
+	
+				const conversationData = await response.json();
+				console.log ("conversationData.id :", conversationData.id);
+				if (!conversationData.id) {
+					console.error("Aucune conversation trouvée ou créée.");
+					return;
+				}
 
-			if (!conversationResponse.ok)
-				throw new Error("Erreur lors de la récupération de la conversation.");
-
-			const conversationData = await conversationResponse.json();
-			if (!conversationData.id) {
-				return;
-			}
-			const response = await fetch("/api/messages/", {
-				method: "POST",
-				headers: {
-					Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					sender: currentUser.id,
-					conversation: conversationData.id,
-					text,
-				}),
-			});
-
-			if (response.status === 403) {
-				console.warn(
-					"Vous avez été bloqué par cet utilisateur et ne pouvez pas lui envoyer de messages."
+				// const messagesRetrieve = await fetch(`/api/messages/`, {
+				// 	headers: {
+				// 		Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+				// 		"Content-Type": "application/json",
+				// 	},
+				// });
+				// if (!messagesRetrieve.ok) {
+				// 	console.error("Erreur lors de la récupération des messages.");
+				// 	return;
+				// }
+				// const messagesData = await messagesRetrieve.json();
+				// setMessages(messagesData.messages);
+	
+				wsRef.current = new WebSocket(
+					`ws://127.0.0.1:8001/ws/chat/${conversationData.id}/` // ${conversationData.id}
 				);
-				return;
-			}
 
-			if (response.ok) {
-				let savedMessage = await response.json();
+				wsRef.current.onopen = () => {
+					console.log("WebSocket connecté avec succès !");
+					setSocket(wsRef.current);
+					console.log("setSocket exécuté !");
+					console.log("📡 ReadyState après ouverture :", wsRef.current.readyState);
+				};
+	
+				wsRef.current.onmessage = (event: MessageEvent) => {
+					console.log("websocket message recu : ", event.data);
+					const data = JSON.parse(event.data);
+					console.log("data in the front after JSON.parse : ", data);
+					setMessages((prevMessages: Message[]) => [
+						...prevMessages,
+						{
+							sender: data.sender,
+							conversation_id: conversationData.id,
+							text: data.message,
+							timestamp: new Date().toISOString(),
+							senderPicture: selectedFriend.profile_picture || "./img/default.png",
+						},
+					]);
+				};
 
-				savedMessage.senderPicture =
-					currentUser.profile_picture || "./img/default.png";
-				setMessages((prevMessages) => [...prevMessages, savedMessage]);
-			} else {
-				console.error(
-					"Erreur lors de l'envoi du message :",
-					response.statusText
-				);
+				console.log("sender in the front : ", messages.sender);
+
+				wsRef.current.onerror = (error: Event) => {
+					console.error("Erreur WebSocket :", error);
+				};
+	
+				wsRef.current.onclose = (event: CloseEvent) => {
+					console.warn("⚠️ WebSocket fermé :", event.code, event.reason);
+				};
+			} catch (error) {
+				console.error("Erreur réseau :", error);
 			}
-		} catch (error) {
-			console.error("Erreur réseau :", error);
+		};
+	
+		fetchConversationId();
+		return () => {
+			wsRef.current?.close();
+		};
+	}, [selectedFriend, currentUser]);
+
+
+	const handleSendMessage = (message: string) => {
+		if (!wsRef.current) {
+			console.error("❌ WebSocket non initialisé !");
+			return;
 		}
+
+		if (wsRef.current.readyState === WebSocket.CONNECTING) {
+			console.warn("⌛ WebSocket en cours de connexion... Attends un peu !");
+			return;
+		}
+
+		if (wsRef.current.readyState !== WebSocket.OPEN) {
+			console.error("❌ WebSocket fermé. Impossible d'envoyer un message.");
+			return;
+		}
+
+		// console.log("📤 Envoi du message WebSocket :", messageData);
+		// socket.send(JSON.stringify({message: "Test", sender: 1 }));
+		
+		// console.log("📨 Envoi du message :", message);
+		wsRef.current.send(JSON.stringify({ 
+			message,
+			sender: currentUser?.id
+		}));
 	};
 
 	const handleProfileClick = () => {
@@ -171,66 +287,66 @@ const LiveChatClient = () => {
 		}
 	};
 
-	useEffect(() => {
-		if (!selectedFriend || !currentUser) {
-			return;
-		}
+	// useEffect(() => {
+	// 	if (!selectedFriend || !currentUser) {
+	// 		return;
+	// 	}
 
-		const fetchMessages = async () => {
-			setLoading(true);
+	// 	const fetchMessages = async () => {
+	// 		setLoading(true);
 
-			try {
-				const conversationResponse = await fetch(
-					"/api/get_or_create_conversation/",
-					{
-						method: "POST",
-						headers: {
-							Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-							"Content-Type": "application/json",
-						},
-						body: JSON.stringify({ user_id: selectedFriend.id }),
-					}
-				);
+	// 		try {
+	// 			const conversationResponse = await fetch(
+	// 				"/api/get_or_create_conversation/",
+	// 				{
+	// 					method: "POST",
+	// 					headers: {
+	// 						Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+	// 						"Content-Type": "application/json",
+	// 					},
+	// 					body: JSON.stringify({ user_id: selectedFriend.id }),
+	// 				}
+	// 			);
 
-				if (!conversationResponse.ok) {
-					console.error(
-						"Erreur lors de la récupération de la conversation :",
-						conversationResponse.statusText
-					);
-					return;
-				}
+	// 			if (!conversationResponse.ok) {
+	// 				console.error(
+	// 					"Erreur lors de la récupération de la conversation :",
+	// 					conversationResponse.statusText
+	// 				);
+	// 				return;
+	// 			}
 
-				const conversationData = await conversationResponse.json();
-				const conversationId = conversationData.id;
+	// 			const conversationData = await conversationResponse.json();
+	// 			const conversationId = conversationData.id;
 
-				const response = await fetch(
-					`/api/messages?conversation_id=${conversationId}`,
-					{
-						headers: {
-							Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-						},
-					}
-				);
+	// 			const response = await fetch(
+	// 				`/api/messages?conversation_id=${conversationId}`,
+	// 				{
+	// 					headers: {
+	// 						Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+	// 					},
+	// 				}
+	// 			);
 
-				if (response.ok) {
-					const data = await response.json();
-					setMessages(data);
-				} else {
-					console.error(
-						`Erreur lors du chargement des messages : ${response.statusText}`
-					);
-				}
-			} catch (error) {
-				console.error("Erreur réseau :", error);
-			} finally {
-				setLoading(false);
-			}
-		};
-		fetchMessages();
+	// 			if (response.ok) {
+	// 				const data = await response.json();
+	// 				setMessages(data);
+	// 			} else {
+	// 				console.error(
+	// 					`Erreur lors du chargement des messages : ${response.statusText}`
+	// 				);
+	// 			}
+	// 		} catch (error) {
+	// 			console.error("Erreur réseau :", error);
+	// 		} finally {
+	// 			setLoading(false);
+	// 		}
+	// 	};
+	// 	fetchMessages();
 
-		const interval = setInterval(fetchMessages, 3000);
-		return () => clearInterval(interval);
-	}, [selectedFriend, currentUser]);
+	// 	// const interval = setInterval(fetchMessages, 3000);
+	// 	// return () => clearInterval(interval);
+	// }, [selectedFriend, currentUser]);
 
 	return (
 		<div className="livechat-container">
@@ -244,25 +360,19 @@ const LiveChatClient = () => {
 
 				<div className="current-chat">
 					{currentUser && selectedFriend ? (
-						<>
-							{loading ? (
-								<p className="text-center text-muted">Loading...</p>
-							) : (
-								<CurrentChat
-									friend={selectedFriend}
-									messages={messages}
-									currentUser={currentUser}
-								/>
-							)}
-							<MessageBar
-								onSendMessage={handleSendMessage}
-								onProfileClick={handleProfileClick}
-								onInviteClick={handleInviteClick}
-							/>
-						</>
-					) : (
-						<p className="text-muted">Select a friend to start chatting</p>
-					)}
+						<CurrentChat
+							friend={selectedFriend}
+							messages={messages}
+							currentUser={currentUser}
+						/>							
+						) : (
+							<p className="text-muted">Select a friend to start chatting</p>
+						)}
+						<MessageBar
+							onSendMessage={handleSendMessage}
+							onProfileClick={handleProfileClick}
+							onInviteClick={handleInviteClick}
+						/>
 				</div>
 			</div>
 		</div>
