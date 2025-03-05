@@ -5,7 +5,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from .serializer import UserSerializer, MatchSerializer, CustomTokenObtainPairSerializer, CustomTokenRefreshSerializer, MessageSerializer
+from .serializer import UserSerializer, CustomTokenObtainPairSerializer, CustomTokenRefreshSerializer, MessageSerializer, MatchSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.core.files.storage import default_storage
@@ -111,81 +111,6 @@ class ProfileAPIView(APIView):
 
 		return Response({"error": "No profile picture provided."}, status=status.HTTP_400_BAD_REQUEST)
 
-class MatchAPIView(APIView):
-    def get(self, request):
-        try:
-            if request.body:
-                data = request.data
-                validate_request_data_match(data)
-                user = data.get('user', None)
-                opponent = data.get('opponent', None)
-                date = data.get('date', None)
-                result = data.get('result', None)
-
-                queryset = Match.objects.all()
-                if user:
-                    queryset = queryset.filter(user__id=user)
-                if opponent:
-                    queryset = queryset.filter(opponent=opponent)
-                if date:
-                    queryset = queryset.filter(date=date)
-                if result:
-                    queryset = queryset.filter(result=result)
-            else:
-                queryset = Match.objects.all()
-            
-            serializer = MatchSerializer(queryset, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-    def post(self, request):
-        try:
-            serializer = MatchSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-    def put(self, request, pk=None):
-        try:
-            match = Match.objects.get(pk=pk)
-            serializer = MatchSerializer(match, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except User.DoesNotExist:
-            return Response({"error": "Match not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-    def patch(self, request, pk=None):
-        try:
-            match = Match.objects.get(pk=pk)
-            serializer = MatchSerializer(match, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except User.DoesNotExist:
-            return Response({"error": "Match not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-    def delete(self, request, pk=None):
-        try:
-            match = Match.objects.get(pk=pk)
-            match.delete()
-            return Response({"message": "Match deleted successfully"}, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"error": "Match not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)  
-
-# API made for the management of the friend list of the user
 class FriendListAPIView(APIView):
     permission_classes = [IsAuthenticated]
      
