@@ -9,16 +9,24 @@ class MatchSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = Match
-		fields = [
-			'id', 'player1', 'player2', 'player1_username', 'player2_username',
-			'score_player1', 'score_player2', 'is_finished', 'is_ongoing',
-			'winner', 'winner_username', 'looser', 'looser_username',
-			'invite_game', 'created_at'
-		]
+		fields = "__all__"
+		extra_kwargs = {
+            "player1": {"read_only": True},  # Ensure player1 is not required in request
+            "player2": {"required": False},  # Optional in requests
+        }
 		read_only_fields = ['id', 'created_at', 'winner', 'looser']
+
 	def create(self, validated_data):
-		validated_data['player1'] = self.context['request'].user
-		return super().create(validated_data)
+			"""
+			Set `player1` from request user before saving.
+			"""
+			request = self.context.get("request")
+			if request and request.user.is_authenticated:
+				validated_data["player1"] = request.user
+			else:
+				raise serializers.ValidationError({"player1": "User must be authenticated."})
+
+			return super().create(validated_data)
 
 	def validate(self, data):
 		"""
@@ -26,16 +34,24 @@ class MatchSerializer(serializers.ModelSerializer):
 		- player1 and player2 cannot be the same user
 		- score values cannot be negative
 		"""
-		player1 = self.context['request'].user  # Always use the authenticated user
+		request = self.context.get('request')
+		if not request or not hasattr(request, 'user'):
+			raise serializers.ValidationError("Request user is required.")
+		
+		if not request.user.is_authenticated:
+			raise serializers.ValidationError("You must be logged in to create a match.")
+
+		player1 = request.user  # Ensure player1 is always the authenticated user
 		player2 = data.get('player2', self.instance.player2 if self.instance else None)
+
+		 # If updating, check existing instance
+		if self.instance and not player2:
+			player2 = self.instance.player2
 
 		if player1 and player2 and player1 == player2:
 			raise serializers.ValidationError("Player1 and Player2 cannot be the same user.")
 
-		if 'score_player1' in data and data['score_player1'] < 0:
-			raise serializers.ValidationError("score_player1 cannot be negative.")
-        
-		if 'score_player2' in data and data['score_player2'] < 0:
-			raise serializers.ValidationError("score_player2 cannot be negative.")
+		if data.get('score_player1', 0) < 0 or data.get('score_player2', 0) < 0:
+			raise serializers.ValidationError("scores cannot be negative.")
 
 		return data

@@ -14,7 +14,7 @@ import { createSimpleMatch } from "../utilities/matchActions";
 import "./match.css";
 
 export const profileSchema = z.object({
-	tournamentName: z
+	tournament_name: z
 		.string()
 		.min(3, "Username must be at least 3 characters long")
 		.max(32, "Username is too long"),
@@ -35,7 +35,7 @@ export default function Lobby() {
 		try {
 			const userProfile = await fetchUserProfile();
 			setAlias(
-				userProfile.tournamentName ? userProfile.tournamentName : undefined
+				userProfile.tournament_name ? userProfile.tournament_name : undefined
 			);
 		} catch (error) {
 			setAlert({
@@ -54,32 +54,32 @@ export default function Lobby() {
 		_previousState: unknown,
 		formData: FormData
 	) {
-		const tournamentName = formData.get("tournamentName") as string;
-		if (!tournamentName) {
+		const tournament_name = formData.get("tournamentName") as string;
+		if (!tournament_name) {
 			return {
 				tournamentNameError: "Please insert an alias for your tournament ",
 			};
 		}
 
-		const validationResult = profileSchema.safeParse({ tournamentName });
+		const validationResult = profileSchema.safeParse({ tournament_name });
 
 		if (!validationResult.success)
 			return {
-				previousValues: { tournamentName },
+				previousValues: { tournament_name },
 				tournamentNameError: validationResult.error.errors.find(
-					(err) => err.path[0] === "tournamentName"
+					(err) => err.path[0] === "tournament_name"
 				)?.message,
 			};
 
 		try {
 			await updateUserProfile(validationResult.data);
-			setAlias(validationResult.data.tournamentName);
+			setAlias(validationResult.data.tournament_name);
 		} catch (error) {
 			setAlert({
 				message: `Error updating your alias name: ${error}`,
 				type: "danger",
 			});
-			return { previousValues: { tournamentName } };
+			return { previousValues: { tournament_name } };
 		}
 
 		try {
@@ -96,7 +96,7 @@ export default function Lobby() {
 				message: `Error creating a 1v1 game: ${error}`,
 				type: "danger",
 			});
-			return { previousValues: { tournamentName } };
+			return { previousValues: { tournament_name } };
 		}
 	}
 
@@ -128,7 +128,7 @@ export default function Lobby() {
 									type="text"
 									name="tournamentName"
 									defaultValue={
-										gameData?.previousValues?.tournamentName || alias
+										gameData?.previousValues?.tournament_name || alias
 									}
 									className="border rounded-md p-2 mb-4 w-full"
 								/>

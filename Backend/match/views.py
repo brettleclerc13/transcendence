@@ -4,6 +4,10 @@ from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from .models import Match
 from .serializer import MatchSerializer
+from django.http import JsonResponse
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+from uuid import UUID
 
 class MatchAPIView(generics.ListCreateAPIView):
 	"""
@@ -31,9 +35,16 @@ class MatchAPIView(generics.ListCreateAPIView):
 			'is_finished': self.request.query_params.get('is_finished'),
 		}
 
+		# Convert ID to UUID safely
+		if filter_params['id']:
+			try:
+				filter_params['id'] = UUID(filter_params['id'])
+			except ValueError:
+				raise ValidationError({'id': _("Invalid match ID format.")})
+
 		# Apply filters dynamically
 		for key, value in filter_params.items():
-			if value is not None:
+			if value is not None and value != "null":
 				if key == 'player2' and value == '':
 					queryset = queryset.filter(player2__isnull=True)
 				else:
@@ -41,10 +52,21 @@ class MatchAPIView(generics.ListCreateAPIView):
 
 		return queryset
 
+	def get_serializer_context(self):
+		"""Pass request context to serializer so it can access `request.user`."""
+		context = super().get_serializer_context()
+		context.update({"request": self.request})
+		return context
+
 	def post(self, request, *args, **kwargs):
-		print(f"Authenticated user: {request.user}")  # Check if user is authenticated
-		print(f"Headers: {request.headers}")  # See headers received
-		print(f"Body: {request.data}")  # Debug request data
+		print(f"Headers: {request.headers}")  # Print headers
+		print(f"Authenticated user: {request.user}")  # Should not be "AnonymousUser"
+		print(f"User authenticated: {request.user.is_authenticated}")  # Should be True
+		print(f"Body: {request.data}")  # Check request data
+
+		if not request.user.is_authenticated:
+			return JsonResponse({"error": "User is not authenticated"}, status=401)
+
 		return self.create(request, *args, **kwargs)
 
 	def perform_create(self, serializer):
@@ -52,8 +74,15 @@ class MatchAPIView(generics.ListCreateAPIView):
 		Creates a match with the authenticated user as player1.
         Also allows setting `invite_game` flag.
 		"""
-		print("Received POST request with data:", self.request.data)
+		print(f"Authenticated user: {self.request.user}")  # Debugging line
+		print(f"User is authenticated: {self.request.user.is_authenticated}")  # Check if user is authenticated
+		print(f"Received POST request with data:", self.request.data)
+
 		invite_game = self.request.data.get('invite_game', False)
+
+		# Ensure player1 is set in the serializer
+		serializer.validated_data['player1'] = self.request.user
+
 		match = serializer.save(player1=self.request.user, invite_game=invite_game)
 		return Response({'match_id': match.id}, status=status.HTTP_201_CREATED)
 

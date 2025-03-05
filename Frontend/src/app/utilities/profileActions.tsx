@@ -10,7 +10,7 @@ export type UserProfileData = {
 	bio?: string;
 	is_online?: boolean;
 	profile_picture?: string | null;
-	tournamentName?: string;
+	tournament_name?: string;
 };
 
 export const fetchUserProfile = async () => {
@@ -85,10 +85,6 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 			throw new Error(errorMessage);
 		} else {
 			data = await response.json();
-			console.log(
-				"User profile updated successfully. is_online: ",
-				profileData.is_online
-			);
 			return data;
 		}
 	} catch (error) {

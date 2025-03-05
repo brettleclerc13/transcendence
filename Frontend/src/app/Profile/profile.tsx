@@ -243,7 +243,7 @@ export default function Profile({
 							<input
 								type="text"
 								name="tournamentName"
-								defaultValue={userProfile?.tournamentName}
+								defaultValue={userProfile?.tournament_name}
 							/>
 						</div>
 						{profileData?.nationalityError && (

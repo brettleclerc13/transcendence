@@ -5,11 +5,12 @@ import { cookies } from "next/headers";
 type MatchFilterProps = {
 	id?: string;
 	player1?: string;
-	player2?: string | null; // Use null instead of empty string to indicate player2__isnull=True
+	player2?: string | undefined;
 	winner?: string;
 	looser?: string;
 	is_ongoing?: boolean;
 	is_finished?: boolean;
+	is_tournament?: boolean;
 };
 
 export const fetchMatches = async (filters: MatchFilterProps = {}) => {
@@ -20,11 +21,15 @@ export const fetchMatches = async (filters: MatchFilterProps = {}) => {
 	try {
 		const queryString = Object.keys(filters)
 			.map((key) => {
-				if (key in filters) {
-					return `${key}=${filters[key as keyof MatchFilterProps]}`;
-				} else {
-					throw new Error(`Invalid key: ${key}`);
+				const value = filters[key as keyof MatchFilterProps];
+
+				if (typeof value === "boolean") {
+					return `${key}=${value ? "1" : "0"}`;
 				}
+				if (value === undefined) {
+					return `${key}=`;
+				}
+				return `${key}=${value}`;
 			})
 			.join("&");
 
@@ -67,6 +72,7 @@ export const fetchMatches = async (filters: MatchFilterProps = {}) => {
 export const createSimpleMatch = async (invite_game?: boolean) => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
+	console.log("AcessToken: ", token);
 	if (!token) throw new Error("Access token missing");
 
 	try {
@@ -99,7 +105,7 @@ export const createSimpleMatch = async (invite_game?: boolean) => {
 			throw new Error(errorMessage);
 		} else {
 			console.log("Simple match successfully created");
-			return response;
+			return;
 		}
 	} catch (error) {
 		console.error("createSimpleMatch: ", error);

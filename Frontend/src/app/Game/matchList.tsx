@@ -18,7 +18,7 @@ export default function MatchList() {
 				const filters = {
 					is_ongoing: false,
 					is_finished: false,
-					player2: null,
+					player2: undefined,
 				};
 				const data = await fetchMatches(filters);
 				setMatches(data);
