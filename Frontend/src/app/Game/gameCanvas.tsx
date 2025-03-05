@@ -11,7 +11,7 @@ type GameState = {
 	score: [number, number];
 	paddle_speed: number;
 	resolution: number;
-	collision_point: [number, number];
+	collision_point: [number, number][];
 	last_update_time: number;
 };
 
@@ -76,6 +76,17 @@ export default function GameCanvas() {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const inputInterval = useRef<NodeJS.Timeout | null>(null);
 	const currentDirectionRef = useRef(0); // ✅ Use a ref to track direction persistently
+	//Smoothening variables
+	const prevBallPosition = useRef<[number, number] | null>(null);
+	const targetBallPosition = useRef<[number, number] | null>(null);
+	const collisionPoints = useRef<[number, number][]>([]);
+	const lerpProgress = useRef(0); // 0 to 1 progress between previous and target positions
+	const lastUpdateTime = useRef(0); // Tracks last game update time
+	const prevPaddle1Position = useRef<[number, number] | null>(null);
+	const prevPaddle2Position = useRef<[number, number] | null>(null);
+	const targetPaddle1Position = useRef<[number, number] | null>(null);
+	const targetPaddle2Position = useRef<[number, number] | null>(null);
+
 
 	useEffect(() => {
 		const roomName = "defaultRoom";
@@ -98,6 +109,21 @@ export default function GameCanvas() {
 			}
 
 			if (data.type === "game_update") {
+				const newBallPosition = data.game_state.ball_position;
+				const newCollisions = data.game_state.collision_point || [];
+				prevPaddle1Position.current = targetPaddle1Position.current || data.game_state.player1_position;
+				prevPaddle2Position.current = targetPaddle2Position.current || data.game_state.player2_position;
+		
+				targetPaddle1Position.current = data.game_state.player1_position;
+				targetPaddle2Position.current = data.game_state.player2_position;
+		
+				prevBallPosition.current = targetBallPosition.current || newBallPosition;
+				targetBallPosition.current = newBallPosition;
+				collisionPoints.current = newCollisions;
+		
+				lerpProgress.current = 0;
+				lastUpdateTime.current = Date.now();
+		
 				setGameState(data.game_state);
 			}
 		};
@@ -112,8 +138,88 @@ export default function GameCanvas() {
 	}, []);
 
 	useEffect(() => {
-		if (!gameState || !canvasRef.current) return;
-		drawGame(gameState, canvasRef.current as HTMLCanvasElement);
+		let animationFrameId: number;
+	
+		const renderLoop = () => {
+			if (!gameState || !canvasRef.current || !prevBallPosition.current || !targetBallPosition.current ||
+				!prevPaddle1Position.current || !targetPaddle1Position.current ||
+				!prevPaddle2Position.current || !targetPaddle2Position.current) {
+				animationFrameId = requestAnimationFrame(renderLoop);
+				return;
+			}
+		
+			const ctx = canvasRef.current.getContext("2d");
+			if (!ctx) return;
+		
+			const now = Date.now();
+			const deltaTime = now - lastUpdateTime.current; // Time since last game update (ms)
+			const totalDuration = 100; // Each tick lasts 50ms
+		
+			// Determine interpolation progress (0 to 1)
+			lerpProgress.current = Math.min(deltaTime / totalDuration, 1);
+		
+			// Interpolate Paddle 1 Position
+			const interpolatedPaddle1Position: [number, number] = [
+				prevPaddle1Position.current[0] + (targetPaddle1Position.current[0] - prevPaddle1Position.current[0]) * lerpProgress.current,
+				prevPaddle1Position.current[1] + (targetPaddle1Position.current[1] - prevPaddle1Position.current[1]) * lerpProgress.current
+			];
+		
+			// Interpolate Paddle 2 Position
+			const interpolatedPaddle2Position: [number, number] = [
+				prevPaddle2Position.current[0] + (targetPaddle2Position.current[0] - prevPaddle2Position.current[0]) * lerpProgress.current,
+				prevPaddle2Position.current[1] + (targetPaddle2Position.current[1] - prevPaddle2Position.current[1]) * lerpProgress.current
+			];
+		
+			// Interpolate Ball Position (already implemented)
+			let interpolatedBallPosition: [number, number] = prevBallPosition.current;
+			if (collisionPoints.current.length > 0) {
+				const numSegments = collisionPoints.current.length + 1;
+				const segmentTime = totalDuration / numSegments;
+				const currentSegment = Math.min(Math.floor(deltaTime / segmentTime), numSegments - 1);
+				const segmentStartTime = lastUpdateTime.current + currentSegment * segmentTime;
+				const segmentProgress = Math.min((now - segmentStartTime) / segmentTime, 1);
+		
+				let start: [number, number];
+				let end: [number, number];
+		
+				if (currentSegment === 0) {
+					start = prevBallPosition.current;
+					end = collisionPoints.current.length > 0 ? collisionPoints.current[0] : targetBallPosition.current;
+				} else if (currentSegment < collisionPoints.current.length) {
+					start = collisionPoints.current[currentSegment - 1];
+					end = collisionPoints.current[currentSegment];
+				} else {
+					start = collisionPoints.current[collisionPoints.current.length - 1];
+					end = targetBallPosition.current;
+				}
+		
+				interpolatedBallPosition = [
+					start[0] + (end[0] - start[0]) * segmentProgress,
+					start[1] + (end[1] - start[1]) * segmentProgress
+				];
+			} else {
+				interpolatedBallPosition = [
+					prevBallPosition.current[0] + (targetBallPosition.current[0] - prevBallPosition.current[0]) * lerpProgress.current,
+					prevBallPosition.current[1] + (targetBallPosition.current[1] - prevBallPosition.current[1]) * lerpProgress.current
+				];
+			}
+		
+			// Draw the updated frame
+			drawGame({
+				...gameState,
+				ball_position: interpolatedBallPosition,
+				player1_position: interpolatedPaddle1Position,
+				player2_position: interpolatedPaddle2Position
+			}, canvasRef.current);
+		
+			// Request the next frame
+			animationFrameId = requestAnimationFrame(renderLoop);
+		};
+		
+	
+		animationFrameId = requestAnimationFrame(renderLoop);
+	
+		return () => cancelAnimationFrame(animationFrameId);
 	}, [gameState]);
 
 	useEffect(() => {
@@ -124,10 +230,10 @@ export default function GameCanvas() {
 					type: "initialize",
 					game_parametres: {
 						ball_diametre: 1.5,
-						paddle_speed: 20,
+						paddle_speed: 25,
 						paddle_height: 12,
 						paddle_width: 1.5,
-						ball_speed: 5,
+						ball_speed: 35,
 						paddle_xposition: 0.007,
 						screen_width: 800,
 						screen_height: 592,
