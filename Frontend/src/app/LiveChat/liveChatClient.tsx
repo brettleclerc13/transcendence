@@ -186,16 +186,26 @@ const LiveChatClient = () => {
 					return;
 				}
 
-				// const messagesRetrieve = await fetch(`/api/messages/`, {
-				// 	headers: {
-				// 		Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-				// 		"Content-Type": "application/json",
-				// 	},
-				// });
-				// if (!messagesRetrieve.ok) {
-				// 	console.error("Erreur lors de la récupération des messages.");
-				// 	return;
-				// }
+				const messagesRetrieve = await fetch(`/api/messages/?conversation_id=${conversationData.id}`, {
+					headers: {
+						Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+						"Content-Type": "application/json",
+					},
+				});
+
+				if (messagesRetrieve.ok) {
+					const data = await messagesRetrieve.json();
+					console.log ("data : ", data);
+					console.log ("data.text : ", data['0']['text']);
+					console.log ("data.messages : ", data.messages);
+					setMessages(data);
+				} else {
+					console.error(`Erreur lors de la récupération des messages : ${response.statusText}`);
+				}
+				if (!messagesRetrieve.ok) {
+					console.error("Erreur lors de la récupération des messages.");
+					return;
+				}
 				// const messagesData = await messagesRetrieve.json();
 				// setMessages(messagesData.messages);
 	
