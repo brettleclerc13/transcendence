@@ -65,6 +65,7 @@ input:focus {
 
 .lobby-button-container {
 	display: flex;
+	justify-content: space-between;
 	bottom: 20px; /* Place les boutons à 10px du bas */
 	right: 20px; /* Place les boutons à 10px du côté droit */
 	display: flex; /* Aligne les boutons côte à côte */

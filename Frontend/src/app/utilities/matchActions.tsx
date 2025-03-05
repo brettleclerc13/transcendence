@@ -45,15 +45,14 @@ export const fetchMatches = async (filters: MatchFilterProps = {}) => {
 		);
 
 		let data;
+		const text = await response.text();
+		try {
+			data = JSON.parse(text);
+		} catch {
+			throw new Error(`Unexpected response: ${response.status}`);
+		}
 
 		if (!response.ok) {
-			const text = await response.text();
-			try {
-				data = JSON.parse(text);
-			} catch {
-				throw new Error(`Unexpected response: ${response.status}`);
-			}
-
 			const errorMessage =
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
@@ -61,7 +60,6 @@ export const fetchMatches = async (filters: MatchFilterProps = {}) => {
 				"Failed to fetch matches.";
 			throw new Error(errorMessage);
 		} else {
-			data = await response.json();
 			return data;
 		}
 	} catch (error) {
@@ -72,7 +70,6 @@ export const fetchMatches = async (filters: MatchFilterProps = {}) => {
 export const createSimpleMatch = async (invite_game?: boolean) => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
-	console.log("AcessToken: ", token);
 	if (!token) throw new Error("Access token missing");
 
 	try {
@@ -84,19 +81,17 @@ export const createSimpleMatch = async (invite_game?: boolean) => {
 			},
 			body: invite_game ? JSON.stringify({ invite_game }) : JSON.stringify({}),
 		});
+
 		let data;
-
+		const text = await response.text();
+		try {
+			data = JSON.parse(text);
+		} catch {
+			throw new Error(
+				`Unexpected response concerning simple match creation: ${response.status}`
+			);
+		}
 		if (!response.ok) {
-			const text = await response.text();
-			try {
-				data = JSON.parse(text);
-			} catch {
-				throw new Error(
-					`Unexpected response concerning simple match creation: ${response.status}`
-				);
-			}
-			console.log("Match API return data: ", data);
-
 			const errorMessage =
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
@@ -104,11 +99,10 @@ export const createSimpleMatch = async (invite_game?: boolean) => {
 				"Failed to create simple match.";
 			throw new Error(errorMessage);
 		} else {
-			console.log("Simple match successfully created");
-			return;
+			if (data.id) return { matchID: data.match_id as string };
+			else throw new Error("MatchID not found");
 		}
 	} catch (error) {
-		console.error("createSimpleMatch: ", error);
 		throw new Error(String(error) || "Failed to create simple match.");
 	}
 };

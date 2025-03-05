@@ -67,7 +67,7 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 	ctx.restore();
 }
 
-export default function GameCanvas() {
+export default function GameCanvas(match: { ID: string }) {
 	const [status, setStatus] = useState<"waiting" | "ready" | "playing">(
 		"waiting"
 	);
@@ -80,7 +80,8 @@ export default function GameCanvas() {
 	const [currentDirection, setCurrentDirection] = useState(0); // 1 for up, -1 for down, 0 for no movement
 
 	useEffect(() => {
-		const roomName = "defaultRoom"; // Example room name
+		console.log("match.ID: ", match.ID);
+		const roomName = match.ID;
 		const ws = new WebSocket(`wss://transcendence.fr/game/${roomName}/`);
 
 		ws.onopen = () => {
@@ -230,7 +231,7 @@ export default function GameCanvas() {
 	}, [socket, playerRole, currentDirection]);
 
 	return (
-		<div>
+		<div className="flex justify-center items-center h-full w-full">
 			{status === "waiting" && <p>Waiting for opponent...</p>}
 			{status === "ready" && <p>Ready! Game starting soon...</p>}
 			{status === "playing" && (
