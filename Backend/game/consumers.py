@@ -591,7 +591,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             if relative_pos == 0:
                 relative_pos == 0.2
             reflected[1] += self.reflection_bias * relative_pos
-            #print(f"reflected: {reflected}", flush=True)
             reflected =  self.normalize(reflected)
         elif self.game_state["ball_direction"][1] > 0:
             bias_x = max(0, relative_pos)

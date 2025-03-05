@@ -79,7 +79,7 @@ export default function GameCanvas() {
 
 	useEffect(() => {
 		const roomName = "defaultRoom";
-		const ws = new WebSocket(`wss://transcendence.fr:8080/game/${roomName}/`);
+		const ws = new WebSocket(`wss://127.0.0.1:8080/game/${roomName}/`);
 
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
