@@ -47,8 +47,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.debug_paddle = False
         self.debug_ball = False
         #variables to change the feel of the game
-        self.time_per_tick = 0.03 #50 ms
-        self.sub_tick_amount = 5
+        self.time_per_tick = 0.05 #50 ms
+        self.sub_tick_amount = 1
         self.reflection_bias = 0.95    
         self.max_speed = 10000 # best not set too high
         self.directional_limit = 0.1
@@ -213,7 +213,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         }))
     
     async def dispatch(self, message):
-        print(f"Dispatching message: {message}", flush=True)
+        if message["type"] == "websocket.receive":
+            print(f"Dispatching message: {message}", flush=True)
         await super().dispatch(message)
 
     async def handle_game_end(self, winner: str, msg: str):

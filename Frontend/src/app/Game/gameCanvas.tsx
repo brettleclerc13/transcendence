@@ -69,36 +69,31 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 }
 
 export default function GameCanvas() {
-	const [status, setStatus] = useState<"waiting" | "ready" | "playing">(
-		"waiting"
-	);
-	const [playerRole, setPlayerRole] = useState<"player_1" | "player_2" | null>(
-		null
-	);
+	const [status, setStatus] = useState<"waiting" | "ready" | "playing">("waiting");
+	const [playerRole, setPlayerRole] = useState<"player_1" | "player_2" | null>(null);
 	const [socket, setSocket] = useState<WebSocket | null>(null);
 	const [gameState, setGameState] = useState<GameState | null>(null);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const [currentDirection, setCurrentDirection] = useState(0); // 1 for up, -1 for down, 0 for no movement
+	const inputInterval = useRef<NodeJS.Timeout | null>(null);
+	const currentDirectionRef = useRef(0); // ✅ Use a ref to track direction persistently
 
-	
-    useEffect(() => {
-        const roomName = "defaultRoom"; // Example room name
-        const ws = new WebSocket(`wss://127.0.0.1:8080/game/${roomName}/`);
+	useEffect(() => {
+		const roomName = "defaultRoom";
+		const ws = new WebSocket(`wss://transcendence.fr:8080/game/${roomName}/`);
 
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
 
-			if (data.type === "game_end")
-				console.log("data type sent in:", data.type);
+			if (data.type === "game_end") console.log("data type sent in:", data.type);
 
 			if (data.type === "initializer_pack") {
 				console.log("player name:", data.player_role);
-				setPlayerRole(data.player_role); // Assign "player_1" or "player_2"
+				setPlayerRole(data.player_role);
 				setStatus("ready");
 			}
 
 			if (data.type === "start_game") {
-				console.log("recived start game");
+				console.log("received start game");
 				setStatus("playing");
 			}
 
@@ -109,9 +104,7 @@ export default function GameCanvas() {
 
 		ws.onclose = (event) => {
 			console.log("WebSocket disconnected");
-			if (event.code === 4000) {
-				console.log("Room is Full");
-			}
+			if (event.code === 4000) console.log("Room is Full");
 		};
 		setSocket(ws);
 
@@ -120,94 +113,69 @@ export default function GameCanvas() {
 
 	useEffect(() => {
 		if (!gameState || !canvasRef.current) return;
-		//console.log("Drawing game state: ", gameState);
 		drawGame(gameState, canvasRef.current as HTMLCanvasElement);
 	}, [gameState]);
 
-	
-    useEffect(() => {
-        if (status === "ready" && playerRole) {
-            console.log("sending initializer data");
-            socket?.send(JSON.stringify({ type: "initialize", game_parametres: {
-                "ball_diametre": 1.5,
-                "paddle_speed": 40,
-                "paddle_height": 12,
-                "paddle_width": 1.5,
-                "ball_speed": 55,
-                "paddle_xposition": 0.007,
-                "screen_width": 800,
-                "screen_height": 592,
-                "resolution": 8,
-                "point_goal": 10
-             }}));
-        }
-    }, [status, playerRole]);
-
-    /* Send directional input every 50ms
-    useEffect(() => {
-        let interval: number | null = null;
-
-        if (status === "playing") {
-            interval = window.setInterval(() => {
-                const timestamp = Date.now();
-                socket?.send(
-                    JSON.stringify({
-                        type: "input",
-                        player: playerRole,
-                        direction: currentDirection,
-                        timestamp,// -1 for down, 1 for up
-                        
-                    })
-                );
-                //console.log("Sent input:", { player: playerRole, direction: currentDirection, timestamp });
-            }, 50);
-        }
-
-        return () => {
-            if (interval !== null) {
-                window.clearInterval(interval); // Use `window.clearInterval` with a `number`
-            }
-        };
-    }, [status, playerRole, socket, currentDirection]);*/
+	useEffect(() => {
+		if (status === "ready" && playerRole) {
+			console.log("sending initializer data");
+			socket?.send(
+				JSON.stringify({
+					type: "initialize",
+					game_parametres: {
+						ball_diametre: 1.5,
+						paddle_speed: 20,
+						paddle_height: 12,
+						paddle_width: 1.5,
+						ball_speed: 5,
+						paddle_xposition: 0.007,
+						screen_width: 800,
+						screen_height: 592,
+						resolution: 8,
+						point_goal: 10,
+					},
+				})
+			);
+		}
+	}, [status, playerRole]);
 
 	useEffect(() => {
-		let inputInterval: number = 0; // Default to 0 (no active interval)
+		const sendInput = () => {
+			if (socket && playerRole) {
+				socket.send(
+					JSON.stringify({
+						type: "input",
+						player: playerRole,
+						direction: currentDirectionRef.current, // ✅ Always send the latest ref value
+						timestamp: Date.now(),
+					})
+				);
+			}
+		};
 
 		const handleKeyDown = (event: KeyboardEvent) => {
 			let newDirection = 0;
 			if (event.key === "ArrowUp") newDirection = 1;
 			if (event.key === "ArrowDown") newDirection = -1;
 
-			if (newDirection !== 0 && currentDirection !== newDirection) {
-				setCurrentDirection(newDirection); // Update direction state
-			}
+			if (newDirection !== 0 && currentDirectionRef.current !== newDirection) {
+				currentDirectionRef.current = newDirection; // ✅ Update the ref immediately
+				sendInput(); // ✅ Send an immediate input
 
-			if (!inputInterval && newDirection !== 0) {
-					socket?.send(
-						JSON.stringify({
-							type: "input",
-							player: playerRole,
-							direction: newDirection,
-							timestamp: Date.now(),
-						})
-					);
+				if (!inputInterval.current) {
+					inputInterval.current = setInterval(() => sendInput(), 50); // ✅ Start interval
+				}
 			}
 		};
 
 		const handleKeyUp = (event: KeyboardEvent) => {
 			if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-				setCurrentDirection(0); // Reset direction
-				if (inputInterval) {
-					clearInterval(inputInterval); // Stop sending
-					inputInterval = 0; // Reset interval ID
-					socket?.send(
-						JSON.stringify({
-							type: "input",
-							player: playerRole,
-							direction: 0,
-							timestamp: Date.now(),
-						})
-					); // Send "stop" message
+				currentDirectionRef.current = 0; // ✅ Reset the ref
+				sendInput(); // ✅ Send stop signal
+
+				if (inputInterval.current) {
+					clearInterval(inputInterval.current);
+					inputInterval.current = null;
 				}
 			}
 		};
@@ -218,21 +186,19 @@ export default function GameCanvas() {
 		return () => {
 			window.removeEventListener("keydown", handleKeyDown);
 			window.removeEventListener("keyup", handleKeyUp);
-			if (inputInterval) clearInterval(inputInterval); // Clear the interval when unmounting
+			if (inputInterval.current) {
+				clearInterval(inputInterval.current);
+				inputInterval.current = null;
+			}
 		};
-	}, [socket, playerRole, currentDirection]);
+	}, [socket, playerRole]);
 
 	return (
 		<div>
 			{status === "waiting" && <p>Waiting for opponent...</p>}
 			{status === "ready" && <p>Ready! Game starting soon...</p>}
 			{status === "playing" && (
-				<canvas
-					ref={canvasRef}
-					width={800}
-					height={592}
-					style={{ backgroundColor: "black", display: "block" }}
-				/>
+				<canvas ref={canvasRef} width={800} height={592} style={{ backgroundColor: "black", display: "block" }} />
 			)}
 		</div>
 	);
