@@ -42,11 +42,11 @@ export default function MatchList() {
 							<th>Created At</th>
 							<th>Match Type</th>
 							<th>Players</th>
-							<th>Join</th>
+							<th></th>
 						</tr>
 					</thead>
 					<tbody>
-						{matches.slice(0, 5).map((match) => (
+						{matches.map((match) => (
 							<tr key={match.id}>
 								<td>{match.created_at}</td>
 								<td>1v1</td>
@@ -58,12 +58,6 @@ export default function MatchList() {
 						))}
 					</tbody>
 				</table>
-			)}
-			{matches.length > 5 && (
-				<div className="load-more-container">
-					<p>More matches available...</p>
-					<button className="load-more-btn">Load More</button>
-				</div>
 			)}
 		</div>
 	);
