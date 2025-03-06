@@ -19,7 +19,7 @@ from django.conf import settings
 from django.urls import path
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenVerifyView
-from user.views import RegisterAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView
+from user.views import RegisterAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView
 from match.views import MatchAPIView, MatchRetrieveUpdateAPIView
 
 urlpatterns = [
@@ -34,7 +34,7 @@ urlpatterns = [
 
 	path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
 	path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
-	path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+	path('token/verify/', CustomTokenVerifyView.as_view(), name='token_verify'),
 
 	path('friends/', FriendListAPIView.as_view(), name='friend_list'),
 	path('messages/', MessageAPIView.as_view(), name='messages'),

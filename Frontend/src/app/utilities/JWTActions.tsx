@@ -11,7 +11,7 @@ export default function RefreshAccessToken() {
 	return <></>;
 }
 
-const refreshAccessToken = async () => {
+export const refreshAccessToken = async () => {
 	const refreshToken = getCookie("refreshToken");
 	if (!refreshToken) return;
 
@@ -44,7 +44,7 @@ const refreshAccessToken = async () => {
 				console.warn(
 					"Refresh token refers to a non-existent user. Removing tokens ..."
 				);
-				return;
+				return { ok: false };
 			} else {
 				throw new Error(errorMessage);
 			}
@@ -58,10 +58,11 @@ const refreshAccessToken = async () => {
 			setCookie("accessToken", newAccessToken);
 			setCookie("tokenExpiry", newExpiresAt.toString());
 			console.log("Access token refreshed");
+			return { ok: true };
 		}
 	} catch (error) {
 		console.log("Error refreshing access token", error);
-		return;
+		return { ok: false };
 	}
 };
 

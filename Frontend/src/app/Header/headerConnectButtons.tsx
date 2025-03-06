@@ -13,6 +13,7 @@ import Popup from "@/components/popup/popup";
 import Profile from "../Profile/profile";
 import "./headerComponent.css";
 import { useRouter } from "next/navigation";
+import { refreshAccessToken } from "../utilities/JWTActions";
 
 export default function HeaderConnectButtons() {
 	const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -23,6 +24,10 @@ export default function HeaderConnectButtons() {
 
 	const run = async () => {
 		try {
+			const tokenStatus = await refreshAccessToken();
+			if (!tokenStatus?.ok) {
+				window.location.reload();
+			}
 			const profileResults = await fetchUserProfile();
 
 			setUserProfile(profileResults);

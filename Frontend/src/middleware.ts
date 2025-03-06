@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
 		return;
 	}
 
-	const isValid = await verifyToken(accessToken);
+	const isValid = await verifyToken(accessToken, request);
 
 	if (!isValid) {
 		console.log("❌ Invalid token detected. Clearing tokens...");
@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
 	return NextResponse.next();
 }
 
-async function verifyToken(token: string) {
+async function verifyToken(token: string, request: NextRequest) {
 	try {
 		const response = await fetch(`http://backend:8001/token/verify/`, {
 			method: "POST",

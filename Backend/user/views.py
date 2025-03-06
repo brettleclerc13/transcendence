@@ -5,10 +5,11 @@ from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from .serializer import UserSerializer, CustomTokenObtainPairSerializer, CustomTokenRefreshSerializer, MessageSerializer
+from .serializer import UserSerializer, CustomTokenObtainPairSerializer, CustomTokenRefreshSerializer, CustomTokenVerifySerializer, MessageSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import UserProfile, Message, FriendRequest, Conversation
+from rest_framework_simplejwt.views import TokenVerifyView
 
 # Create your views here.
 
@@ -39,6 +40,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class CustomTokenRefreshView(TokenRefreshView):
 	serializer_class = CustomTokenRefreshSerializer
+
+class CustomTokenVerifyView(TokenVerifyView):
+	serializer_class = CustomTokenVerifySerializer
 
 class ProfileAPIView(APIView):
 	permission_classes = [IsAuthenticated]

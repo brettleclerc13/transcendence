@@ -81,7 +81,27 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
 			raise serializers.ValidationError("User does not exist")
 		except Exception as e:
 			raise serializers.ValidationError(str(e))
-	
+
+class CustomTokenVerifySerializer(serializers.Serializer):
+	token = serializers.CharField()
+
+	def validate(self, attrs):
+		token = attrs.get("token")
+
+		try:
+			# Decode the token
+			decoded_token = UntypedToken(token)
+			user_id = decoded_token.payload.get("user_id")
+
+			# Ensure the user still exists
+			if not User.objects.filter(id=user_id).exists():
+				raise serializers.ValidationError("User does not exist")
+
+		except Exception as e:
+			raise serializers.ValidationError(str(e))
+
+		return attrs
+
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
