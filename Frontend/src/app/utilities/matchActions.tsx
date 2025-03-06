@@ -107,3 +107,40 @@ export const createSimpleMatch = async (invite_game?: boolean) => {
 		throw new Error(String(error) || "Failed to create simple match.");
 	}
 };
+
+export const joinSimpleMatch = async (matchID: string) => {
+	const cookieStore = await cookies();
+	const token = cookieStore.get("accessToken")?.value;
+	if (!token) throw new Error("Access token missing");
+
+	try {
+		const response = await fetch(`http://backend:8001/matches/${matchID}/`, {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+		});
+
+		let data;
+		const text = await response.text();
+		try {
+			data = JSON.parse(text);
+		} catch {
+			throw new Error(
+				`Unexpected response when trying to join simple match: ${response.status}`
+			);
+		}
+		if (!response.ok) {
+			const errorMessage =
+				data.error ||
+				data.non_field_errors?.[0] || // First item in non_field_errors array
+				data.message || // Fallback to a generic message
+				data.detail || // Another common key for error messages
+				"Failed to join simple match.";
+			throw new Error(errorMessage);
+		}
+	} catch (error) {
+		throw new Error(String(error) || "Failed to join simple match.");
+	}
+};

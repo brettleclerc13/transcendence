@@ -3,7 +3,6 @@ import HeaderComponent from "../Header/headerComponent";
 import LoginForm from "@/app/User/loginForm";
 import RegisterForm from "@/app/User/registerForm";
 import AboutUsLayer from "../AboutUs/aboutUs";
-import Game from "../Game/game";
 import LiveChat from "../LiveChat/liveChat";
 import Lobby from "../Game/lobby";
 import { redirect } from "next/navigation";
@@ -14,7 +13,6 @@ export default async function SectionPage(props: {
 	const existingSections = [
 		"",
 		"lobby",
-		"play",
 		"aboutUs",
 		"login",
 		"register",
@@ -33,7 +31,6 @@ export default async function SectionPage(props: {
 				<HeaderComponent />
 				{section === "" && <Hero />}
 				{section === "lobby" && <Lobby />}
-				{section === "play" && <Game />}
 				{section === "aboutUs" && <AboutUsLayer />}
 				{section === "login" && <LoginForm />}
 				{section === "register" && <RegisterForm />}

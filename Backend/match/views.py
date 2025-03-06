@@ -4,7 +4,6 @@ from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from .models import Match
 from .serializer import MatchSerializer
-from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from uuid import UUID
@@ -58,17 +57,6 @@ class MatchAPIView(generics.ListCreateAPIView):
 		context.update({"request": self.request})
 		return context
 
-	def post(self, request, *args, **kwargs):
-		print(f"Headers: {request.headers}")  # Print headers
-		print(f"Authenticated user: {request.user}")  # Should not be "AnonymousUser"
-		print(f"User authenticated: {request.user.is_authenticated}")  # Should be True
-		print(f"Body: {request.data}")  # Check request data
-
-		if not request.user.is_authenticated:
-			return JsonResponse({"error": "User is not authenticated"}, status=401)
-
-		return self.create(request, *args, **kwargs)
-
 	def perform_create(self, serializer):
 		"""
 		Creates a match with the authenticated user as player1.
@@ -90,7 +78,49 @@ class MatchAPIView(generics.ListCreateAPIView):
 		"""
 		Allows player2 to join a match.
 		"""
+		print("Received PATCH request with data:", request.data)
 		match_id = kwargs.get('pk')
+		print("Match ID:", match_id)
+		user = request.user
+
+		try:
+			with transaction.atomic():
+				match = Match.objects.select_for_update().get(id=match_id)
+
+				# Ensure player2 is not already set
+				if match.player2 is not None:
+					return Response({'error': 'Player2 has already joined this match.'}, status=status.HTTP_400_BAD_REQUEST)
+
+				# Prevent player1 from joining as player2
+				if match.player1 == user:
+					return Response({'error': 'You cannot join your own match as player2.'}, status=status.HTTP_400_BAD_REQUEST)
+
+				# Assign player2 and set match as ongoing
+				match.player2 = user
+				match.is_ongoing = True
+				match.save()
+
+			return Response(MatchSerializer(match).data, status=status.HTTP_200_OK)
+
+		except Match.DoesNotExist:
+			return Response({'error': 'Match not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+class MatchRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
+	"""
+	Handles retrieving and updating a single match.
+	"""
+	serializer_class = MatchSerializer
+	permission_classes = [IsAuthenticated]
+	queryset = Match.objects.all()
+	lookup_field = 'id'  # Set UUID as lookup field
+
+	def patch(self, request, *args, **kwargs):
+		"""
+		Allows player2 to join a match.
+		"""
+		print("Received PATCH request with data:", request.data)
+		match_id = kwargs.get('id')  # This now correctly maps to the URL
+		print("Match ID:", match_id)
 		user = request.user
 
 		try:

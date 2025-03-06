@@ -7,7 +7,6 @@ import {
 	updateUserProfile,
 } from "../utilities/profileActions";
 import { z } from "zod";
-import { useRouter } from "next/navigation";
 import { isUserLoggedIn } from "../utilities/userClientActions";
 import Link from "next/link";
 import { createSimpleMatch } from "../utilities/matchActions";
@@ -26,11 +25,12 @@ export default function Lobby() {
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
 		null
 	);
+	const [isReadyToPlay, setIsReadyToPlay] = useState<boolean>(false);
+	const [matchID, setmatchID] = useState<string>("");
 	const [gameData, gameAction, gamePending] = useActionState(
 		handleSimpleMatchCreation,
 		undefined
 	);
-	const router = useRouter();
 
 	const fetchProfile = async () => {
 		try {
@@ -89,7 +89,11 @@ export default function Lobby() {
 				message: "Game on!",
 				type: "success",
 			});
-			return { readyToPlay: true, matchID: response.matchID };
+			setmatchID(response.matchID);
+			setTimeout(() => {
+				setIsReadyToPlay(true);
+			}, 1000);
+			return;
 		} catch (error) {
 			setAlert({
 				message: `Error creating a 1v1 game: ${error}`,
@@ -101,8 +105,8 @@ export default function Lobby() {
 
 	return (
 		<>
-			{gameData?.readyToPlay ? (
-				<GameCanvas ID={gameData?.matchID} />
+			{isReadyToPlay ? (
+				<GameCanvas ID={matchID} />
 			) : (
 				<div className="lobby-container">
 					{isUserLoggedIn() ? (
@@ -125,7 +129,11 @@ export default function Lobby() {
 							)}
 							<div className="lobby-sub-container">
 								<div className="basis-3/5">
-									<MatchList />
+									<MatchList
+										setAlert={setAlert}
+										setMatchID={setmatchID}
+										setIsReadyToPlay={setIsReadyToPlay}
+									/>
 								</div>
 								<div className="basis-2/5">
 									<form action={gameAction}>
