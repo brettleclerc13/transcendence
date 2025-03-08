@@ -1,5 +1,26 @@
 import { fail } from "assert";
 
+const getToken = () => localStorage.getItem("accessToken");
+
+const handleResponse = async (response: Response) => {
+	const text = await response.text();
+	let data;
+	try {
+		data = JSON.parse(text);
+	} catch {
+		throw new Error(`Unexpected response: ${response.status} - ${text}`);
+	}
+	if (!response.ok) {
+		const errorMessage =
+			data.non_field_errors?.[0] ||
+			data.message ||
+			data.detail ||
+			"An unexpected error occurred.";
+		throw new Error(errorMessage);
+	}
+	return data;
+};
+
 export const SearchFriend = async (searchValue: string) => {
 
 	try {
@@ -9,24 +30,8 @@ export const SearchFriend = async (searchValue: string) => {
 				"Content-Type": "application/json",
 			},
 		});
-		let data;
-		const text = await response.text();
-			try {
-				data = JSON.parse(text);
-				
-			} catch {
-				throw new Error(`Unexpected response: ${response.status}`);
-			}
-		if (!response.ok) {
-			const errorMessage =
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to search for users.";
-			throw new Error(errorMessage);
-		} else {
-			return {data, status:true};
-		}
+		const data = await handleResponse(response);
+		return { data, status: true };
 	} catch (error) {
 		console.error("Erreur lors de la recherche :", error);
 		return {error, status:false};
@@ -34,7 +39,7 @@ export const SearchFriend = async (searchValue: string) => {
 }
 
 export const FetchFriends = async () => {
-	const token = localStorage.getItem("accessToken");
+	const token = getToken();
 	if (!token) throw new Error("Access token missing");
 
 	try {
@@ -45,25 +50,14 @@ export const FetchFriends = async () => {
 				"Content-Type": "application/json",
 			},
 		});
-
-		if (!response.ok) {
-			const data = await response.json();
-			const errorMessage =
-			data.non_field_errors?.[0] || // First item in non_field_errors array
-			data.message || // Fallback to a generic message
-			data.detail || // Another common key for error messages
-			"Failed to update friend's list.";
-			throw new Error(errorMessage);
-		}
-		const data = await response.json();
-		return data;
+		return await handleResponse(response);
 	} catch (error) {
 		throw new Error(String(error) || "Erreur réseau (friends)");
 	}
 };
 
 export const FetchInvitations = async () => {
-	const token = localStorage.getItem("accessToken");
+	const token = getToken();
 	if (!token) throw new Error("Access token missing");
 
 	try {
@@ -74,24 +68,33 @@ export const FetchInvitations = async () => {
 				"Content-Type": "application/json",
 			},
 		});
-		if (!response.ok) {
-			const data = await response.json();
-			const errorMessage =
-			data.non_field_errors?.[0] || // First item in non_field_errors array
-			data.message || // Fallback to a generic message
-			data.detail || // Another common key for error messages
-			"Failed to update invitation list.";
-			throw new Error(errorMessage);
-		}
-		const data = await response.json();
-		return data;
+		return await handleResponse(response);
 	} catch (error) {
 		throw new Error(String(error) || "Erreur réseau (invitations)");
 	}
 };
 
+export const SendFriendRequest = async (receiver_username: string) => {
+	const token = getToken();
+	if (!token) throw new Error("Access token missing");
+
+	try {
+		const response = await fetch("/api/friends/request/send/", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify({ receiver_username }),
+		});
+		return await handleResponse(response);
+	} catch (error) {
+		throw new Error(String(error) || "Erreur réseau (send request)");
+	}
+};
+
 export const AcceptInvitation = async (id: number) => {
-	const token = localStorage.getItem("accessToken");
+	const token = getToken();
 	if (!token) throw new Error("Access token missing");
 
 	try {
@@ -102,26 +105,14 @@ export const AcceptInvitation = async (id: number) => {
 				"Content-Type": "application/json",
 			},
 		});
-
-		const data = await response.json();
-
-		if (!response.ok) {
-			const errorMessage =
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to accept invitation.";
-			throw new Error(errorMessage);
-		}
-
-		return data;
+		return await handleResponse(response);
 	} catch (error) {
 		throw new Error(String(error) || "Erreur réseau (accept invitation)");
 	}
 };
 
 export const DeclineInvitation = async (id: number) => {
-	const token = localStorage.getItem("accessToken");
+	const token = getToken();
 	if (!token) throw new Error("Access token missing");
 
 	try {
@@ -132,19 +123,7 @@ export const DeclineInvitation = async (id: number) => {
 				"Content-Type": "application/json",
 			},
 		});
-
-		const data = await response.json();
-
-		if (!response.ok) {
-			const errorMessage =
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to decline invitation.";
-			throw new Error(errorMessage);
-		}
-
-		return data;
+		return await handleResponse(response);
 	} catch (error) {
 		throw new Error(String(error) || "Erreur réseau (decline invitation)");
 	}

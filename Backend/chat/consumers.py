@@ -8,7 +8,6 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-
 # from .models import Message, UserProfile, Conversation
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -95,5 +94,6 @@ class ContactConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def notify_update(self, event):
+        print(f"🔔 Mise à jour pour {self.user_id}: {event}")
         await self.send(text_data=json.dumps(event))
 

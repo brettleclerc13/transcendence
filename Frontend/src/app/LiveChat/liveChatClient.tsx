@@ -208,22 +208,17 @@ const LiveChatClient = () => {
 				}
 				// const messagesData = await messagesRetrieve.json();
 				// setMessages(messagesData.messages);
-	
+
 				wsRef.current = new WebSocket(
 					`ws://127.0.0.1:8001/ws/chat/${conversationData.id}/` // ${conversationData.id}
 				);
 
 				wsRef.current.onopen = () => {
-					console.log("WebSocket connecté avec succès !");
 					setSocket(wsRef.current);
-					console.log("setSocket exécuté !");
-					console.log("📡 ReadyState après ouverture :", wsRef.current.readyState);
 				};
 	
 				wsRef.current.onmessage = (event: MessageEvent) => {
-					console.log("websocket message recu : ", event.data);
 					const data = JSON.parse(event.data);
-					console.log("data in the front after JSON.parse : ", data);
 					setMessages((prevMessages: Message[]) => [
 						...prevMessages,
 						{
@@ -235,15 +230,12 @@ const LiveChatClient = () => {
 						},
 					]);
 				};
-
-				console.log("sender in the front : ", messages.sender);
-
 				wsRef.current.onerror = (error: Event) => {
 					console.error("Erreur WebSocket :", error);
 				};
-	
+
 				wsRef.current.onclose = (event: CloseEvent) => {
-					console.warn("⚠️ WebSocket fermé :", event.code, event.reason);
+					console.warn("WebSocket fermé :", event.code, event.reason);
 				};
 			} catch (error) {
 				console.error("Erreur réseau :", error);
