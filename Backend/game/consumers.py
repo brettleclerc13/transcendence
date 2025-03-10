@@ -46,7 +46,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.debug_paddle = False
         self.debug_ball = False
         #variables to change the feel of the game
-        self.time_per_tick = 0.1 #50 ms
+        self.time_per_tick = 0.1 
         self.sub_tick_amount = 5
         self.reflection_bias = 0.95    
         self.max_speed = 10000 # best not set too high
@@ -115,8 +115,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             players_key = f"room:{self.room_name}:players"
 
            
-            await RedisManager.delete_user_data(self.room_name, "players", self.channel_name)
-            await RedisManager.delete_user_data(self.room_name, "initialized_players", self.channel_name)
+            await RedisManager.delete_user_data("room", self.room_name, "players", self.channel_name)
+            await RedisManager.delete_user_data("room", self.room_name, "initialized_players", self.channel_name)
             current_players = await self.redis.lrange(players_key, 0, -1)
 
             # Stop game loop if all players leave

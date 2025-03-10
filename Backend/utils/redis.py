@@ -30,9 +30,9 @@ class RedisManager:
             await redis.delete(*keys)
 
     @classmethod
-    async def delete_user_data(cls, room_name: str, key_id: str, value: str):
+    async def delete_user_data(cls,consumer_type: str ,room_name: str, key_id: str, value: str):
         redis = await cls.get_redis()
-        key = f"room:{room_name}:{key_id}"
+        key = f"{consumer_type}:{room_name}:{key_id}"
 
         removed_count = await redis.lrem(key, 1, value)
 
@@ -56,6 +56,12 @@ class RedisManager:
                 await redis.delete(*keys)
         
         print(f"deleted room: {room_name}", flush=True)
+    
+    @classmethod
+    async def store_user_data(cls, tournament_key, user_id, user_data):
+        redis = await cls.get_redis()
+        user_data_json = json.dumps(user_data)
+        await redis.hset(tournament_key, user_id, user_data_json)  # Store as a hash
 
     @classmethod
     async def get_json(cls, key):
@@ -71,3 +77,24 @@ class RedisManager:
         except Exception as e:
             print(f"Error retrieving JSON from Redis: {e}", flush=True)
             return {"message": "Error retrieving data"}
+    
+    @classmethod
+    async def set_tournament_state(cls, room_id, state):
+        redis = await cls.get_redis()
+        state_key = f"tournament:{room_id}:state"
+
+        current_state = await redis.get(state_key, encoding="utf-8")
+        if current_state != state:
+            await redis.set(state_key, state)  # ✅ Set new state only if different
+
+    @classmethod
+    async def get_tournament_state(cls, room_id):
+        redis = await cls.get_redis()
+        state_key = f"tournament:{room_id}:state"
+        return await redis.get(state_key, encoding="utf-8")
+    
+    @classmethod
+    async def get_all_users(cls, key):
+        redis = await cls.get_redis()
+        users = await redis.hgetall(key, encoding="utf-8")
+        return list(users.keys())  # ✅ Return list of player IDs
