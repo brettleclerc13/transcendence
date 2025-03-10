@@ -20,7 +20,7 @@ from django.urls import path
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenVerifyView
 from user.views import RegisterAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView
-from match.views import MatchAPIView, MatchRetrieveUpdateAPIView
+from match.views import MatchAPIView, MatchRetrieveUpdateAPIView, MatchHistoryView
 
 urlpatterns = [
 	path('admin/', admin.site.urls),
@@ -32,6 +32,7 @@ urlpatterns = [
 
 	path('matches/', MatchAPIView.as_view(), name="Match-get-post"),
 	path('matches/<uuid:id>/', MatchRetrieveUpdateAPIView.as_view(), name="match-patch"),
+	path('match_history/', MatchHistoryView.as_view(), name="match-history-get"),
 
 	path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
 	path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),

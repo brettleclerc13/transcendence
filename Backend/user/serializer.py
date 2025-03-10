@@ -33,12 +33,6 @@ class UserSerializer(serializers.ModelSerializer):
 		if "username" in data and User.objects.filter(username=data.get('username')).exists():
 			raise serializers.ValidationError({"username": "A user with this username already exists."})
 
-		# old_password = data.get("old_password")
-		# if old_password:
-		# 	if not self.instance or not self.instance.check_password(data["old_password"]):
-		# 		print(f"Reaching here", flush=True)
-		# 		raise serializers.ValidationError({"old_password": "Old password is incorrect."})
-
 		return data
 
 	def create(self, validated_data):

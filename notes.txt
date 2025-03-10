@@ -22,8 +22,6 @@ DELETE FROM user_userprofile WHERE user_id IN (SELECT id FROM auth_user);
 DELETE FROM auth_user;
 
 
-PROFILE
-- alias name for tournament
 
 LIVE CHAT
 - invite game: have an invitation_game boolean in versusMatch API to hide game from other users

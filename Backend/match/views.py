@@ -7,6 +7,8 @@ from .serializer import MatchSerializer
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from uuid import UUID
+from rest_framework.views import APIView
+from django.db.models import Q
 
 class MatchAPIView(generics.ListCreateAPIView):
 	"""
@@ -144,3 +146,13 @@ class MatchRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 
 		except Match.DoesNotExist:
 			return Response({'error': 'Match not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+class MatchHistoryView(APIView):
+    def get(self, request):
+        user = request.user
+        matches = Match.objects.filter(
+            Q(winner=user) | Q(looser=user),
+            is_finished=True
+        )
+        serializer = MatchSerializer(matches, many=True)
+        return Response(serializer.data)

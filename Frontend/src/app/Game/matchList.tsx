@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { fetchMatches, joinSimpleMatch } from "../utilities/matchActions";
 import "./match.css";
-import GameCanvas from "./gameCanvas";
 
 type Match = {
 	id: string;

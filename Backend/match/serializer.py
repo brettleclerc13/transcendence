@@ -6,6 +6,9 @@ class MatchSerializer(serializers.ModelSerializer):
 	player2_username = serializers.ReadOnlyField(source='player2.username')
 	winner_username = serializers.ReadOnlyField(source='winner.username')
 	looser_username = serializers.ReadOnlyField(source='looser.username')
+	result = serializers.SerializerMethodField()
+	match_type = serializers.SerializerMethodField()
+	score = serializers.SerializerMethodField()
 
 	class Meta:
 		model = Match
@@ -15,6 +18,19 @@ class MatchSerializer(serializers.ModelSerializer):
             "player2": {"required": False},  # Optional in requests
         }
 		read_only_fields = ['id', 'created_at', 'winner', 'looser']
+
+	def get_result(self, obj):
+		request = self.context.get("request")
+		if obj.winner == request.user:
+			return 'won'
+		else:
+			return 'lost'
+
+	def get_match_type(self, obj):
+		return '1v1'
+	
+	def get_score(self, obj):
+		return f"{obj.score_player1} / {obj.score_player2}"
 
 	def create(self, validated_data):
 			"""

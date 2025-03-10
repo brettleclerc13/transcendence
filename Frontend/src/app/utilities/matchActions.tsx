@@ -144,3 +144,46 @@ export const joinSimpleMatch = async (matchID: string) => {
 		throw new Error(String(error) || "Failed to join simple match.");
 	}
 };
+
+export const fetchSimpleMatchHistory = async () => {
+	const cookieStore = await cookies();
+	const token = cookieStore.get("accessToken")?.value;
+	if (!token) throw new Error("Access token missing");
+
+	try {
+		const response = await fetch(`http://backend:8001/match_history/`, {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+		});
+
+		let data;
+		const text = await response.text();
+		try {
+			data = JSON.parse(text);
+		} catch {
+			throw new Error(
+				`Unexpected response when trying to fetch user 1v1 match history: ${response.status}`
+			);
+		}
+		if (!response.ok) {
+			const errorMessage =
+				data.error ||
+				data.non_field_errors?.[0] || // First item in non_field_errors array
+				data.message || // Fallback to a generic message
+				data.detail || // Another common key for error messages
+				"Failed to fetch user 1v1 match history.";
+			throw new Error(errorMessage);
+		} else {
+			return data;
+		}
+	} catch (error) {
+		return {
+			ok: false,
+			error:
+				(error as Error).message || "Failed to fetch user 1v1 match history.",
+		};
+	}
+};

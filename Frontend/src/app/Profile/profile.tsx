@@ -1,15 +1,13 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useActionState } from "react";
+import React, { useState, useActionState } from "react";
 import "./profile.css";
 import { updateUserProfile } from "../utilities/profileActions";
-import Link from "next/link";
 import { z } from "zod";
 import ProfileImage from "./profileImage";
 
-import { Doughnut } from "react-chartjs-2";
-
 import type { UserProfileData } from "../utilities/profileActions";
+import MatchHistory from "./matchHistory";
 
 type ProfileProps = {
 	userProfile: UserProfileData | null;
@@ -61,65 +59,19 @@ export const profileSchema = z.object({
 		.optional(),
 });
 
-type Match = {
-	duelNumber?: number;
-	adversary?: string;
-	date?: string;
-	result?: string; // W/L
-};
-
 export default function Profile({
 	userProfile,
 	setUserProfile,
 	setIsProfileOpen,
 }: ProfileProps) {
-	const modalRef = useRef<HTMLDivElement>(null);
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
 		null
 	);
-	const [chartData, setChartData] = useState({});
-	const [matches, setMatches] = useState<Match[]>([]);
 
 	const [profileData, profileAction, profilePending] = useActionState(
 		handleUserProfileUpdate,
 		undefined
 	);
-
-	// useEffect(() => {
-	// 	const fetchMatchData = async () => {
-	// 		const matchResults = await fetchUserMatches();
-
-	// 		if (matchResults.success) {
-	// 			// Calcul des statistiques Win/Lose
-	// 			const totalMatches = matches.length;
-	// 			const wins = matches.filter(match => match.result === "W").length;
-	// 			const losses = totalMatches - wins;
-
-	// 			// Données pour la roue
-	// 			setChartData({
-	// 				labels: ["Wins", "Losses"],
-	// 				datasets: [
-	// 					{
-	// 						data: [wins, losses],
-	// 						backgroundColor: ["#4caf50", "#f44336"], // Couleurs pour Win et Lose
-	// 						borderWidth: 1,
-	// 					},
-	// 				],
-	// 			});
-
-	// 			const chartOptions = {
-	// 				cutout: "70%", // Taille du "trou" au centre de l'anneau
-	// 				plugins: {
-	// 					legend: {
-	// 						display: true,
-	// 						position: "bottom",
-	// 					},
-	// 				},
-	// 			};
-	// 			setMatches(matches);
-	// 		}
-	// 	}
-	// }, []);
 
 	async function handleUserProfileUpdate(
 		_previousState: unknown,
@@ -200,7 +152,7 @@ export default function Profile({
 	}
 
 	if (!userProfile) {
-		return <div>Failed to load profile.</div>; // Affiche un message si le profil n'est pas disponible
+		return <div>Failed to load profile.</div>;
 	}
 
 	return (
@@ -320,36 +272,7 @@ export default function Profile({
 						{profileData?.bioError && (
 							<p className="input-error">{profileData?.bioError}</p>
 						)}
-						{/* <div className="match-history">
-								<h3>Match History</h3>
-								<div className="table-container">
-									<table className="table">
-										<thead>
-											<tr>
-												<th scope="col">Duel #</th>
-												<th scope="col">Adversary</th>
-												<th scope="col">Date</th>
-												<th scope="col">W/L</th>
-											</tr>
-										</thead>
-										<tbody>
-											{matches.map((match) => (
-												<tr key={match.duelNumber}>
-													<th scope="row">{match.duelNumber}</th>
-													<td>{match.adversary}</td>
-													<td>{match.date}</td>
-													<td>{match.result}</td>
-												</tr>
-											))}
-										</tbody>
-									</table>
-								</div>
-							</div>
-							<div className="win-lose-chart">
-								<h3>Win/Loss Ratio</h3>
-								<Doughnut data={chartData} options={chartOptions} />
-								<Doughnut data={chartData} />
-							</div> */}
+						<MatchHistory setAlert={setAlert} />
 						<div className="button-container">
 							<button
 								className="button-save"

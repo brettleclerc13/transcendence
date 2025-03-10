@@ -30,15 +30,14 @@ export const fetchUserProfile = async () => {
 		});
 
 		let data;
+		const text = await response.text();
+		try {
+			data = JSON.parse(text);
+		} catch {
+			throw new Error(`Unexpected response: ${response.status}`);
+		}
 
 		if (!response.ok) {
-			const text = await response.text();
-			try {
-				data = JSON.parse(text);
-			} catch {
-				throw new Error(`Unexpected response: ${response.status}`);
-			}
-
 			const errorMessage =
 				data.error ||
 				data.non_field_errors?.[0] || // First item in non_field_errors array
@@ -47,7 +46,6 @@ export const fetchUserProfile = async () => {
 				"Failed to fetch user's profile info.";
 			throw new Error(errorMessage);
 		} else {
-			data = await response.json();
 			return data;
 		}
 	} catch (error) {
@@ -73,15 +71,14 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 		});
 
 		let data;
+		const text = await response.text();
+		try {
+			data = JSON.parse(text);
+		} catch {
+			throw new Error(`Unexpected response: ${response.status}`);
+		}
 
 		if (!response.ok) {
-			const text = await response.text();
-			try {
-				data = JSON.parse(text);
-			} catch {
-				throw new Error(`Unexpected response: ${response.status}`);
-			}
-
 			const errorMessage =
 				data.error ||
 				data.non_field_errors?.[0] || // First item in non_field_errors array
@@ -90,7 +87,6 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 				"Failed to update profile.";
 			throw new Error(errorMessage);
 		} else {
-			data = await response.json();
 			return data;
 		}
 	} catch (error) {
