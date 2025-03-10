@@ -17,6 +17,7 @@ export const FetchFriends = async () => {
 
 		if (!response.ok) {
 			const errorMessage =
+				data.error ||
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
@@ -46,6 +47,7 @@ export const FetchInvitations = async () => {
 
 		if (!response.ok) {
 			const errorMessage =
+				data.error ||
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
@@ -76,6 +78,7 @@ export const AcceptInvitation = async (id: number) => {
 
 		if (!response.ok) {
 			const errorMessage =
+				data.error ||
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
@@ -106,6 +109,7 @@ export const DeclineInvitation = async (id: number) => {
 
 		if (!response.ok) {
 			const errorMessage =
+				data.error ||
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages

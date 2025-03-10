@@ -38,8 +38,27 @@ export const profileSchema = z.object({
 	tournament_name: z
 		.string()
 		.min(3, "Alias must be at least 3 characters long")
-		.max(32, "Alias is too long"),
+		.max(32, "Alias is too long")
+		.optional(),
 	bio: z.string().max(500, "Bio must not exceed 500 characters").optional(),
+	old_password: z
+		.string()
+		.min(8)
+		.max(128)
+		.regex(
+			/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#?_])[a-zA-Z0-9!@#?_]+$/,
+			"Password must contain an uppercase letter, a number, and a special character (! @ # ? _)"
+		)
+		.optional(),
+	new_password: z
+		.string()
+		.min(8)
+		.max(128)
+		.regex(
+			/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#?_])[a-zA-Z0-9!@#?_]+$/,
+			"Password must contain an uppercase letter, a number, and a special character (! @ # ? _)"
+		)
+		.optional(),
 });
 
 type Match = {
@@ -110,9 +129,11 @@ export default function Profile({
 			username: formData.get("username"),
 			email: formData.get("email"),
 			age: formData.get("age") ? Number(formData.get("age")) : undefined,
-			nationality: formData.get("nationality"),
-			tournament_name: formData.get("tournamentName"),
-			bio: formData.get("bio"),
+			nationality: formData.get("nationality") || undefined,
+			tournament_name: formData.get("tournamentName") || undefined,
+			bio: formData.get("bio") || undefined,
+			old_password: formData.get("oldPassword") || undefined,
+			new_password: formData.get("newPassword") || undefined,
 		};
 
 		const validationResult = profileSchema.safeParse(profileInput);
@@ -136,6 +157,12 @@ export default function Profile({
 			const bioError = validationResult.error.errors.find(
 				(err) => err.path[0] === "bio"
 			);
+			const oldPasswordError = validationResult.error.errors.find(
+				(err) => err.path[0] === "old_password"
+			);
+			const newPasswordError = validationResult.error.errors.find(
+				(err) => err.path[0] === "new_password"
+			);
 			return {
 				emailError: emailError ? emailError.message : undefined,
 				usernameError: usernameError ? usernameError.message : undefined,
@@ -147,22 +174,28 @@ export default function Profile({
 					? tournamentNameError
 					: undefined,
 				bioError: bioError ? bioError.message : undefined,
+				oldPasswordError: oldPasswordError
+					? oldPasswordError.message
+					: undefined,
+				newPasswordError: newPasswordError
+					? newPasswordError.message
+					: undefined,
 			};
 		}
 
-		try {
-			await updateUserProfile(validationResult.data);
+		const result = await updateUserProfile(validationResult.data);
+		if (!result.ok) {
+			setAlert({
+				message: `Error updating your profile: ${result.error}`,
+				type: "danger",
+			});
+			return;
+		} else {
 			setUserProfile({ ...userProfile, ...validationResult.data });
 			setAlert({
 				message: "Your profile has been successfully updated!",
 				type: "success",
 			});
-		} catch (error) {
-			setAlert({
-				message: `Error updating your profile: ${error}`,
-				type: "danger",
-			});
-			return;
 		}
 	}
 
@@ -194,10 +227,12 @@ export default function Profile({
 				<div className="contour-informations">
 					<div className="left-informations">
 						<div>
-							<label>Username:</label>
+							<label htmlFor="username">Username:</label>
 							<input
 								type="text"
 								name="username"
+								id="username"
+								autoComplete="username"
 								defaultValue={userProfile.username}
 							/>
 						</div>
@@ -205,33 +240,55 @@ export default function Profile({
 							<p className="input-error">{profileData?.usernameError}</p>
 						)}
 						<div>
-							<label>Email:</label>
+							<label htmlFor="email">Email:</label>
 							<input
 								type="email"
 								name="email"
+								id="email"
 								defaultValue={userProfile.email}
+								autoComplete="email"
 							/>
 						</div>
 						{profileData?.emailError && (
 							<p className="input-error">{profileData?.emailError}</p>
 						)}
 						<div>
-							<label>Age:</label>
-							<input type="number" name="age" defaultValue={userProfile?.age} />
+							<label htmlFor="age">Age:</label>
+							<input
+								type="number"
+								name="age"
+								id="age"
+								defaultValue={userProfile?.age}
+							/>
 						</div>
 						{profileData?.ageError && (
 							<p className="input-error">{profileData?.ageError}</p>
 						)}
 						<div>
-							<label>Nationality:</label>
+							<label htmlFor="nationality">Nationality:</label>
 							<input
 								type="text"
 								name="nationality"
+								id="nationality"
 								defaultValue={userProfile?.nationality}
 							/>
 						</div>
 						{profileData?.nationalityError && (
 							<p className="input-error">{profileData?.nationalityError}</p>
+						)}
+						<div>
+							<label htmlFor="current_password">Old Password:</label>
+							<input type="password" name="oldPassword" id="current_password" />
+						</div>
+						{profileData?.oldPasswordError && (
+							<p className="input-error">{profileData?.oldPasswordError}</p>
+						)}
+						<div>
+							<label htmlFor="new_password">New Password:</label>
+							<input type="password" name="newPassword" id="new_password" />
+						</div>
+						{profileData?.newPasswordError && (
+							<p className="input-error">{profileData?.newPasswordError}</p>
 						)}
 					</div>
 
@@ -239,20 +296,23 @@ export default function Profile({
 
 					<div className="right-informations">
 						<div>
-							<label>Alias (Tournament name):</label>
+							<label htmlFor="nickname">Alias (Tournament name):</label>
 							<input
 								type="text"
 								name="tournamentName"
+								id="nickname"
 								defaultValue={userProfile?.tournament_name}
+								autoComplete="nickname"
 							/>
 						</div>
 						{profileData?.nationalityError && (
 							<p className="input-error">{profileData?.nationalityError}</p>
 						)}
 						<div>
-							<label>Bio:</label>
+							<label htmlFor="bio">Bio:</label>
 							<textarea
 								name="bio"
+								id="bio"
 								placeholder="Whatever!"
 								defaultValue={userProfile?.bio}
 							/>

@@ -26,6 +26,7 @@ export const updateUserProfileImage = async (formData: FormData) => {
 			}
 
 			const errorMessage =
+				data.error ||
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages

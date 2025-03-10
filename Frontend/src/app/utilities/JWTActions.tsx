@@ -25,6 +25,10 @@ export const refreshAccessToken = async () => {
 		let data;
 
 		if (!response.ok) {
+			deleteCookie("accessToken");
+			deleteCookie("refreshToken");
+			deleteCookie("tokenExpiry");
+
 			const text = await response.text();
 			try {
 				data = JSON.parse(text);
@@ -37,9 +41,6 @@ export const refreshAccessToken = async () => {
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
 				"Failed to refresh JWT access token.";
-			deleteCookie("accessToken");
-			deleteCookie("refreshToken");
-			deleteCookie("tokenExpiry");
 			if (errorMessage === "User does not exist") {
 				console.warn(
 					"Refresh token refers to a non-existent user. Removing tokens ..."

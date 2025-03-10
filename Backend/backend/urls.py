@@ -28,6 +28,7 @@ urlpatterns = [
 	path('register/', RegisterAPIView.as_view(), name='register'),
 	path('logout/', LogoutAPIView.as_view(), name='logout'),
 	path('profile/', ProfileAPIView.as_view(), name='profile'),
+	path('public_profile/', ProfileAPIView.as_view(), name='public-profile'),
 
 	path('matches/', MatchAPIView.as_view(), name="Match-get-post"),
 	path('matches/<uuid:id>/', MatchRetrieveUpdateAPIView.as_view(), name="match-patch"),

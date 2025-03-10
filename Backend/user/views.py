@@ -10,6 +10,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import UserProfile, Message, FriendRequest, Conversation
 from rest_framework_simplejwt.views import TokenVerifyView
+from django.contrib.auth.hashers import check_password
 
 # Create your views here.
 
@@ -70,6 +71,7 @@ class ProfileAPIView(APIView):
 		return Response(profile_data, status=status.HTTP_200_OK)
         
 	def post(self, request):
+		print(f"Received data: {request.data}", flush=True)
 		user = request.user
 		profile = user.profile
 		data = request.data
@@ -86,6 +88,34 @@ class ProfileAPIView(APIView):
 			if User.objects.filter(email=email).exists():
 				return Response({"error": "Email already exists."}, status=status.HTTP_400_BAD_REQUEST)
 			user.email = email
+        
+		# Validate and update password
+		old_password = data.get("old_password")
+		new_password = data.get("new_password")
+
+		if old_password or new_password:
+			print(f"old_password: ", old_password)
+			print(f"new_password: ", new_password)
+			if not old_password:
+				return Response({"error": "Old password is required to change password."}, status=status.HTTP_400_BAD_REQUEST)
+
+			if not check_password(old_password, user.password):
+				return Response({"error": "Old password is incorrect."}, status=status.HTTP_400_BAD_REQUEST)
+
+			if not new_password:
+				return Response({"error": "New password cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
+
+			if len(new_password) < 8 or len(new_password) > 128:
+				return Response({"error": "New password must be between 8 and 128 characters."}, status=status.HTTP_400_BAD_REQUEST)
+
+			if not any(c.isupper() for c in new_password) or not any(c.isdigit() for c in new_password) or not any(c in "!@#?_" for c in new_password):
+				return Response(
+					{"error": "Password must contain at least one uppercase letter, one number, and one special character (! @ # ? _)."},
+					status=status.HTTP_400_BAD_REQUEST,
+				)
+
+			# Update password
+			user.set_password(new_password)
 
 		# Validate and update profile fields
 		profile_fields = ["nationality", "bio", "age", "tournament_name", "is_online"]
@@ -112,6 +142,31 @@ class ProfileAPIView(APIView):
 			return Response({"message": "Profile picture updated successfully.", "profile_picture": profile.profile_picture.url}, status=status.HTTP_200_OK)
 
 		return Response({"error": "No profile picture provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+class PublicProfileAPIView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		username = request.query_params.get("username")
+
+		if username:
+			try:
+				user = User.objects.get(username=username)
+			except User.DoesNotExist:
+				return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+		else:
+			return Response({"error": "Username is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+		profile = user.profile
+		profile_data = {
+			"nationality": profile.nationality,
+			"bio": profile.bio,
+			"age": profile.age,
+			"profile_picture": profile.profile_picture.url if profile.profile_picture else None,
+			"tournament_name": profile.tournament_name,
+			"is_online": profile.is_online,
+		}
+		return Response(profile_data, status=status.HTTP_200_OK)
 
 class FriendListAPIView(APIView):
     permission_classes = [IsAuthenticated]

@@ -11,6 +11,8 @@ export type UserProfileData = {
 	is_online?: boolean;
 	profile_picture?: string | null;
 	tournament_name?: string;
+	old_password?: string;
+	new_password?: string;
 };
 
 export const fetchUserProfile = async () => {
@@ -38,6 +40,7 @@ export const fetchUserProfile = async () => {
 			}
 
 			const errorMessage =
+				data.error ||
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
@@ -57,6 +60,8 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 		const cookieStore = await cookies();
 		const token = cookieStore.get("accessToken")?.value;
 		if (!token) throw new Error("Access token missing");
+
+		console.log("profile data:", JSON.stringify(profileData));
 
 		const response = await fetch("http://backend:8001/profile/", {
 			method: "POST",
@@ -78,6 +83,7 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 			}
 
 			const errorMessage =
+				data.error ||
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
@@ -89,6 +95,9 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 		}
 	} catch (error) {
 		console.error("updateUserProfileError: ", error);
-		throw new Error(String(error) || "Failed to update profile.");
+		return {
+			ok: false,
+			error: (error as Error).message || "Failed to update profile.",
+		};
 	}
 };

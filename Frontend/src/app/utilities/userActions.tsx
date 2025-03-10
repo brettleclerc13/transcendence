@@ -31,6 +31,7 @@ export const login = async ({ email, pass }: LoginProps) => {
 		}
 
 		const errorMessage =
+			data.error ||
 			data.non_field_errors?.[0] || // First item in non_field_errors array
 			data.message || // Fallback to a generic message
 			data.detail || // Another common key for error messages
@@ -115,6 +116,7 @@ export const register = async (requestData: RegisterProps) => {
 		const errorMessage =
 			data.email?.[0] || // First error message related to email
 			data.username?.[0] || // First error message related to username
+			data.error ||
 			data.non_field_errors?.[0] || // First item in non_field_errors array
 			data.message || // Fallback to a generic message
 			data.detail || // Another common key for error messages
