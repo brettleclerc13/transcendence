@@ -228,25 +228,11 @@ export default function Profile({
 						{profileData?.nationalityError && (
 							<p className="input-error">{profileData?.nationalityError}</p>
 						)}
-						<div>
-							<label htmlFor="current_password">Old Password:</label>
-							<input type="password" name="oldPassword" id="current_password" />
-						</div>
-						{profileData?.oldPasswordError && (
-							<p className="input-error">{profileData?.oldPasswordError}</p>
-						)}
-						<div>
-							<label htmlFor="new_password">New Password:</label>
-							<input type="password" name="newPassword" id="new_password" />
-						</div>
-						{profileData?.newPasswordError && (
-							<p className="input-error">{profileData?.newPasswordError}</p>
-						)}
 					</div>
 
 					<div className="separator"></div>
 
-					<div className="right-informations">
+					<div className="center-informations">
 						<div>
 							<label htmlFor="nickname">Alias (Tournament name):</label>
 							<input
@@ -272,22 +258,41 @@ export default function Profile({
 						{profileData?.bioError && (
 							<p className="input-error">{profileData?.bioError}</p>
 						)}
-						<MatchHistory setAlert={setAlert} />
-						<div className="button-container">
-							<button
-								className="button-save"
-								type="submit"
-								disabled={profilePending}
-							>
-								Save
-							</button>
-							<button
-								className="button-cancel"
-								onClick={() => setIsProfileOpen(false)}
-							>
-								Cancel
-							</button>
+						<div>
+							<label htmlFor="current_password">Old Password:</label>
+							<input type="password" name="oldPassword" id="current_password" />
 						</div>
+						{profileData?.oldPasswordError && (
+							<p className="input-error">{profileData?.oldPasswordError}</p>
+						)}
+						<div>
+							<label htmlFor="new_password">New Password:</label>
+							<input type="password" name="newPassword" id="new_password" />
+						</div>
+						{profileData?.newPasswordError && (
+							<p className="input-error">{profileData?.newPasswordError}</p>
+						)}
+					</div>
+
+					<div className="separator"></div>
+
+					<div className="right-informations">
+						<MatchHistory setAlert={setAlert} />
+					</div>
+					<div className="button-container">
+						<button
+							className="button-save"
+							type="submit"
+							disabled={profilePending}
+						>
+							Save
+						</button>
+						<button
+							className="button-cancel"
+							onClick={() => setIsProfileOpen(false)}
+						>
+							Cancel
+						</button>
 					</div>
 				</div>
 			</form>

@@ -1,13 +1,17 @@
 import { Doughnut } from "react-chartjs-2";
 import { useRef, useEffect, useState } from "react";
 import { fetchSimpleMatchHistory } from "../utilities/matchActions";
+import type { ChartData } from "chart.js";
+import "./profile.css";
 
 type SimpleMatchHistory = {
-	created_at?: string;
-	result?: string;
-	match_type?: string;
-	score_player1?: number;
-	score_player2?: number;
+	created_at: string;
+	result: string;
+	match_type: string;
+	score_player1: number;
+	score_player2: number;
+	type: string;
+	score: string;
 };
 
 export default function MatchHistory({
@@ -15,9 +19,15 @@ export default function MatchHistory({
 }: {
 	setAlert: (alert: { message: string; type: string } | null) => void;
 }) {
-	const modalRef = useRef<HTMLDivElement>(null);
-	const [chartData, setChartData] = useState({});
+	//const modalRef = useRef<HTMLDivElement>(null);
+	const [chartData, setChartData] = useState<
+		ChartData<"doughnut", number[], unknown>
+	>({
+		labels: [],
+		datasets: [],
+	});
 	const [simpleMatches, setSimpleMatches] = useState<SimpleMatchHistory[]>([]);
+	const [chartOptions, setChartOptions] = useState({});
 
 	useEffect(() => {
 		const fetchMatchHistoryData = async () => {
@@ -25,15 +35,19 @@ export default function MatchHistory({
 
 			if (!matchResults.ok) {
 				setAlert({
-					message: `Error fetching your match histor: ${matchResults.error}`,
+					message: `Error fetching your match history: ${matchResults.error}`,
 					type: "danger",
 				});
 				return;
 			} else {
 				setSimpleMatches(matchResults.data);
 				// Calcul des statistiques Win/Lose
-				// const wins = simpleMatches.filter((match) => match.result === "Won").length;
-				// const losses = simpleMatches.filter((match) => match.result === "W").length;
+				const wins = simpleMatches.filter(
+					(match) => match.result === "Won"
+				).length;
+				const losses = simpleMatches.filter(
+					(match) => match.result === "Lost"
+				).length;
 
 				// Données pour la roue
 				setChartData({
@@ -47,7 +61,7 @@ export default function MatchHistory({
 					],
 				});
 
-				const chartOptions = {
+				setChartOptions({
 					cutout: "70%", // Taille du "trou" au centre de l'anneau
 					plugins: {
 						legend: {
@@ -55,7 +69,7 @@ export default function MatchHistory({
 							position: "bottom",
 						},
 					},
-				};
+				});
 			}
 		};
 
@@ -70,18 +84,18 @@ export default function MatchHistory({
 					<table className="table">
 						<thead>
 							<tr>
-								<th scope="col">Duel #</th>
-								<th scope="col">Adversary</th>
 								<th scope="col">Date</th>
+								<th scope="col">Type</th>
 								<th scope="col">W/L</th>
+								<th scope="col">Score</th>
 							</tr>
 						</thead>
 						<tbody>
-							{matches.map((match) => (
+							{simpleMatches.map((match) => (
 								<tr key={match.created_at}>
 									<th scope="row">{match.created_at}</th>
-									<td>{match.result}</td>
 									<td>{match.type}</td>
+									<td>{match.result}</td>
 									<td>{match.score}</td>
 								</tr>
 							))}
@@ -92,7 +106,6 @@ export default function MatchHistory({
 			<div className="win-lose-chart">
 				<h3>Win/Loss Ratio</h3>
 				<Doughnut data={chartData} options={chartOptions} />
-				<Doughnut data={chartData} />
 			</div>
 		</>
 	);
