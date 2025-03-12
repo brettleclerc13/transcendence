@@ -11,6 +11,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import UserProfile, Message, FriendRequest, Conversation
 from rest_framework_simplejwt.views import TokenVerifyView
 from django.contrib.auth.hashers import check_password
+from django.http import JsonResponse
 
 # Create your views here.
 
@@ -176,14 +177,33 @@ class FriendListAPIView(APIView):
         profile = user.profile
         friends = profile.friends.all()
 
-        friends_data = [
-            {
+        friends_data = []
+
+        for friend in friends:
+            # Vérifie si profile_picture existe et génère l'URL absolue
+            profile_picture_url = None
+            if friend.profile_picture:
+                profile_picture_url = request.build_absolute_uri(friend.profile_picture.url)
+                
+                # Si l'URL ne contient pas le port :8001, on l'ajoute manuellement
+                if "127.0.0.1" in profile_picture_url and ":8001" not in profile_picture_url:
+                    profile_picture_url = profile_picture_url.replace("http://127.0.0.1", "http://127.0.0.1:8001")
+
+
+            friends_data.append({
                 "id": friend.user.id,
                 "username": friend.user.username,
-                "profile_picture": friend.profile_picture,
-            }
-            for friend in friends
-        ]
+                "profile_picture": profile_picture_url,
+            })
+
+        # friends_data = [
+        #     {
+        #         "id": friend.user.id,
+        #         "username": friend.user.username,
+        #         "profile_picture": request.build_absolute_uri(friend.profile_picture.url) if friend.profile_picture else None,
+        #     }
+        #     for friend in friends
+        # ]
 
         return Response(friends_data, status=status.HTTP_200_OK)
         
@@ -261,6 +281,17 @@ class MessageAPIView(APIView):
         return Response(serializer.data)
 
 
+# # class SearchAPIView(APIView):
+
+# #     def get(self, request):
+# #         query = request.query_params.get("query", "").strip()
+# #         if not query:
+# #             return Response({"error": "Query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+# #         users = User.objects.filter(username__icontains=query).values("username")[:3]
+# #         # serializer = UserSerializer([user.user for user in users], many=True)
+# #         return Response(list(users), status=status.HTTP_200_OK)
+
 class SearchAPIView(APIView):
 
     def get(self, request):
@@ -269,8 +300,7 @@ class SearchAPIView(APIView):
             return Response({"error": "Query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
         
         users = User.objects.filter(username__icontains=query).values("username")[:3]
-        # serializer = UserSerializer([user.user for user in users], many=True)
-        return Response(list(users), status=status.HTTP_200_OK)
+        return JsonResponse(list(users), safe=False)
 
 
 class SendFriendRequestAPIView(APIView):

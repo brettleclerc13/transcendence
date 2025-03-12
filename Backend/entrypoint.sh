@@ -15,4 +15,4 @@ python manage.py migrate
 
 #python manage.py runserver_plus --cert-file transcendence.pem --key-file transcendence.key 0.0.0.0:8001
 
-daphne -b 0.0.0.0 -p 8001 backend.asgi:application
+daphne -b 0.0.0.0 -p 8001 backend.asgi:application -v2

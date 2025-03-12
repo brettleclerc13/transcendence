@@ -1,4 +1,5 @@
 import aioredis
+import json
 
 class RedisManager:
     _redis_pool = None
@@ -29,9 +30,9 @@ class RedisManager:
             await redis.delete(*keys)
 
     @classmethod
-    async def delete_user_data(cls, room_name: str, key_id: str, value: str):
+    async def delete_user_data_list(cls,consumer_type: str ,room_name: str, key_id: str, value: str):
         redis = await cls.get_redis()
-        key = f"room:{room_name}:{key_id}"
+        key = f"{consumer_type}:{room_name}:{key_id}"
 
         removed_count = await redis.lrem(key, 1, value)
 
@@ -55,3 +56,70 @@ class RedisManager:
                 await redis.delete(*keys)
         
         print(f"deleted room: {room_name}", flush=True)
+    
+    @classmethod
+    async def store_user_data(cls, tournament_key, user_id, user_data):
+        redis = await cls.get_redis()
+        user_data_json = json.dumps(user_data)
+        await redis.hset(tournament_key, user_id, user_data_json)  # Store as a hash
+
+    @classmethod
+    async def get_json(cls, key):
+        try:
+            redis = await cls.get_redis()  
+            json_data = await redis.execute("GET", key)
+
+            if json_data is not None:
+                return json.loads(json_data.decode("utf-8"))
+            else:
+                return {"error": "Data not found"}
+
+        except Exception as e:
+            print(f"Error retrieving JSON from Redis: {e}", flush=True)
+            return {"message": "Error retrieving data"}
+    
+    @classmethod
+    async def get_all_users_list(cls, key):
+        redis = await cls.get_redis()
+        users = await redis.hgetall(key, encoding="utf-8")
+        return list(users.keys())  
+
+    @classmethod
+    async def get_all_users_json(cls, key):
+        redis = await cls.get_redis()
+        users = await redis.hgetall(key, encoding="utf-8")  
+
+        return {user_id: json.loads(user_data) for user_id, user_data in users.items()}
+    
+    @classmethod
+    async def delete_user_data_map(cls, key: str, user_id: str):
+        redis = await cls.get_redis()
+        removed_count = await redis.hdel(key, user_id)  
+
+        return removed_count > 0
+
+    @classmethod
+    async def update_user_data_map(cls, key: str, user_id: str, field: str, new_value):
+        redis = await cls.get_redis()
+
+        user_data_json = await redis.hget(key, user_id, encoding="utf-8")
+
+        if user_data_json is None:
+            return False  
+        user_data = json.loads(user_data_json)
+
+        user_data[field] = new_value
+
+        await redis.hset(key, user_id, json.dumps(user_data))
+
+        return True 
+    
+    @classmethod
+    async def set_state(cls, key: str, state: str):
+        redis = await cls.get_redis()
+        await redis.set(key, state)
+
+    @classmethod
+    async def get_state(cls, key: str):
+        redis = await cls.get_redis()
+        return await redis.get(key, encoding="utf-8")

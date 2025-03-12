@@ -1,19 +1,24 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile, Message
+from .models import  UserProfile, Message
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from django.contrib.auth import authenticate
 
 class UserProfileSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
+    profile_picture = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
         fields = ['user' ,'nationality', 'bio', 'age', 'profile_picture', 'tournament_name', 'is_online']
 
+    def get_profile_picture(self, obj):
+        return obj.profile_picture.url if obj.profile_picture else None
+		
     def get_user(self, obj):
         return {"id": obj.user.id, "username": obj.user.username}
+
 
 class UserSerializer(serializers.ModelSerializer):
 	profile = UserProfileSerializer(required=False)

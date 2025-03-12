@@ -29,7 +29,22 @@ class UserProfile(models.Model):
 
 	def is_blocked(self, user):
 		return self.blocked_users.filter(id=user.id).exists()
-    
+
+
+class Match(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="matches")
+	opponent = models.CharField(max_length=20)
+	date = models.DateField()
+	score = models.IntegerField()
+	opponent_score = models.IntegerField()
+	result = models.CharField(max_length=10, choices=[('Win', 'Win'), ('Lose', 'Lose')])
+
+	def __str__(self):
+		return f"Match against {self.opponent} on {self.date}"
+
+	def __str__(self):
+		return f"Match against {self.opponent} on {self.date}"
+
 class Conversation(models.Model):
     participants = models.ManyToManyField(User)
 

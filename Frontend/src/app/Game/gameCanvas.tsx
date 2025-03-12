@@ -11,11 +11,12 @@ type GameState = {
 	score: [number, number];
 	paddle_speed: number;
 	resolution: number;
+	collision_point: [number, number][];
 	last_update_time: number;
 };
 
 function drawGame(state: GameState, canvas: HTMLCanvasElement) {
-	console.log("Drawing game state:", state);
+	//console.log("Drawing game state:", state);
 
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
@@ -26,8 +27,8 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 	ctx.scale(1, -1);
 
 	// Convert paddle dimensions from "units" to pixels temporarry hard coded.
-	const paddleWidth = 2 * state.resolution; // Convert from 0-100 to pixels
-	const paddleHeight = 8 * state.resolution; // Convert from 0-100 to pixels
+	const paddleWidth = 1.5 * state.resolution;
+	const paddleHeight = 12 * state.resolution;
 
 	// Player 1's paddle
 	const player1XCenter = state.player1_position[0] * state.resolution; // Convert X-center to pixels
@@ -53,7 +54,7 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 	ctx.arc(
 		state.ball_position[0] * state.resolution, // X-center
 		state.ball_position[1] * state.resolution, // Y-center
-		1 * state.resolution, // Radius (10 pixels)
+		1.5 * state.resolution, // Radius (10 pixels)
 		0,
 		Math.PI * 2
 	);
@@ -77,10 +78,20 @@ export default function GameCanvas(match: { ID: string }) {
 	const [socket, setSocket] = useState<WebSocket | null>(null);
 	const [gameState, setGameState] = useState<GameState | null>(null);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const [currentDirection, setCurrentDirection] = useState(0); // 1 for up, -1 for down, 0 for no movement
+	const inputInterval = useRef<NodeJS.Timeout | null>(null);
+	const currentDirectionRef = useRef(0); // ✅ Use a ref to track direction persistently
+	//Smoothening variables
+	const prevBallPosition = useRef<[number, number] | null>(null);
+	const targetBallPosition = useRef<[number, number] | null>(null);
+	const collisionPoints = useRef<[number, number][]>([]);
+	const lerpProgress = useRef(0); // 0 to 1 progress between previous and target positions
+	const lastUpdateTime = useRef(0); // Tracks last game update time
+	const prevPaddle1Position = useRef<[number, number] | null>(null);
+	const prevPaddle2Position = useRef<[number, number] | null>(null);
+	const targetPaddle1Position = useRef<[number, number] | null>(null);
+	const targetPaddle2Position = useRef<[number, number] | null>(null);
 
 	useEffect(() => {
-		console.log("match.ID: ", match.ID);
 		const roomName = match.ID;
 		const ws = new WebSocket(`wss://transcendence.fr/game/${roomName}/`);
 
@@ -91,11 +102,12 @@ export default function GameCanvas(match: { ID: string }) {
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
 
-			console.log("data type sent in:", data.type);
+			if (data.type === "game_end")
+				console.log("data type sent in:", data.type);
 
 			if (data.type === "initializer_pack") {
 				console.log("player name:", data.player_role);
-				setPlayerRole(data.player_role); // Assign "player_1" or "player_2"
+				setPlayerRole(data.player_role);
 				setStatus("ready");
 			}
 
@@ -105,15 +117,31 @@ export default function GameCanvas(match: { ID: string }) {
 			}
 
 			if (data.type === "game_update") {
+				const newBallPosition = data.game_state.ball_position;
+				const newCollisions = data.game_state.collision_point || [];
+				prevPaddle1Position.current =
+					targetPaddle1Position.current || data.game_state.player1_position;
+				prevPaddle2Position.current =
+					targetPaddle2Position.current || data.game_state.player2_position;
+
+				targetPaddle1Position.current = data.game_state.player1_position;
+				targetPaddle2Position.current = data.game_state.player2_position;
+
+				prevBallPosition.current =
+					targetBallPosition.current || newBallPosition;
+				targetBallPosition.current = newBallPosition;
+				collisionPoints.current = newCollisions;
+
+				lerpProgress.current = 0;
+				lastUpdateTime.current = Date.now();
+
 				setGameState(data.game_state);
 			}
 		};
 
 		ws.onclose = (event) => {
 			console.log("WebSocket disconnected");
-			if (event.code === 4000) {
-				console.log("Room is Full");
-			}
+			if (event.code === 4000) console.log("Room is Full");
 		};
 		setSocket(ws);
 
@@ -121,9 +149,119 @@ export default function GameCanvas(match: { ID: string }) {
 	}, []);
 
 	useEffect(() => {
-		if (!gameState || !canvasRef.current) return;
-		console.log("Drawing game state: ", gameState);
-		drawGame(gameState, canvasRef.current as HTMLCanvasElement);
+		let animationFrameId: number;
+
+		const renderLoop = () => {
+			if (
+				!gameState ||
+				!canvasRef.current ||
+				!prevBallPosition.current ||
+				!targetBallPosition.current ||
+				!prevPaddle1Position.current ||
+				!targetPaddle1Position.current ||
+				!prevPaddle2Position.current ||
+				!targetPaddle2Position.current
+			) {
+				animationFrameId = requestAnimationFrame(renderLoop);
+				return;
+			}
+
+			const ctx = canvasRef.current.getContext("2d");
+			if (!ctx) return;
+
+			const now = Date.now();
+			const deltaTime = now - lastUpdateTime.current; // Time since last game update (ms)
+			const totalDuration = 100; // Each tick lasts 50ms
+
+			// Determine interpolation progress (0 to 1)
+			lerpProgress.current = Math.min(deltaTime / totalDuration, 1);
+
+			// Interpolate Paddle 1 Position
+			const interpolatedPaddle1Position: [number, number] = [
+				prevPaddle1Position.current[0] +
+					(targetPaddle1Position.current[0] - prevPaddle1Position.current[0]) *
+						lerpProgress.current,
+				prevPaddle1Position.current[1] +
+					(targetPaddle1Position.current[1] - prevPaddle1Position.current[1]) *
+						lerpProgress.current,
+			];
+
+			// Interpolate Paddle 2 Position
+			const interpolatedPaddle2Position: [number, number] = [
+				prevPaddle2Position.current[0] +
+					(targetPaddle2Position.current[0] - prevPaddle2Position.current[0]) *
+						lerpProgress.current,
+				prevPaddle2Position.current[1] +
+					(targetPaddle2Position.current[1] - prevPaddle2Position.current[1]) *
+						lerpProgress.current,
+			];
+
+			// Interpolate Ball Position (already implemented)
+			let interpolatedBallPosition: [number, number] = prevBallPosition.current;
+			if (collisionPoints.current.length > 0) {
+				const numSegments = collisionPoints.current.length + 1;
+				const segmentTime = totalDuration / numSegments;
+				const currentSegment = Math.min(
+					Math.floor(deltaTime / segmentTime),
+					numSegments - 1
+				);
+				const segmentStartTime =
+					lastUpdateTime.current + currentSegment * segmentTime;
+				const segmentProgress = Math.min(
+					(now - segmentStartTime) / segmentTime,
+					1
+				);
+
+				let start: [number, number];
+				let end: [number, number];
+
+				if (currentSegment === 0) {
+					start = prevBallPosition.current;
+					end =
+						collisionPoints.current.length > 0
+							? collisionPoints.current[0]
+							: targetBallPosition.current;
+				} else if (currentSegment < collisionPoints.current.length) {
+					start = collisionPoints.current[currentSegment - 1];
+					end = collisionPoints.current[currentSegment];
+				} else {
+					start = collisionPoints.current[collisionPoints.current.length - 1];
+					end = targetBallPosition.current;
+				}
+
+				interpolatedBallPosition = [
+					start[0] + (end[0] - start[0]) * segmentProgress,
+					start[1] + (end[1] - start[1]) * segmentProgress,
+				];
+			} else {
+				interpolatedBallPosition = [
+					prevBallPosition.current[0] +
+						(targetBallPosition.current[0] - prevBallPosition.current[0]) *
+							lerpProgress.current,
+					prevBallPosition.current[1] +
+						(targetBallPosition.current[1] - prevBallPosition.current[1]) *
+							lerpProgress.current,
+				];
+			}
+
+			// Draw the updated frame
+			drawGame(
+				{
+					...gameState,
+					ball_position: interpolatedBallPosition,
+					player1_position: interpolatedPaddle1Position,
+					player2_position: interpolatedPaddle2Position,
+				},
+				canvasRef.current
+			);
+
+			// Request the next frame
+			animationFrameId = requestAnimationFrame(renderLoop);
+		};
+
+		animationFrameId = requestAnimationFrame(renderLoop);
+
+		return () => cancelAnimationFrame(animationFrameId);
 	}, [gameState]);
 
 	useEffect(() => {
@@ -133,14 +271,14 @@ export default function GameCanvas(match: { ID: string }) {
 				JSON.stringify({
 					type: "initialize",
 					game_parametres: {
-						ball_diametre: 1,
-						paddle_speed: 20,
-						paddle_height: 8,
-						paddle_width: 2,
-						ball_speed: 20,
-						paddle_xposition: 0.2,
+						ball_diametre: 1.5,
+						paddle_speed: 25,
+						paddle_height: 12,
+						paddle_width: 1.5,
+						ball_speed: 35,
+						paddle_xposition: 0.007,
 						screen_width: 800,
-						screen_height: 400,
+						screen_height: 592,
 						resolution: 8,
 						point_goal: 10,
 					},
@@ -149,73 +287,43 @@ export default function GameCanvas(match: { ID: string }) {
 		}
 	}, [status, playerRole]);
 
-	/* Send directional input every 50ms
-    useEffect(() => {
-        let interval: number | null = null;
-
-        if (status === "playing") {
-            interval = window.setInterval(() => {
-                const timestamp = Date.now();
-                socket?.send(
-                    JSON.stringify({
-                        type: "input",
-                        player: playerRole,
-                        direction: currentDirection,
-                        timestamp,// -1 for down, 1 for up
-                        
-                    })
-                );
-                //console.log("Sent input:", { player: playerRole, direction: currentDirection, timestamp });
-            }, 50);
-        }
-
-        return () => {
-            if (interval !== null) {
-                window.clearInterval(interval); // Use `window.clearInterval` with a `number`
-            }
-        };
-    }, [status, playerRole, socket, currentDirection]);*/
-
 	useEffect(() => {
-		let inputInterval: number = 0; // Default to 0 (no active interval)
+		const sendInput = () => {
+			if (socket && playerRole) {
+				socket.send(
+					JSON.stringify({
+						type: "input",
+						player: playerRole,
+						direction: currentDirectionRef.current, // ✅ Always send the latest ref value
+						timestamp: Date.now(),
+					})
+				);
+			}
+		};
 
 		const handleKeyDown = (event: KeyboardEvent) => {
 			let newDirection = 0;
 			if (event.key === "ArrowUp") newDirection = 1;
 			if (event.key === "ArrowDown") newDirection = -1;
 
-			if (newDirection !== 0 && currentDirection !== newDirection) {
-				setCurrentDirection(newDirection); // Update direction state
-			}
+			if (newDirection !== 0 && currentDirectionRef.current !== newDirection) {
+				currentDirectionRef.current = newDirection; // ✅ Update the ref immediately
+				sendInput(); // ✅ Send an immediate input
 
-			if (!inputInterval && newDirection !== 0) {
-				inputInterval = window.setInterval(() => {
-					socket?.send(
-						JSON.stringify({
-							type: "input",
-							player: playerRole,
-							direction: newDirection,
-							timestamp: Date.now(),
-						})
-					);
-				}, 50); // Send every 50ms
+				if (!inputInterval.current) {
+					inputInterval.current = setInterval(() => sendInput(), 50); // ✅ Start interval
+				}
 			}
 		};
 
 		const handleKeyUp = (event: KeyboardEvent) => {
 			if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-				setCurrentDirection(0); // Reset direction
-				if (inputInterval) {
-					clearInterval(inputInterval); // Stop sending
-					inputInterval = 0; // Reset interval ID
-					socket?.send(
-						JSON.stringify({
-							type: "input",
-							player: playerRole,
-							direction: 0,
-							timestamp: Date.now(),
-						})
-					); // Send "stop" message
+				currentDirectionRef.current = 0; // ✅ Reset the ref
+				sendInput(); // ✅ Send stop signal
+
+				if (inputInterval.current) {
+					clearInterval(inputInterval.current);
+					inputInterval.current = null;
 				}
 			}
 		};
@@ -226,9 +334,12 @@ export default function GameCanvas(match: { ID: string }) {
 		return () => {
 			window.removeEventListener("keydown", handleKeyDown);
 			window.removeEventListener("keyup", handleKeyUp);
-			if (inputInterval) clearInterval(inputInterval); // Clear the interval when unmounting
+			if (inputInterval.current) {
+				clearInterval(inputInterval.current);
+				inputInterval.current = null;
+			}
 		};
-	}, [socket, playerRole, currentDirection]);
+	}, [socket, playerRole]);
 
 	return (
 		<div className="flex justify-center items-center h-full w-full">
@@ -238,7 +349,7 @@ export default function GameCanvas(match: { ID: string }) {
 				<canvas
 					ref={canvasRef}
 					width={800}
-					height={400}
+					height={592}
 					style={{ backgroundColor: "black", display: "block" }}
 				/>
 			)}
