@@ -1,6 +1,10 @@
 import json
 import asyncio
+from urllib.parse import parse_qs
+from user.models import UserProfile
 from utils.redis import RedisManager
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework_simplejwt.tokens import AccessToken
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 class TournamentConsumer(AsyncWebsocketConsumer):
@@ -8,6 +12,12 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
         self.room_group_name = f"tournament_{self.room_id}"
 
+        self.user = await self.authenticate_user()
+        if not self.user:
+            await self.close(code=4001)  
+            return
+
+        self.tournament_id = None
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
@@ -22,9 +32,8 @@ class TournamentConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         user_key = f"tournament:{self.room_id}:users"
-        await RedisManager.delete_user_data(user_key, self.channel_name)
-        await self.update_tournament_state()
-
+        if self.tournament_id != None:
+            await RedisManager.update_user_data_map(user_key, self.tournament_id, "is_on_page", False)
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -41,28 +50,62 @@ class TournamentConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         message_type = data.get("type")
+        user_key = f"tournament:{self.room_id}:users"
 
-        if message_type == "user_data":
+        if message_type == "user_connected":
             user_data = {
-                "id": self.channel_name,  # need to update this one
-                "username": data.get("username", "Unknown"),
+                "id": self.user.id,  #questonable
+                "tournament_name": self.user.tournament_name,
+                "profile_picture": self.user.profile_picture,
+                "is_on_page": True
             }
 
-            user_key = f"tournament:{self.room_id}:users"
-            await RedisManager.store_user_data(user_key, self.channel_name, user_data)
-            await self.update_tournament_state()
+            players = await RedisManager.get_all_users_list(user_key)
+            self.tournament_id = f"player_{len(players) + 1}"
+            await RedisManager.store_user_data(user_key, self.tournament_id, user_data)
+            connected_users = await RedisManager.get_all_users_json(user_key)
 
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     "type": "new_user_joined",
-                    "user_data": user_data,
+                    "users": connected_users,
                 }
             )
+        elif message_type == "user_disconnected":
+            if self.tournament_id != None:
+                await RedisManager.delete_user_data_map(user_key, self.tournament_id)
+            
+    
+    async def authenticate_user(self):
+        try:
+            query_params = parse_qs(self.scope["query_string"].decode())  
+            token = query_params.get("token", [None])[0]  
+
+            if not token:
+                return None  
+
+            decoded_token = AccessToken(token)  
+            user_id = decoded_token["user_id"]  
+
+            return await self.get_user(user_id)
+        
+        except Exception as e:
+            print(f"JWT Authentication Error: {e}")
+            return None  
+
+    async def get_user(self, user_id):
+        try:
+            return await asyncio.get_event_loop().run_in_executor(
+                None, lambda: UserProfile.objects.get(id=user_id)
+            )
+        except ObjectDoesNotExist:
+            return None
     
     async def update_tournament_state(self):
         user_key = f"tournament:{self.room_id}:users"
-        players = await RedisManager.get_all_users(user_key)
+        state_key = f"tournament:{self.room_id}:state"
+        players = await RedisManager.get_all_users_list(user_key)
         num_players = len(players)
 
         if num_players < 4:
@@ -70,7 +113,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         elif num_players == 4:
             new_state = "tournament_starting" #for now a simple state manager would need to upgarde this
         else:
-            new_state = await RedisManager.get_tournament_state(self.room_id)  
+            new_state = await RedisManager.get_state(state_key)
 
         await RedisManager.set_tournament_state(self.room_id, new_state)
 
@@ -92,7 +135,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
     async def new_user_joined(self, event):
         await self.send(text_data=json.dumps({
             "type": "new_user",
-            "user_data": event["user_data"]
+            "users": event["users"]
         }))
 
     async def user_disconnected(self, event):

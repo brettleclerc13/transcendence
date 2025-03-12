@@ -115,8 +115,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             players_key = f"room:{self.room_name}:players"
 
            
-            await RedisManager.delete_user_data("room", self.room_name, "players", self.channel_name)
-            await RedisManager.delete_user_data("room", self.room_name, "initialized_players", self.channel_name)
+            await RedisManager.delete_user_data_list("room", self.room_name, "players", self.channel_name)
+            await RedisManager.delete_user_data_list("room", self.room_name, "initialized_players", self.channel_name)
             current_players = await self.redis.lrange(players_key, 0, -1)
 
             # Stop game loop if all players leave
