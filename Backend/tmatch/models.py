@@ -11,9 +11,7 @@ class TournamentMatch(models.Model):
 	max_players = models.IntegerField(default=4)
 	is_finished = models.BooleanField(default=False)
 	is_ongoing = models.BooleanField(default=False)
-	is_tournament = models.BooleanField(default=False)
-	winner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="won_matches")
-	looser = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="lost_matches")
+	tournament_winner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="won_matches")
 	created_at = models.DateTimeField(auto_now_add=True)
 
 	def __str__(self):

@@ -105,9 +105,8 @@ export default function Lobby() {
 
 	return (
 		<>
-			{isReadyToPlay ? (
-				<GameCanvas ID={matchID} />
-			) : (
+			{isReadyToPlay && <GameCanvas ID={matchID} />}
+			{!isReadyToPlay && (
 				<div className="lobby-container">
 					{isUserLoggedIn() ? (
 						<>
@@ -155,6 +154,7 @@ export default function Lobby() {
 											<button
 												className="button-tournament"
 												type="submit"
+												// onClick={() => handleTournamentMatchCreation}
 												disabled={gamePending}
 											>
 												Create tournament match
