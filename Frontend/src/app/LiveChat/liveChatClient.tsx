@@ -219,6 +219,12 @@ const LiveChatClient = () => {
 
 				wsRef.current.onmessage = (event: MessageEvent) => {
 					const data = JSON.parse(event.data);
+
+					if (!data.message || data.message.trim() === "") {
+						console.warn("Message vide reçu, il ne sera pas affiché.");
+						return;
+					}
+
 					setMessages((prevMessages: Message[]) => [
 						...prevMessages,
 						{

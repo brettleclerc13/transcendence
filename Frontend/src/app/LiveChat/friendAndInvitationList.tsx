@@ -84,6 +84,23 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 		
 			wsRef.current.onmessage = (event) => {
 			const data = JSON.parse(event.data);
+			console.log("Message reçu :", data); // debug
+
+				if (data.type === "notify_update" && data.update_type === "user_blocked") {
+					const blockedUser = {
+						id: data.data.user_id,
+						username: data.data.username,
+						profile_picture: data.data.profile_picture || null,
+					};
+					setBlockedUsers((prev) => [...prev, blockedUser]);
+			
+					setFriends((prev) => prev.filter((friend) => friend.id !== blockedUser.id));
+					setInvitations((prev) => prev.filter((invite) => invite.id !== blockedUser.id));
+				}
+			
+				if (data.type === "notify_update" && data.update_type === "user_unblocked") {
+					setBlockedUsers((prev) => prev.filter((user) => user.id !== data.data.user_id));
+				}
 
 				if (data.type === "friend_list_update") {
 					setFriends(data.friends);

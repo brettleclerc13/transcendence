@@ -11,14 +11,19 @@ def notify_user_update(user_id, update_type, data):
             "data": data
         }
     )
-    
-def notify_block_status(user, action):
+
+def notify_block_status(user, status):
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        f"user_{user.id}",
+        f"contacts_{user.id}",
         {
-            "type": "block_status",
-            "action": action,
-            "user_id": user.id,
+            "type": "notify_update",
+            "update_type": f"user_{status}",
+            "data": {
+                "user_id": user.id,
+                "username": user.username,
+                "profile_picture": user.profile.profile_picture.url if user.profile.profile_picture else None,
+            },
         },
     )
+    print(f"Sending WebSocket message to user_{user.id}: {status}") # debug
