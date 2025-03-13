@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { fetchUserProfile } from "../utilities/profileActions"
 import {
 	FetchFriends,
 	FetchInvitations,
@@ -15,6 +16,14 @@ import {
 } from "../utilities/blockActions";
 import { data } from "framer-motion/client";
 
+interface User {
+	id: number;
+	username: string;
+	email: string;
+	profile_picture: string | null;
+	is_online: boolean;
+}
+
 interface Friend {
 	id: number;
 	username: string;
@@ -24,6 +33,7 @@ interface Friend {
 
 const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => void }> = ({ onSelectFriend }) => {
 	const [friends, setFriends] = useState<Friend[]>([]);
+	const [currentUser, setCurrentUser] = useState<User | null>(null);
 	const [invitations, setInvitations] = useState<Friend[]>([]);
 	const [blockedUsers, setBlockedUsers] = useState<Friend[]>([]);
 	const [isFriendsTab, setIsFriendsTab] = useState(true);
@@ -32,17 +42,30 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 	useEffect(() => {
 		const fetchData = async () => {
 			try {
-				const friendList = await FetchFriends();
-				if (friendList && friendList.length === 0) {
-					console.log("No friends in the list.");
-				}
-				else if (friendList) setFriends(friendList || []);
+				const userProfile = await fetchUserProfile();
+				if (userProfile) setCurrentUser(userProfile);
 
-				const invitationList = await FetchInvitations();
-				if (invitationList && invitationList.length === 0) {
-					console.log("No invitation pending.");
+				const friendListResponse = await FetchFriends();
+				if (friendListResponse.status === true && Array.isArray(friendListResponse.data)) {
+					setFriends(friendListResponse.data);
+				} else if (friendListResponse.status === "warning") {
+					console.log("Warning:", friendListResponse.message);
+					setFriends([]);
+				} else if (friendListResponse.status === false) {
+					console.log("Error:", friendListResponse.error);
+					setFriends([]);
 				}
-				else if (invitationList) setInvitations(invitationList || []);
+
+				const invitationListResponse = await FetchInvitations();
+				if (invitationListResponse.status === true && Array.isArray(invitationListResponse.data)) {
+					setInvitations(invitationListResponse.data);
+				} else if (invitationListResponse.status === "warning") {
+					console.log("Warning:", invitationListResponse.message);
+					setInvitations([]);
+				} else if (invitationListResponse.status === false) {
+					console.log("Error:", invitationListResponse.error);
+					setInvitations([]);
+				}
 
 				const blockedList = await FetchBlockedUsers();
 				if (blockedList)
@@ -52,40 +75,77 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 			}
 		};
 		fetchData();
-
-		const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
-		wsRef.current = new WebSocket(`${wsProtocol}://127.0.0.1:8001/ws/contacts/`);
-
-		wsRef.current.onopen = () => console.log("✅ WebSocket ouvert");
-		wsRef.current.onerror = (err) => console.error("❌ Erreur WebSocket", err);
-		wsRef.current.onclose = (event) => console.warn("⚠️ WebSocket fermé :", event.code, event.reason);
-
-		wsRef.current.onmessage = (event) => {
-			const data = JSON.parse(event.data);
-			if (data.type === "friend_list_update") {
-				setFriends(data.friends);
-			}
-			if (data.type === "invitation_list_update") {
-				setInvitations(data.invitations);
-			}
-			if (data.action === "blocked") {
-				setBlockedUsers((prev) => [...prev, { id: data.user_id, username: data.username || "Unknown", profile_picture: data.profile_picture || null }]);
-			} else if (data.action === "unblocked") {
-				setBlockedUsers((prev) => prev.filter(user => user.id !== data.user_id));
-			}
-		};
-
-		return () => {
-			wsRef.current?.close();
-		};
 	}, []);
 
+	useEffect(() => {
+		if (currentUser?.id) {
+
+			wsRef.current = new WebSocket(`ws://127.0.0.1:8001/ws/contacts/${currentUser?.id}/`);
+		
+			wsRef.current.onmessage = (event) => {
+			const data = JSON.parse(event.data);
+
+				if (data.type === "friend_list_update") {
+					setFriends(data.friends);
+				}
+			
+				if (data.type === "invitation_list_update") {
+					setInvitations(data.invitations);
+				}
+
+				if (data.type === "notify_update" && data.update_type === "friend_request") {
+					FetchInvitations().then((invitationListResponse) => {
+						if (invitationListResponse.status === true && Array.isArray(invitationListResponse.data)) {
+							setInvitations(invitationListResponse.data);
+						} else {
+							setInvitations([]);
+						}
+					}).catch((error) => {
+						console.error("Erreur lors de la mise à jour des invitations :", error);
+					});
+				}
+
+				if (data.type === "notify_update" && data.update_type === "new_friend") {
+					FetchFriends().then((friendsListResponse) => {
+						if (friendsListResponse.status === true && Array.isArray(friendsListResponse.data)) {
+							setFriends(friendsListResponse.data);
+						} else {
+							setFriends([]);
+						}
+					}).catch((error) => {
+						console.error("Erreur lors de la mise à jour des amis :", error);
+					});
+				}
+			
+				if (data.action === "blocked") {
+					setBlockedUsers((prev) => [...prev, { id: data.user_id, username: data.username || "Unknown", profile_picture: data.profile_picture || null }]);
+				} else if (data.action === "unblocked") {
+					setBlockedUsers((prev) => prev.filter(user => user.id !== data.user_id));
+				}
+			};
+		
+			return () => {
+				wsRef.current?.close();
+			};
+		}
+	}, [currentUser]);
+
 	const handleAccept = async (id: number) => {
-		await AcceptInvitation(id);
+		try {
+			await AcceptInvitation(id);
+			setInvitations((prevInvitations) => prevInvitations.filter((invite) => invite.id !== id));
+		} catch (error) {
+			console.error("Erreur lors de l'acceptation de l'invitation :", error);
+		}
 	};
 
 	const handleDecline = async (id: number) => {
-		await DeclineInvitation(id);
+		try {
+			await DeclineInvitation(id);
+			setInvitations((prevInvitations) => prevInvitations.filter((invite) => invite.id !== id));
+		} catch (error) {
+			console.error("Erreur lors du refus de l'invitation :", error);
+		}
 	};
 
 	const handleBlockUser = async (user: Friend) => {

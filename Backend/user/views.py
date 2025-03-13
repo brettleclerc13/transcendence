@@ -254,7 +254,7 @@ class SendFriendRequestAPIView(APIView):
         receiver_username = request.data.get("receiver_username")
 
         if not receiver_username:
-            return Response({"error": "Receiver username is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"warning": "Receiver username is required"}, status=status.HTTP_200_OK)
 
         try:
             receiver = User.objects.get(username=receiver_username)
@@ -262,16 +262,16 @@ class SendFriendRequestAPIView(APIView):
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
         if sender == receiver:
-            return Response({"error": "You cannot send a friend request to yourself"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"warning": "You cannot send a friend request to yourself"}, status=status.HTTP_200_OK)
 
         sender_profile = sender.profile
         receiver_profile = receiver.profile
 
         if receiver_profile in sender_profile.friends.all():
-            return Response({"error": "You are already friends"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"warning": "You are already friends"}, status=status.HTTP_200_OK)
 
         if FriendRequest.objects.filter(sender=sender, receiver=receiver, status="pending").exists():
-            return Response({"error": "Friend request already sent"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"warning": "Friend request already sent"}, status=status.HTTP_200_OK)
 
         friend_request = FriendRequest.objects.create(sender=sender, receiver=receiver)
 
@@ -291,6 +291,9 @@ class AcceptFriendRequestAPIView(APIView):
         sender = friend_request.sender
         receiver = friend_request.receiver
 
+        if sender.profile.friends.filter(id=receiver.id).exists():
+            return Response({"error": "Already friends"}, status=status.HTTP_400_BAD_REQUEST)
+
         sender.profile.friends.add(receiver.profile)
         receiver.profile.friends.add(sender.profile)
 
@@ -298,12 +301,6 @@ class AcceptFriendRequestAPIView(APIView):
 
         notify_user_update(sender.id, "new_friend", {"username": receiver.username})
         notify_user_update(receiver.id, "new_friend", {"username": sender.username})
-
-        # friend_request.status = "accepted"
-        # friend_request.save()
-
-        # friend_request.sender.profile.friends.add(friend_request.receiver.profile)
-        # friend_request.receiver.profile.friends.add(friend_request.sender.profile)
 
         return Response({"message": "Friend request accepted"}, status=status.HTTP_200_OK)
 
@@ -314,11 +311,10 @@ class DeclineFriendRequestAPIView(APIView):
         try:
             friend_request = FriendRequest.objects.get(id=request_id, receiver=request.user, status="pending")
         except FriendRequest.DoesNotExist:
-            return Response({"error": "Friend request not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Friend request not found or already processed"}, status=status.HTTP_404_NOT_FOUND)
 
         friend_request.delete()
-        # friend_request.status = "declined"
-        # friend_request.save()
+
         return Response({"message": "Friend request declined"}, status=status.HTTP_200_OK)
 
 class PendingFriendRequestsAPIView(APIView):
@@ -326,6 +322,8 @@ class PendingFriendRequestsAPIView(APIView):
 
     def get(self, request):
         requests = FriendRequest.objects.filter(receiver=request.user, status="pending").values("id", "sender__username")
+        if not requests:
+            return Response({"message": "No pending friend requests"}, status=status.HTTP_200_OK)
         return Response(list(requests), status=status.HTTP_200_OK)
 
 class GetOrCreateConversationAPIView(APIView):

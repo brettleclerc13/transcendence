@@ -176,3 +176,9 @@ REST_FRAMEWORK = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+CORS_ALLOW_ALL_ORIGINS = True  # temporairement pour les tests
+
+CORS_ALLOWED_ORIGINS = [
+    "https://transcendence.fr",
+]

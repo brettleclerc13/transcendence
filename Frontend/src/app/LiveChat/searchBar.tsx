@@ -21,7 +21,7 @@ const SearchBar = () => {
 
 		if (searchValue.trim().length > 0) {
 			const response = await SearchFriend(searchValue);
-			if (response.status === true) {
+			if (response.status === true && response.data) {
 				setResults(response.data.slice(0, 3));
 				setShowDropdown(true);
 			} else {
@@ -37,19 +37,24 @@ const SearchBar = () => {
 	const handleInviteClick = async (username: string) => {
 		setLoading(true);
 		setShowDropdown(false);
-
+	
 		try {
 			const response = await SendFriendRequest(username);
-			if (response.status) {
-			  setInvitationSent(true);
-			  setMessage("Friend request sent!");
-			  setTimeout(() => setInvitationSent(false), 3000);
+	
+			if (response.status === true) {
+				setInvitationSent(true);
+				setMessage("Friend request sent!");
+				setTimeout(() => setInvitationSent(false), 3000);
+			} else if (response.status === "warning") {
+				setMessage(response.message);
+			} else if (response.status === false) {
+				setMessage(response.error || "Failed to send friend request.");
 			} else {
-			  setMessage(response.error || "Failed to send friend request.");
+				setMessage("An unexpected response format was received.");
 			}
 		} catch (error) {
 			console.error("Error sending friend request:", error);
-			setMessage("An error occurred. Please try again.");
+			setMessage("An unexpected error occurred. Please try again.");
 		} finally {
 			setLoading(false);
 		}

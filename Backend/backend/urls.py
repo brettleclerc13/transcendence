@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import path
 from django.conf.urls.static import static
+from chat.consumers import ContactConsumer
 from user.views import RegisterAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView,   BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView
 
 urlpatterns = [
@@ -46,6 +47,7 @@ urlpatterns = [
 	path('block-user/<int:user_id>/', BlockUserAPIView.as_view(), name='block_user'),
 	path('unblock-user/<int:user_id>/', UnblockUserAPIView.as_view(), name='unblock_user'),
 	path('blocked-users/', BlockedUsersAPIView.as_view(), name='blocked_users'),
+    
 ]
 
 if settings.DEBUG:

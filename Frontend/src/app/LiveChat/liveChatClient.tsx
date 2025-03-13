@@ -195,9 +195,9 @@ const LiveChatClient = () => {
 
 				if (messagesRetrieve.ok) {
 					const data = await messagesRetrieve.json();
-					console.log ("data : ", data);
-					console.log ("data.text : ", data['0']['text']);
-					console.log ("data.messages : ", data.messages);
+					// console.log ("data : ", data);
+					// console.log ("data.text : ", data['0']['text']);
+					// console.log ("data.messages : ", data.messages);
 					setMessages(data);
 				} else {
 					console.error(`Erreur lors de la récupération des messages : ${response.statusText}`);
@@ -216,7 +216,7 @@ const LiveChatClient = () => {
 				wsRef.current.onopen = () => {
 					setSocket(wsRef.current);
 				};
-	
+
 				wsRef.current.onmessage = (event: MessageEvent) => {
 					const data = JSON.parse(event.data);
 					setMessages((prevMessages: Message[]) => [
