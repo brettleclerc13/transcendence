@@ -1,8 +1,8 @@
 import json
 import asyncio
+from utils.redis import RedisManager
 from urllib.parse import parse_qs
 from user.models import UserProfile
-from utils.redis import RedisManager
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.tokens import AccessToken
 from channels.generic.websocket import AsyncWebsocketConsumer
