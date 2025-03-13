@@ -148,11 +148,36 @@ class MatchRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 			return Response({'error': 'Match not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 class MatchHistoryView(APIView):
-    def get(self, request):
-        user = request.user
-        matches = Match.objects.filter(
-            Q(winner=user) | Q(looser=user),
-            is_finished=True
-        )
-        serializer = MatchSerializer(matches, many=True)
-        return Response(serializer.data)
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		user = request.user
+		matches = Match.objects.filter(
+			Q(winner=user) | Q(looser=user),
+			is_finished=True
+		)
+		serializer = MatchSerializer(matches, many=True)
+		return Response(serializer.data)
+
+class MatchCLIView():
+	serializer_class = MatchSerializer
+
+	def get_queryset(self):
+		"""
+		Allow filtering matches based on query params (e.g., user, winner, looser, match ID).
+		"""
+		queryset = Match.objects.all()
+		if not queryset.exists():
+			return Match.objects.none()
+
+		filter_params = {
+			'is_ongoing': self.request.query_params.get('is_ongoing'),
+			'is_finished': self.request.query_params.get('is_finished'),
+		}
+
+		# Apply filters dynamically
+		for key, value in filter_params.items():
+			if value is not None and value != "null":
+				queryset = queryset.filter(**{key: value})
+
+		return queryset
