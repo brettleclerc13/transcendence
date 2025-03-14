@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { getCookie } from "cookies-next/client";
 
 type GameState = {
 	player1_position: [number, number];
@@ -92,8 +93,16 @@ export default function GameCanvas(match: { ID: string }) {
 	const targetPaddle2Position = useRef<[number, number] | null>(null);
 
 	useEffect(() => {
+		const accessToken = getCookie("accessToken");
+
+		if (!accessToken) {
+			console.log("Access Token not retrieved in Game Canvas");
+			return;
+		}
 		const roomName = match.ID;
-		const ws = new WebSocket(`wss://transcendence.fr/game/${roomName}/`);
+		const ws = new WebSocket(
+			`wss://transcendence.fr/game/${roomName}?${accessToken}`
+		);
 
 		ws.onopen = () => {
 			console.log("Connected to WebSocket");
