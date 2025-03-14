@@ -26,4 +26,3 @@ def notify_block_status(user, status):
             },
         },
     )
-    print(f"Sending WebSocket message to user_{user.id}: {status}") # debug

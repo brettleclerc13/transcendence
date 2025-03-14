@@ -344,7 +344,7 @@ class GetOrCreateConversationAPIView(APIView):
             print(f"Conversation créée avec les participants : {conversation.participants.all()}")
 
         return Response({"id": conversation.id})
-    
+
 
 class BlockUserAPIView(APIView):
     permission_classes = [IsAuthenticated]

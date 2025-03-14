@@ -37,6 +37,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 	const [invitations, setInvitations] = useState<Friend[]>([]);
 	const [blockedUsers, setBlockedUsers] = useState<Friend[]>([]);
 	const [isFriendsTab, setIsFriendsTab] = useState(true);
+	const [blockedUserIds, setBlockedUserIds] = useState<Set<number>>(new Set());
 	const wsRef = useRef<WebSocket | null>(null);
 
 	useEffect(() => {
@@ -67,9 +68,16 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 					setInvitations([]);
 				}
 
-				const blockedList = await FetchBlockedUsers();
-				if (blockedList)
-					setBlockedUsers(blockedList.map((user: { id: number }) => user.id));
+				const fetchBlockedUsers = async () => {
+					const blockedList = await FetchBlockedUsers();
+					if (blockedList) {
+						setBlockedUsers(blockedList);
+						setBlockedUserIds(new Set(blockedList.map((user: Friend) => user.id)));
+					}
+				};
+				fetchBlockedUsers();
+				// if (blockedList)
+				// 	setBlockedUsers(blockedList.map((user: { id: number }) => user.id));
 			} catch (error) {
 				console.error("Error fetching data:", error);
 			}
@@ -84,7 +92,6 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 		
 			wsRef.current.onmessage = (event) => {
 			const data = JSON.parse(event.data);
-			console.log("Message reçu :", data); // debug
 
 				if (data.type === "notify_update" && data.update_type === "user_blocked") {
 					const blockedUser = {
@@ -145,7 +152,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 				wsRef.current?.close();
 			};
 		}
-	}, [currentUser]);
+	}, [currentUser?.id]);
 
 	const handleAccept = async (id: number) => {
 		try {
@@ -168,11 +175,17 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 	const handleBlockUser = async (user: Friend) => {
 		await BlockUser(user.id);
 		setBlockedUsers((prev) => [...prev, user]);
+		setBlockedUserIds((prev) => new Set(prev).add(user.id));
 	};
 
 	const handleUnblockUser = async (userId: number) => {
 		await UnblockUser(userId);
 		setBlockedUsers((prev) => prev.filter((user) => user.id !== userId));
+		setBlockedUserIds((prev) => {
+			const updated = new Set(prev);
+			updated.delete(userId);
+			return updated;
+		});
 	};
 
 	return (
@@ -188,12 +201,14 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 							friends.map((friend) => (
 								<li key={friend.id} className="list-group-item d-flex align-items-center justify-content-between">
 									<div onClick={() => onSelectFriend(friend)} style={{ cursor: "pointer", display: "flex", alignItems: "center"}}>
-										<img src={`${friend.profile_picture}` || "/img/default.png"} alt={`${friend.username}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10, }} />
+										<img src={friend.profile_picture || "/img/default.png"} alt={`${friend.username}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10, }} />
 										<span>{friend.username}</span>
 									</div>
 									<button className={`btn ${ blockedUsers.some((user) => user.id === friend.id) ? "btn-danger" : "btn-secondary" }`}
-										onClick={() => blockedUsers.some((user) => user.id === friend.id) ? handleUnblockUser(friend.id) : handleBlockUser(friend) } >
-											{blockedUsers.some((user) => user.id === friend.id) ? "Unblock": "Block"}
+										onClick={() => blockedUserIds.has(friend.id) ? handleUnblockUser(friend.id) : handleBlockUser(friend)}>
+											{blockedUserIds.has(friend.id) ? "Unblock" : "Block"} 
+										{/* onClick={() => blockedUsers.some((user) => user.id === friend.id) ? handleUnblockUser(friend.id) : handleBlockUser(friend) } > */}
+										{/* {blockedUsers.some((user) => user.id === friend.id) ? "Unblock": "Block"} */}
 									</button>
 								</li>
 							))
@@ -204,8 +219,8 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 						invitations.map((invite) => (
 							<li key={invite.id} className="list-group-item d-flex align-items-center justify-content-between" >
 								<div className="d-flex align-items-center">
-									<img src={`${invite.profile_picture}` || "./img/default.png"} alt={`${invite.sender__username}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10 }} />
-									<span>{invite.sender__username}</span>
+									<img src={invite.profile_picture || "./img/default.png"} alt={`${invite.sender__username}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10 }} />
+									<span>{invite.sender__username || invite.username}</span>
 								</div>
 								<div>
 									<button className="btn btn-success me-2" onClick={() => handleAccept(invite.id)} >
