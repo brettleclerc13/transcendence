@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import path
 from django.conf.urls.static import static
-from match.views import MatchAPIView, MatchRetrieveUpdateAPIView, MatchHistoryView
+from match.views import MatchAPIView, MatchRetrieveUpdateAPIView, MatchHistoryView, MatchCLIView
 from user.views import RegisterAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView
 
 urlpatterns = [
@@ -32,6 +32,7 @@ urlpatterns = [
 	path('matches/', MatchAPIView.as_view(), name="Match-get-post"),
 	path('matches/<uuid:id>/', MatchRetrieveUpdateAPIView.as_view(), name="match-patch"),
 	path('match_history/', MatchHistoryView.as_view(), name="match-history-get"),
+    path('match-list/', MatchCLIView.as_view(), name="match-list-get"),
 
 	path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
 	path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
