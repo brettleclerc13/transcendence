@@ -25,6 +25,10 @@ fclean: down
 	rm -Rf ./Backend/utils/__pycache__
 	rm -Rf ./Backend/game/migrations
 	rm -Rf ./Backend/game/__pycache__
+	rm -Rf ./Backend/match/migrations
+	rm -Rf ./Backend/match/__pycache__
+	rm -Rf ./Backend/tmatch/migrations
+	rm -Rf ./Backend/tmatch/__pycache__
 	rm -Rf ./Backend/media/profile_pictures/*
 	mkdir -p ./Volume
 	mkdir -p ./Volume/postgresql

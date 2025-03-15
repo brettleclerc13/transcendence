@@ -71,3 +71,11 @@ class MatchSerializer(serializers.ModelSerializer):
 			raise serializers.ValidationError("scores cannot be negative.")
 
 		return data
+
+class MatchSummarySerializer(serializers.ModelSerializer):
+	player1_username = serializers.ReadOnlyField(source='player1.username')
+	player2_username = serializers.ReadOnlyField(source='player2.username')
+
+	class Meta:
+		model = Match
+		fields = ['id', 'player1_username', 'player2_username']

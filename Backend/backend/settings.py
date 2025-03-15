@@ -58,7 +58,8 @@ INSTALLED_APPS = [
     'channels',
     'user',
     'game',
-	'match'
+	'match',
+	'tmatch',
     'tournament',
 	'chat',
 ]

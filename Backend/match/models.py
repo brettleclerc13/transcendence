@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from tmatch.models import TournamentMatch
 import uuid
 
 class Match(models.Model):
@@ -12,9 +13,9 @@ class Match(models.Model):
 	is_finished = models.BooleanField(default=False)
 	is_ongoing = models.BooleanField(default=False)
 	is_tournament = models.BooleanField(default=False)
-	tournament = models.ForeignKey('TournamentMatch', on_delete=models.SET_NULL, null=True, blank=True, related_name="matches")
-	winner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="won_matches")
-	looser = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="lost_matches")
+	tournament = models.ForeignKey(TournamentMatch, on_delete=models.SET_NULL, null=True, blank=True, related_name="tournament_id")
+	winner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="match_wins")
+	looser = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="match_losses")
 	invite_game = models.BooleanField(default=False)
 	created_at = models.DateTimeField(auto_now_add=True)
 

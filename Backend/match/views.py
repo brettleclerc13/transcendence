@@ -3,12 +3,14 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from .models import Match
-from .serializer import MatchSerializer
+from .serializer import MatchSerializer, MatchSummarySerializer
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from uuid import UUID
 from rest_framework.views import APIView
 from django.db.models import Q
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework.permissions import AllowAny
 
 class MatchAPIView(generics.ListCreateAPIView):
 	"""
@@ -159,13 +161,11 @@ class MatchHistoryView(APIView):
 		serializer = MatchSerializer(matches, many=True)
 		return Response(serializer.data)
 
-class MatchCLIView():
-	serializer_class = MatchSerializer
+class MatchCLIView(APIView):
+	permission_classes = [AllowAny]
+	throttle_classes = [AnonRateThrottle]
 
-	def get_queryset(self):
-		"""
-		Allow filtering matches based on query params (e.g., user, winner, looser, match ID).
-		"""
+	def get(self, request):
 		queryset = Match.objects.all()
 		if not queryset.exists():
 			return Match.objects.none()
@@ -180,4 +180,5 @@ class MatchCLIView():
 			if value is not None and value != "null":
 				queryset = queryset.filter(**{key: value})
 
-		return queryset
+		serializer = MatchSummarySerializer(queryset, many=True)
+		return Response(serializer.data)
