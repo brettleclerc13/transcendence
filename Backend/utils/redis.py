@@ -54,11 +54,14 @@ class RedisManager:
             cursor, keys = await redis.scan(cursor, match=pattern, count=100)
             if keys:
                 await redis.delete(*keys)
+            
+            if cursor == b'0':
+                break
         
         print(f"deleted room: {room_name}", flush=True)
     
     @classmethod
-    async def store_user_data(cls, tournament_key, user_id, user_data):
+    async def store_user_data_map(cls, tournament_key, user_id, user_data):
         redis = await cls.get_redis()
         user_data_json = json.dumps(user_data)
         await redis.hset(tournament_key, user_id, user_data_json)  # Store as a hash
@@ -79,10 +82,18 @@ class RedisManager:
             return {"message": "Error retrieving data"}
     
     @classmethod
-    async def get_all_users_list(cls, key):
+    async def get_all_users_list_map(cls, key):
         redis = await cls.get_redis()
         users = await redis.hgetall(key, encoding="utf-8")
         return list(users.keys())  
+
+    @classmethod
+    async def get_list_of_list(cls, key):
+        redis = await cls.get_redis()
+
+        users = await redis.lrange(key, 0, -1)
+
+        return [user.decode("utf-8") for user in users]
 
     @classmethod
     async def get_all_users_json(cls, key):
@@ -122,4 +133,5 @@ class RedisManager:
     @classmethod
     async def get_state(cls, key: str):
         redis = await cls.get_redis()
-        return await redis.get(key, encoding="utf-8")
+        value = await redis.get(key, encoding="utf-8")
+        return value if value is not None else "Unknown"

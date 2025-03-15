@@ -60,9 +60,9 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 "is_on_page": True
             }
 
-            players = await RedisManager.get_all_users_list(user_key)
+            players = await RedisManager.get_all_users_list_map(user_key)
             self.tournament_id = f"player_{len(players) + 1}"
-            await RedisManager.store_user_data(user_key, self.tournament_id, user_data)
+            await RedisManager.store_user_data_map(user_key, self.tournament_id, user_data)
             connected_users = await RedisManager.get_all_users_json(user_key)
 
             await self.channel_layer.group_send(
@@ -105,7 +105,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
     async def update_tournament_state(self):
         user_key = f"tournament:{self.room_id}:users"
         state_key = f"tournament:{self.room_id}:state"
-        players = await RedisManager.get_all_users_list(user_key)
+        players = await RedisManager.get_all_users_list_map(user_key)
         num_players = len(players)
 
         if num_players < 4:
