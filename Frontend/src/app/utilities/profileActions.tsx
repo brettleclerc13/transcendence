@@ -59,8 +59,6 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 		const token = cookieStore.get("accessToken")?.value;
 		if (!token) throw new Error("Access token missing");
 
-		console.log("profile data:", JSON.stringify(profileData));
-
 		const response = await fetch("http://backend:8001/profile/", {
 			method: "POST",
 			headers: {
@@ -72,8 +70,10 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 
 		let data;
 		const text = await response.text();
+
+		console.log("User update TEXT:", text);
 		try {
-			data = JSON.parse(text);
+			data = text ? JSON.parse(text) : {};
 		} catch {
 			throw new Error(`Unexpected response: ${response.status}`);
 		}
@@ -87,7 +87,10 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 				"Failed to update profile.";
 			throw new Error(errorMessage);
 		} else {
-			return data;
+			return {
+				ok: true,
+				message: data.message || "User profile updated successfully",
+			};
 		}
 	} catch (error) {
 		console.error("updateUserProfileError: ", error);

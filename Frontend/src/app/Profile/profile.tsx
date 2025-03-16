@@ -136,7 +136,7 @@ export default function Profile({
 		}
 
 		const result = await updateUserProfile(validationResult.data);
-		if (!result.ok) {
+		if (result.ok === false) {
 			setAlert({
 				message: `Error updating your profile: ${result.error}`,
 				type: "danger",
