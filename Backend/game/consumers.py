@@ -11,6 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.tokens import AccessToken
 from utils.redis import RedisManager
 from channels.generic.websocket import AsyncWebsocketConsumer
+from asgiref.sync import sync_to_async
 
 
 class PongGameConsumer(AsyncWebsocketConsumer):
@@ -47,7 +48,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.has_initialize = False
         #debugging
         self.debug_collision = False
-        self.debug_connections = False
+        self.debug_connections = True
         self.debug_game_stats = True
         self.debug_paddle = False
         self.debug_ball = False
@@ -71,8 +72,9 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         try:
             self.redis = await RedisManager.get_redis()
             if self.debug_connections:
-                print(f"Redis connected for {self.channel_name}", flush=True)
-                print(f"BIG CHECK~ {user_agent} ~CHECK BIG", flush=True)
+                if self.redis is not None:
+                    print(f"Redis connected for {self.channel_name}", flush=True)
+                print(f"User-agent: {user_agent}  | | room name: {self.room_name}", flush=True)
 
             if "Python/3.10 websockets/15.0" in user_agent:  # Browser connection
                 if self.debug_connections:            
@@ -90,12 +92,14 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 if not self.user:
                     await self.close(code=4001)  
                     return
+                if self.debug_connections:
+                    print(f"User Authenticated!", flush=True)
                 self.match = await self.get_match(self.room_name)
                 if not self.match:
                     await self.close(code=4002)
                     return
-                #need to add logic that if the state is waiting for recconection the user be taken another route.
-                #consider has_initialize and restore from game_state_key
+                if self.debug_connections:
+                    print(f"Match Authenticated!", flush=True)
 
                 players_key = f"room:{self.room_name}:players"
                 current_players = await self.redis.lrange(players_key, 0, -1)
@@ -106,11 +110,11 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                     return
 
                 await self.accept()
-                await self.redis.rpush(players_key, self.user.user.username)
-                
+                username = await sync_to_async(lambda: self.user.user.username)()
+                await self.redis.rpush(players_key, username)
 
                 
-                self.player_number = self.get_player_number()
+                self.player_number =  await self.get_player_number()
                 await self.send(text_data=json.dumps({
                     "type": "initializer_pack",
                     "player_role": self.player_number
@@ -121,6 +125,11 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                     await self.send(text_data=json.dumps({
                         "type": "reconnected",
                     }))
+                else:
+                    await self.send(text_data=json.dumps({
+                        "type": "get-ready",
+                    }))
+                    
 
                 # Join the room group
                 await self.channel_layer.group_add(
@@ -139,9 +148,11 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         prev_state_key = f"room:{self.room_name}:prev_state"
         game_started_key = f"room:{self.room_name}:game_running"
         players_key = f"room:{self.room_name}:players"
+        username = await sync_to_async(lambda: self.user.user.username)()
         
-        try:           
-            await RedisManager.delete_user_data_list("room", self.room_name, "players", self.user.user.username)
+        try:      
+            if hasattr(self, "user") and self.user:     
+                await RedisManager.delete_user_data_list("room", self.room_name, "players", username)
             current_players = await RedisManager.get_list_of_list(players_key)
 
             if self.debug_connections:
@@ -164,17 +175,14 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 current_players = await RedisManager.get_list_of_list(players_key)
                 has_reconnected = False
                 for player in current_players:
-                    if player == self.user.user.username:
+                    if player == username:
                         has_reconnected = True
                 if not has_reconnected and await RedisManager.get_state(state_key) != "game over":
                     await RedisManager.set_state(state_key, "game over")
-                    await self.channel_layer.group_send(
-                        self.room_group_name,
-                        {
-                            "type": "handle_game_end", # need to take care of storing data and then just use redis manager to delete everything. this should also work for natural scoring end of the game 
-                            "loser": self.user.user.username 
-                        }
-                    )
+                    if self.player_number == "player_1":
+                        self.handle_game_end("player_2", "a player won, game_over")
+                    else:
+                        self.handle_game_end("player_1", "a player won, game_over")
 
 
         except Exception as e:
@@ -256,11 +264,16 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             query_params = parse_qs(self.scope["query_string"].decode())  
             token = query_params.get("token", [None])[0]  
 
+            if self.debug_connections:
+                print(f"querry parametres: {query_params} | | the token: {token}", flush=True)
+
             if not token:
                 return None  
 
             decoded_token = AccessToken(token)  
-            user_id = decoded_token["user_id"]  
+            user_id = decoded_token["user_id"] 
+            if self.debug_connections:
+                print(f"decoded token: {decoded_token}  | | USER ID: {user_id}", flush=True) 
 
             return await self.get_user(user_id)
         
@@ -279,7 +292,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
     async def get_match(self, match_id):
         try:
             return await asyncio.get_event_loop().run_in_executor(
-                None, lambda: Match.objects.get(match_id)
+                None, lambda: Match.objects.get(id=match_id)
             )
         except ObjectDoesNotExist:
             return None
@@ -299,12 +312,14 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         except ObjectDoesNotExist:
             return False
         
-    def get_player_number(self):
-        if self.match.player1 == self.user:
-            player_number = "player_1"
-        else :
-            player_number = "player_2"
-        return player_number
+    async def get_player_number(self):
+        try:
+            if await sync_to_async(lambda: self.match.player1.id)() == self.user.id:
+                return "player_1"
+            return "player_2"
+        except Exception as e:
+            print(f"Error in get_player_number: {e}", flush=True)
+            return None
 
     async def start_game(self, event):
     # Notify the WebSocket client that the game is starting
@@ -316,6 +331,15 @@ class PongGameConsumer(AsyncWebsocketConsumer):
     async def terminate_game(self, event):
         if hasattr(self, "game_task"):
             self.game_task.cancel()
+        if event["reason"] == "user disconnected, waiting":
+            msg_type = "game_paused"
+        elif event["reason"] == "a player won, game_over":
+            msg_type = "game_ending"
+        await self.send(text_data=json.dumps({
+            "type": msg_type,
+            "reason": event.get("reason", "nothing"),
+            "winner": event.get("winner", "no-one")
+        }))
 
     
     async def game_update(self, event):
@@ -326,12 +350,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             "game_state": event["game_state"],
         })) 
 
-    async def game_end(self, event):
-        await self.send(text_data=json.dumps({
-            "type": "game_end",
-            "message": event["message"],
-            "winner": event["winner"]
-        }))
     ''' 
     async def dispatch(self, message):
         print(f"Dispatching message: {message}", flush=True)
@@ -339,23 +357,35 @@ class PongGameConsumer(AsyncWebsocketConsumer):
     '''
     #needs refactoring.
     async def handle_game_end(self, winner: str, msg: str):
+        game_state_key = f"room:{self.room_name}:game_state"
         try:
-            print("Games Ending", flush=True)
+            if self.debug_game_stats:
+                print("Games Ending", flush=True)
+            
+            game_state = await RedisManager.get_json(game_state_key)
+
+            player1 = await sync_to_async(lambda: self.match.player1)()
+            player2 = await sync_to_async(lambda: self.match.player2)()
+
+            if winner == "player_1":
+                self.save_match(game_state["score"][0], game_state["score"][1], player1, player2)
+            elif winner == "player_2":
+                self.save_match(game_state["score"][0], game_state["score"][1], player2, player1)
+
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
-                    "type": "game_end",
-                    "message": msg,
+                    "type": "terminate_game", 
+                    "reason": msg,
                     "winner": winner
                 }
             )
+           
             await RedisManager.delete_room_data(self.room_name)
             await self.channel_layer.group_discard(
                 self.room_group_name,
                 self.channel_name
             )
-            if hasattr(self, "game_task"):
-                self.game_task.cancel()
         except Exception as e:
             print(f"Error handling game end: {e}", flush=True)
      
@@ -365,6 +395,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         game_state_key = f"room:{self.room_name}:game_state"
         input_buffers = {"player_1": [], "player_2": []}
         buffer_size = 2
+        winner = "none"
 
         try:
             if self.debug_game_stats:
@@ -407,9 +438,11 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                             print(f"normal: {normal} , collision_point {collision_point} , paddle {paddle}", flush=True)
                         self.handle_collision(normal, collision_point, paddle)
                         if self.game_state["score"][0] >= self.game_parametres["point_goal"]:
-                            await self.handle_game_end("player_1", "Player 1 was won")
+                            winner = "player_1"
+                            break
                         elif self.game_state["score"][1] >= self.game_parametres["point_goal"]:
-                            await self.handle_game_end("player_2", "Player 2 was won")
+                            winner = "player_2"
+                            break
                 self.game_state["last_update_time"] = time.time()
                 
                 await self.channel_layer.group_send(
@@ -421,6 +454,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 )
 
                 await self.redis.execute("SET", game_state_key, json.dumps(self.game_state))
+                if winner in ["player_1", "player_2"]:
+                    await self.handle_game_end(winner, "a player won, game_over")
 
                 loop_end = time.perf_counter()  # End time
                 if self.debug_game_stats:
@@ -772,7 +807,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         magnitude = math.sqrt(x**2 + y**2)
         if magnitude == 0:
             raise ValueError("Zero Vector")
-        return (x / magnitude, y / magnitude)
+        return (x / magnitude, y / magnitude) 
 
 ### CHAT GPT stuff ###
 # from django.db import transaction

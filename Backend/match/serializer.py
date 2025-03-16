@@ -21,10 +21,13 @@ class MatchSerializer(serializers.ModelSerializer):
 
 	def get_result(self, obj):
 		request = self.context.get("request")
+		if request is None:
+			return None 
 		if obj.winner == request.user:
 			return 'won'
 		else:
 			return 'lost'
+
 
 	def get_match_type(self, obj):
 		return '1v1'

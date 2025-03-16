@@ -44,6 +44,21 @@ class RedisManager:
             await redis.delete(key)
 
     @classmethod
+    async def append_to_list(cls, key: str, value: str):
+        try:
+            redis = await cls.get_redis()
+            if redis is None:
+                print("🚨 Redis connection is None!", flush=True)
+                return -1  
+            result = await redis.execute("RPUSH", key, value)
+
+            return result  # Return the new length of the list
+
+        except Exception as e:
+            print(f"🚨 Error in Redis RPUSH: {e}", flush=True)
+            return -1  
+
+    @classmethod
     async def delete_room_data(cls, room_name: str):
         redis = await cls.get_redis()
         pattern = f"room:{room_name}:*"
