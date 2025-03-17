@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { getCookie } from "cookies-next/client";
 import { fetchUserProfile } from "../utilities/profileActions"
 import {
 	FetchFriends,
@@ -85,9 +86,14 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 	}, []);
 
 	useEffect(() => {
-		if (currentUser?.id) {
+		const accessToken = getCookie("accessToken");
 
-			wsRef.current = new WebSocket(`ws://127.0.0.1:8001/ws/contacts/${currentUser?.id}/`);
+		if (!accessToken) {
+			console.log("Access Token not retrieved in Game Canvas");
+			return;
+		}
+
+			wsRef.current = new WebSocket(`wss://127.0.0.1:8080/ws/contacts/?token=${accessToken}`);
 		
 			wsRef.current.onmessage = (event) => {
 			const data = JSON.parse(event.data);
@@ -150,7 +156,6 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 			return () => {
 				wsRef.current?.close();
 			};
-		}
 	}, [currentUser?.id]);
 
 	const handleAccept = async (id: number) => {
