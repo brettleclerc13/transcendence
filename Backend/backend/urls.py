@@ -20,7 +20,7 @@ from django.urls import path
 from django.conf.urls.static import static
 from chat.consumers import ContactConsumer
 from match.views import MatchAPIView, MatchRetrieveUpdateAPIView, MatchHistoryView, MatchCLIView
-from user.views import RegisterAPIView, LogoutAPIView, ProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView
+from user.views import RegisterAPIView, LogoutAPIView, ProfileAPIView, PublicProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView
 
 urlpatterns = [
 	path('admin/', admin.site.urls),
@@ -28,7 +28,7 @@ urlpatterns = [
 	path('register/', RegisterAPIView.as_view(), name='register'),
 	path('logout/', LogoutAPIView.as_view(), name='logout'),
 	path('profile/', ProfileAPIView.as_view(), name='profile'),
-	path('public_profile/', ProfileAPIView.as_view(), name='public-profile'),
+	path('public_profile/', PublicProfileAPIView.as_view(), name='public-profile'),
 
 	path('matches/', MatchAPIView.as_view(), name="Match-get-post"),
 	path('matches/<uuid:id>/', MatchRetrieveUpdateAPIView.as_view(), name="match-patch"),

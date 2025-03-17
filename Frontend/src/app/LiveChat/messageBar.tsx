@@ -1,19 +1,28 @@
 import React, { useState } from "react";
 import ProfileButton from "./profileButton";
 import InviteToGameButton from "./inviteToGameButton";
+import Popup from "@/components/popup/popup";
+import PublicProfile from "./publicProfile";
+
+interface Friend {
+	id: number;
+	username: string;
+	profile_picture: string | null;
+}
 
 interface MessageBarProps {
 	onSendMessage: (text: string) => void;
-	onProfileClick: () => void;
 	onInviteClick: () => void;
+	selectedFriend: Friend | null
 }
 
 const MessageBar: React.FC<MessageBarProps> = ({
 	onSendMessage,
-	onProfileClick,
 	onInviteClick,
+	selectedFriend,
 }) => {
 	const [message, setMessage] = useState("");
+	const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
 
 	const handleSend = () => {
 		if (message.trim() !== "") {
@@ -29,15 +38,16 @@ const MessageBar: React.FC<MessageBarProps> = ({
 	};
 
 	return (
-		<div
-			className="message-bar"
-			style={{
-				display: "flex",
-				alignItems: "center",
-				padding: "10px",
-				borderTop: "1px solid #ccc",
-			}}
-		>
+		<>
+			<div
+				className="message-bar"
+				style={{
+					display: "flex",
+					alignItems: "center",
+					padding: "10px",
+					borderTop: "1px solid #ccc",
+				}}
+			>
 			<input
 				type="text"
 				value={message}
@@ -64,10 +74,14 @@ const MessageBar: React.FC<MessageBarProps> = ({
 				Send
 			</button>
 			<div style={{ display: "flex", alignItems: "center" }}>
-				<ProfileButton onClick={onProfileClick} />
+				<ProfileButton onClick={() => {setIsProfileOpen(true)}} />
 				<InviteToGameButton onClick={onInviteClick} />
 			</div>
 		</div>
+		<Popup isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)}>
+			<PublicProfile username={selectedFriend?.username} />
+		</Popup>
+	</>
 	);
 };
 

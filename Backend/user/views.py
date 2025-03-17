@@ -181,30 +181,20 @@ class FriendListAPIView(APIView):
         friends_data = []
 
         for friend in friends:
-            # Vérifie si profile_picture existe et génère l'URL absolue
             profile_picture_url = None
             if friend.profile_picture:
+
                 profile_picture_url = request.build_absolute_uri(friend.profile_picture.url)
                 
-                # Si l'URL ne contient pas le port :8001, on l'ajoute manuellement
-                if "127.0.0.1" in profile_picture_url and ":8001" not in profile_picture_url:
-                    profile_picture_url = profile_picture_url.replace("http://127.0.0.1", "http://127.0.0.1:8001")
-
+                # Remplacer 'backend' par 'localhost:8001' si nécessaire
+                if "backend" in profile_picture_url:
+                    profile_picture_url = profile_picture_url.replace("backend", "127.0.0.1")
 
             friends_data.append({
                 "id": friend.user.id,
                 "username": friend.user.username,
                 "profile_picture": profile_picture_url,
             })
-
-        # friends_data = [
-        #     {
-        #         "id": friend.user.id,
-        #         "username": friend.user.username,
-        #         "profile_picture": request.build_absolute_uri(friend.profile_picture.url) if friend.profile_picture else None,
-        #     }
-        #     for friend in friends
-        # ]
 
         return Response(friends_data, status=status.HTTP_200_OK)
         

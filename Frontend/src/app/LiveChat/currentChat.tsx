@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 
 interface Friend {
 	id: number;
@@ -36,9 +36,8 @@ const CurrentChat: React.FC<CurrentChatProps> = ({
 		(a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
 	);
 
-	// useEffect(() => {
-	//     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-	// }, [messages]);
+	console.log("PP current User : " ,currentUser.profile_picture);
+	console.log("PP friend : ", friend.profile_picture);
 
 	return (
 		<div
@@ -65,7 +64,7 @@ const CurrentChat: React.FC<CurrentChatProps> = ({
 							<div className="message-bubble">{message.text}</div>
 							{isSent && (
 								<img
-									src={currentUser.profile_picture ? `http://127.0.0.1:8001${currentUser.profile_picture}` : "./img/default.png"}
+									src={currentUser.profile_picture ? `${currentUser.profile_picture}` : "./img/default.png"}
 									alt={`Your avatar`}
 								/>
 							)}

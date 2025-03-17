@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import "./liveChat.css";
+import { isUserLoggedIn } from "../utilities/userClientActions";
 import FriendAndInvitationList from "./friendAndInvitationList";
 import CurrentChat from "./currentChat";
 import MessageBar from "./messageBar";
@@ -126,7 +128,7 @@ const LiveChatClient = () => {
 				}
 
 				wsRef.current = new WebSocket(
-					`ws://127.0.0.1:8001/ws/chat/${conversationData.id}/` // ${conversationData.id}
+					`ws://127.0.0.1:8001/ws/chat/${conversationData.id}/`
 				);
 
 				wsRef.current.onopen = () => {
@@ -195,13 +197,6 @@ const LiveChatClient = () => {
 		);
 	};
 
-	const handleProfileClick = () => {
-		if (selectedFriend) {
-			console.log(`Profil de ${selectedFriend.username}`);
-			// Ajoutez ici la navigation ou autre logique pour afficher le profil.
-		}
-	};
-
 	const handleInviteClick = () => {
 		if (selectedFriend) {
 			console.log(`Inviter ${selectedFriend.username} à une partie de Pong`);
@@ -211,31 +206,45 @@ const LiveChatClient = () => {
 
 	return (
 		<div className="livechat-container">
-			<div className="chat-wrapper">
-				<div className="friend-section">
-					<div className="search-bar-container">
-						<SearchBar />
+			{isUserLoggedIn() ? (
+				<>
+					<div className="chat-wrapper">
+						<div className="friend-section">
+							<div className="search-bar-container">
+								<SearchBar />
+							</div>
+							<FriendAndInvitationList onSelectFriend={setSelectedFriend} />
+						</div>
+					
+						<div className="current-chat">
+							{currentUser && selectedFriend ? (
+								<CurrentChat
+								friend={selectedFriend}
+								messages={messages}
+								currentUser={currentUser}
+								/>
+								) : (
+									<p className="text-muted">Select a friend to start chatting</p>
+									)}
+							<MessageBar
+								selectedFriend={selectedFriend}
+								onSendMessage={handleSendMessage}
+								onInviteClick={handleInviteClick}
+							/>
+						</div>
 					</div>
-					<FriendAndInvitationList onSelectFriend={setSelectedFriend} />
+				</>
+			) : (
+				<div className="flex flex-col gap-4 justify-center items-center h-full w-full">
+					<p className="text-lg">
+						Please log in before chatting. It won't even take a
+						minute!
+					</p>
+					<Link className="secondary-button" href="/login">
+						Connect
+					</Link>
 				</div>
-
-				<div className="current-chat">
-					{currentUser && selectedFriend ? (
-						<CurrentChat
-							friend={selectedFriend}
-							messages={messages}
-							currentUser={currentUser}
-						/>
-					) : (
-						<p className="text-muted">Select a friend to start chatting</p>
-					)}
-					<MessageBar
-						onSendMessage={handleSendMessage}
-						onProfileClick={handleProfileClick}
-						onInviteClick={handleInviteClick}
-					/>
-				</div>
-			</div>
+			)}
 		</div>
 	);
 };
