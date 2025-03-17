@@ -59,7 +59,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.max_speed = 10000 # best not set too high
         self.directional_limit = 0.1
         self.dir_correction_rate = 0.12
-        self.reconnection_timer = 60
+        self.reconnection_timer = 30
 
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
@@ -157,34 +157,22 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 
             if self.debug_connections:
                 print(f"in disconect: len of players {len(current_players)}", flush=True)
-            if (await RedisManager.get_state(state_key)) in ["game ongoing", "waiting for players"]: #will need to add potential elif to this
+                print(f"the game state at disconnect: {await RedisManager.get_state(state_key)}", flush=True)
+            if (await RedisManager.get_state(state_key)) in ["game ongoing", "waiting for players"]: 
                 await RedisManager.set_state(prev_state_key, f"{await RedisManager.get_state(state_key)}") 
                 await RedisManager.set_state(state_key, "Waiting for reconnection")
                 await self.channel_layer.group_send(
                         self.room_group_name,
                         {
-                            "type": "terminate_game", #need to update this function to tell front why the game stoped
+                            "type": "terminate_game", 
                             "reason": "user disconnected, waiting"
                         }
                     )
                 if hasattr(self, "game_task"):
                     self.game_task.cancel()
                 await self.redis.delete(game_started_key)
-                await asyncio.sleep(self.reconnection_timer)
-
-                current_players = await RedisManager.get_list_of_list(players_key)
-                has_reconnected = False
-                for player in current_players:
-                    if player == username:
-                        has_reconnected = True
-                if not has_reconnected and await RedisManager.get_state(state_key) != "game over":
-                    await RedisManager.set_state(state_key, "game over")
-                    if self.player_number == "player_1":
-                        self.handle_game_end("player_2", "a player won, game_over")
-                    else:
-                        self.handle_game_end("player_1", "a player won, game_over")
-
-
+                print(f"Calling TASK by {self.player_number} AKA {username}", flush=True)
+                asyncio.create_task(self.wait_for_reconnection(username))
         except Exception as e:
             print(f"Error during disconnect: {e}", flush=True)
 
@@ -299,6 +287,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         
     async def save_match(self, score1, score2, winner, loser):
         try:
+            print(f"saving a match that ended {score1} to {score2}", flush=True)
             self.match.score_player1 = score1
             self.match.score_player2 = score2
             self.match.winner = winner
@@ -356,21 +345,58 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         await super().dispatch(message)
     '''
     #needs refactoring.
+    async def wait_for_reconnection(self, username):
+        try:
+            await asyncio.sleep(self.reconnection_timer)  
+            current_players = await RedisManager.get_list_of_list(f"room:{self.room_name}:players")
+
+            if username in current_players:
+                print(f"User {username} reconnected!", flush=True)
+                return  
+
+            print(f"User {username} did NOT reconnect. Ending game.", flush=True)
+            await RedisManager.set_state(f"room:{self.room_name}:state", "game over")
+
+            winner = "player_2" if self.player_number == "player_1" else "player_1"
+            if await RedisManager.get_state(f"room:{self.room_name}:prev_state") == "waiting for players":
+                print("The Game did not Happen", flush=True)
+                winner = None
+            await self.handle_game_end(winner, "a player won, game_over")
+            return
+
+        except Exception as e:
+            print(f"Error in wait_for_reconnection: {e}", flush=True)
+
+
     async def handle_game_end(self, winner: str, msg: str):
         game_state_key = f"room:{self.room_name}:game_state"
+        game_ended = f"{self.room_name}:game_ended"
         try:
+            
+            already_ended = await RedisManager.get_state(game_ended)
+            if already_ended == "true":
+                print("Already cleaned", flush=True)
+                await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name
+                )
+                return
+            await self.redis.set(game_ended, "true")  # Store the key
+            await self.redis.expire(game_ended, 3600)  # Set expiration to 1 hour
+            
             if self.debug_game_stats:
-                print("Games Ending", flush=True)
+                print(f"Games Ending, winner: {winner} the reason: {msg}", flush=True)
             
             game_state = await RedisManager.get_json(game_state_key)
 
             player1 = await sync_to_async(lambda: self.match.player1)()
             player2 = await sync_to_async(lambda: self.match.player2)()
-
-            if winner == "player_1":
-                self.save_match(game_state["score"][0], game_state["score"][1], player1, player2)
+            if winner == None:
+                await self.save_match(0, 0, None, None)
+            elif winner == "player_1":
+                await self.save_match(game_state["score"][0], game_state["score"][1], player1, player2)
             elif winner == "player_2":
-                self.save_match(game_state["score"][0], game_state["score"][1], player2, player1)
+                await self.save_match(game_state["score"][0], game_state["score"][1], player2, player1)
 
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -455,6 +481,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 
                 await self.redis.execute("SET", game_state_key, json.dumps(self.game_state))
                 if winner in ["player_1", "player_2"]:
+                    print(f"CALLING FROM GAME LOOP {self.player_number}", flush=True)
                     await self.handle_game_end(winner, "a player won, game_over")
 
                 loop_end = time.perf_counter()  # End time

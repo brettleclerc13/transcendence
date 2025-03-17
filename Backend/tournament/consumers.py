@@ -6,6 +6,7 @@ from user.models import UserProfile
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.tokens import AccessToken
 from channels.generic.websocket import AsyncWebsocketConsumer
+from asgiref.sync import sync_to_async
 
 class TournamentConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -55,8 +56,8 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         if message_type == "user_connected":
             user_data = {
                 "id": self.user.id,  #questonable
-                "tournament_name": self.user.tournament_name,
-                "profile_picture": self.user.profile_picture,
+                "tournament_name": await sync_to_async(lambda: self.user.tournament_name)(),
+                "profile_picture": await sync_to_async(lambda: self.user.profile_picture.url if self.user.profile_picture else None)(),
                 "is_on_page": True
             }
 
