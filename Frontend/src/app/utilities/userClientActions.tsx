@@ -1,7 +1,7 @@
 "use client";
 
 import { jwtDecode } from "jwt-decode";
-// import { getCookie } from "cookies-next/client";
+import { getCookie } from "cookies-next/client";
 
 export const isUserLoggedIn = () => {
 	const accessToken = getCookie("accessToken");

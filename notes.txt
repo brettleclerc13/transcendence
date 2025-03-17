@@ -17,9 +17,11 @@ SELECT au.username, au.email, up.is_online, up.age, up.nationality, up.bio
 FROM auth_user au
 JOIN user_userprofile up ON au.id = up.user_id;
 
+To delete users:
+DELETE FROM user_userprofile WHERE user_id IN (SELECT id FROM auth_user);
+DELETE FROM auth_user;
 
-PROFILE
-- alias name for tournament
+
 
 LIVE CHAT
 - invite game: have an invitation_game boolean in versusMatch API to hide game from other users
@@ -45,3 +47,15 @@ game screens:
 - gameCanvas with countdown before game starts
 
 
+
+
+class Tournament(models.Model):
+
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	player = object
+	max_players = models.IntegerField(default=4)
+	is_finished = models.BooleanField(default=False)
+	is_ongoing = models.BooleanField(default=False)
+	winner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="won_matches")
+	looser = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="lost_matches")
+	created_at = models.DateTimeField(auto_now_add=True)

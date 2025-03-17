@@ -48,7 +48,7 @@ export default function RegisterForm() {
 		const email = formData.get("email") as string;
 		const username = formData.get("username") as string;
 		const password = formData.get("password") as string;
-		const age = parseInt(formData.get("age") as string);
+		const age = formData.get("age") ? Number(formData.get("age")) : undefined;
 		const nationality = formData.get("nationality") as string;
 		const bio = formData.get("bio") as string;
 

@@ -3,7 +3,14 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from .models import Match
-from .serializers import MatchSerializer
+from .serializer import MatchSerializer, MatchSummarySerializer
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+from uuid import UUID
+from rest_framework.views import APIView
+from django.db.models import Q
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework.permissions import AllowAny
 
 class MatchAPIView(generics.ListCreateAPIView):
 	"""
@@ -18,7 +25,8 @@ class MatchAPIView(generics.ListCreateAPIView):
 		Allow filtering matches based on query params (e.g., user, winner, looser, match ID).
 		"""
 		queryset = Match.objects.all()
-		user = self.request.user
+		if not queryset.exists():
+			return Match.objects.none()
 
 		filter_params = {
 			'id': self.request.query_params.get('id'),
@@ -30,28 +38,53 @@ class MatchAPIView(generics.ListCreateAPIView):
 			'is_finished': self.request.query_params.get('is_finished'),
 		}
 
+		# Convert ID to UUID safely
+		if filter_params['id']:
+			try:
+				filter_params['id'] = UUID(filter_params['id'])
+			except ValueError:
+				raise ValidationError({'id': _("Invalid match ID format.")})
+
 		# Apply filters dynamically
 		for key, value in filter_params.items():
-			if value is not None:
-				queryset = queryset.filter(**{key: value})
+			if value is not None and value != "null":
+				if key == 'player2' and value == '':
+					queryset = queryset.filter(player2__isnull=True)
+				else:
+					queryset = queryset.filter(**{key: value})
 
 		return queryset
+
+	def get_serializer_context(self):
+		"""Pass request context to serializer so it can access `request.user`."""
+		context = super().get_serializer_context()
+		context.update({"request": self.request})
+		return context
 
 	def perform_create(self, serializer):
 		"""
 		Creates a match with the authenticated user as player1.
         Also allows setting `invite_game` flag.
 		"""
-		invite_game = self.request.data.get('invite_game', False)
-		match = serializer.save(player1=self.request.user, invite_game=invite_game)
+		print(f"Authenticated user: {self.request.user}")  # Debugging line
+		print(f"User is authenticated: {self.request.user.is_authenticated}")  # Check if user is authenticated
+		print(f"Received POST request with data:", self.request.data)
 
+		invite_game = self.request.data.get('invite_game', False)
+
+		# Ensure player1 is set in the serializer
+		serializer.validated_data['player1'] = self.request.user
+
+		match = serializer.save(player1=self.request.user, invite_game=invite_game)
 		return Response({'match_id': match.id}, status=status.HTTP_201_CREATED)
 
 	def patch(self, request, *args, **kwargs):
 		"""
 		Allows player2 to join a match.
 		"""
+		print("Received PATCH request with data:", request.data)
 		match_id = kwargs.get('pk')
+		print("Match ID:", match_id)
 		user = request.user
 
 		try:
@@ -75,3 +108,77 @@ class MatchAPIView(generics.ListCreateAPIView):
 
 		except Match.DoesNotExist:
 			return Response({'error': 'Match not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+class MatchRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
+	"""
+	Handles retrieving and updating a single match.
+	"""
+	serializer_class = MatchSerializer
+	permission_classes = [IsAuthenticated]
+	queryset = Match.objects.all()
+	lookup_field = 'id'  # Set UUID as lookup field
+
+	def patch(self, request, *args, **kwargs):
+		"""
+		Allows player2 to join a match.
+		"""
+		print("Received PATCH request with data:", request.data)
+		match_id = kwargs.get('id')  # This now correctly maps to the URL
+		print("Match ID:", match_id)
+		user = request.user
+
+		try:
+			with transaction.atomic():
+				match = Match.objects.select_for_update().get(id=match_id)
+
+				# Ensure player2 is not already set
+				if match.player2 is not None:
+					return Response({'error': 'Player2 has already joined this match.'}, status=status.HTTP_400_BAD_REQUEST)
+
+				# Prevent player1 from joining as player2
+				if match.player1 == user:
+					return Response({'error': 'You cannot join your own match as player2.'}, status=status.HTTP_400_BAD_REQUEST)
+
+				# Assign player2 and set match as ongoing
+				match.player2 = user
+				match.is_ongoing = True
+				match.save()
+
+			return Response(MatchSerializer(match).data, status=status.HTTP_200_OK)
+
+		except Match.DoesNotExist:
+			return Response({'error': 'Match not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+class MatchHistoryView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		user = request.user
+		matches = Match.objects.filter(
+			Q(winner=user) | Q(looser=user),
+			is_finished=True
+		)
+		serializer = MatchSerializer(matches, many=True)
+		return Response(serializer.data)
+
+class MatchCLIView(APIView):
+	permission_classes = [AllowAny]
+	throttle_classes = [AnonRateThrottle]
+
+	def get(self, request):
+		queryset = Match.objects.all()
+		if not queryset.exists():
+			return Match.objects.none()
+
+		filter_params = {
+			'is_ongoing': self.request.query_params.get('is_ongoing'),
+			'is_finished': self.request.query_params.get('is_finished'),
+		}
+
+		# Apply filters dynamically
+		for key, value in filter_params.items():
+			if value is not None and value != "null":
+				queryset = queryset.filter(**{key: value})
+
+		serializer = MatchSummarySerializer(queryset, many=True)
+		return Response(serializer.data)

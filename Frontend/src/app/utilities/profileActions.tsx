@@ -1,3 +1,7 @@
+"use server";
+
+import { cookies } from "next/headers";
+
 export type UserProfileData = {
 	email?: string;
 	username?: string;
@@ -6,15 +10,18 @@ export type UserProfileData = {
 	bio?: string;
 	is_online?: boolean;
 	profile_picture?: string | null;
-	tournamentName?: string;
+	tournament_name?: string;
+	old_password?: string;
+	new_password?: string;
 };
 
 export const fetchUserProfile = async () => {
 	try {
-		const token = localStorage.getItem("accessToken");
+		const cookieStore = await cookies();
+		const token = cookieStore.get("accessToken")?.value;
 		if (!token) throw new Error("Access token missing");
 
-		const response = await fetch("/api/profile/", {
+		const response = await fetch("http://backend:8001/profile/", {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
@@ -23,23 +30,22 @@ export const fetchUserProfile = async () => {
 		});
 
 		let data;
+		const text = await response.text();
+		try {
+			data = JSON.parse(text);
+		} catch {
+			throw new Error(`Unexpected response: ${response.status}`);
+		}
 
 		if (!response.ok) {
-			const text = await response.text();
-			try {
-				data = JSON.parse(text);
-			} catch {
-				throw new Error(`Unexpected response: ${response.status}`);
-			}
-
 			const errorMessage =
+				data.error ||
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
 				"Failed to fetch user's profile info.";
 			throw new Error(errorMessage);
 		} else {
-			data = await response.json();
 			return data;
 		}
 	} catch (error) {
@@ -49,10 +55,11 @@ export const fetchUserProfile = async () => {
 
 export const updateUserProfile = async (profileData: UserProfileData) => {
 	try {
-		const token = localStorage.getItem("accessToken");
+		const cookieStore = await cookies();
+		const token = cookieStore.get("accessToken")?.value;
 		if (!token) throw new Error("Access token missing");
 
-		const response = await fetch("/api/profile/", {
+		const response = await fetch("http://backend:8001/profile/", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -62,70 +69,34 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 		});
 
 		let data;
+		const text = await response.text();
+
+		console.log("User update TEXT:", text);
+		try {
+			data = text ? JSON.parse(text) : {};
+		} catch {
+			throw new Error(`Unexpected response: ${response.status}`);
+		}
 
 		if (!response.ok) {
-			const text = await response.text();
-			try {
-				data = JSON.parse(text);
-			} catch {
-				throw new Error(`Unexpected response: ${response.status}`);
-			}
-
 			const errorMessage =
+				data.error ||
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
 				"Failed to update profile.";
 			throw new Error(errorMessage);
 		} else {
-			data = await response.json();
-			console.log(
-				"User profile updated successfully. is_online: ",
-				profileData.is_online,
-			);
-			return data;
+			return {
+				ok: true,
+				message: data.message || "User profile updated successfully",
+			};
 		}
 	} catch (error) {
 		console.error("updateUserProfileError: ", error);
-		throw new Error(String(error) || "Failed to update profile.");
-	}
-};
-
-export const updateUserProfileImage = async (formData: FormData) => {
-	try {
-		const token = localStorage.getItem("accessToken");
-		if (!token) throw new Error("Access token missing");
-
-		const response = await fetch("/api/profile/", {
-			method: "PATCH",
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-			body: formData,
-		});
-
-		let data;
-
-		if (!response.ok) {
-			const text = await response.text();
-			try {
-				data = JSON.parse(text);
-			} catch {
-				throw new Error(`Unexpected response: ${response.status}`);
-			}
-
-			const errorMessage =
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to update profile image.";
-			throw new Error(errorMessage);
-		} else {
-			console.log("User profile image successfully changed");
-			return response;
-		}
-	} catch (error) {
-		console.error("updateUserProfileImageError: ", error);
-		throw new Error(String(error) || "Failed to update profile image.");
+		return {
+			ok: false,
+			error: (error as Error).message || "Failed to update profile.",
+		};
 	}
 };

@@ -76,8 +76,6 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 					}
 				};
 				fetchBlockedUsers();
-				// if (blockedList)
-				// 	setBlockedUsers(blockedList.map((user: { id: number }) => user.id));
 			} catch (error) {
 				console.error("Error fetching data:", error);
 			}
@@ -207,8 +205,6 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 									<button className={`btn ${ blockedUsers.some((user) => user.id === friend.id) ? "btn-danger" : "btn-secondary" }`}
 										onClick={() => blockedUserIds.has(friend.id) ? handleUnblockUser(friend.id) : handleBlockUser(friend)}>
 											{blockedUserIds.has(friend.id) ? "Unblock" : "Block"} 
-										{/* onClick={() => blockedUsers.some((user) => user.id === friend.id) ? handleUnblockUser(friend.id) : handleBlockUser(friend) } > */}
-										{/* {blockedUsers.some((user) => user.id === friend.id) ? "Unblock": "Block"} */}
 									</button>
 								</li>
 							))

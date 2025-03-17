@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import "./liveChat.css";
 import { isUserLoggedIn } from "../utilities/userClientActions";
@@ -7,6 +8,7 @@ import FriendAndInvitationList from "./friendAndInvitationList";
 import CurrentChat from "./currentChat";
 import MessageBar from "./messageBar";
 import SearchBar from "./searchBar";
+import { getCookie } from "cookies-next/client";
 
 interface User {
 	id: number;
@@ -40,9 +42,14 @@ const LiveChatClient = () => {
 	useEffect(() => {
 		const fetchCurrentUser = async () => {
 			try {
+				const accessToken = getCookie("accessToken");
+				if (!accessToken) {
+					console.warn("Access token missing!");
+					return;
+				}
 				const response = await fetch("/api/profile/", {
 					headers: {
-						Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+						Authorization: `Bearer ${accessToken}`,
 						"Content-Type": "application/json",
 					},
 				});
@@ -71,38 +78,49 @@ const LiveChatClient = () => {
 
 		const fetchConversationId = async () => {
 			try {
+				const accessToken = getCookie("accessToken");
+				if (!accessToken) {
+					console.warn("Access token missing!");
+					return;
+				}
+
 				const response = await fetch("/api/get_or_create_conversation/", {
 					method: "POST",
 					headers: {
-						Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+						Authorization: `Bearer ${accessToken}`,
 						"Content-Type": "application/json",
 					},
 					body: JSON.stringify({ user_id: selectedFriend.id }),
 				});
-	
+
 				if (!response.ok) {
 					console.error("Erreur lors de la récupération de la conversation.");
 					return;
 				}
-	
+
 				const conversationData = await response.json();
 				if (!conversationData.id) {
 					console.error("Aucune conversation trouvée ou créée.");
 					return;
 				}
 
-				const messagesRetrieve = await fetch(`/api/messages/?conversation_id=${conversationData.id}`, {
-					headers: {
-						Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-						"Content-Type": "application/json",
-					},
-				});
+				const messagesRetrieve = await fetch(
+					`/api/messages/?conversation_id=${conversationData.id}`,
+					{
+						headers: {
+							Authorization: `Bearer ${accessToken}`,
+							"Content-Type": "application/json",
+						},
+					}
+				);
 
 				if (messagesRetrieve.ok) {
 					const data = await messagesRetrieve.json();
 					setMessages(data);
 				} else {
-					console.error(`Erreur lors de la récupération des messages : ${response.statusText}`);
+					console.error(
+						`Erreur lors de la récupération des messages : ${response.statusText}`
+					);
 				}
 				if (!messagesRetrieve.ok) {
 					console.error("Erreur lors de la récupération des messages.");
@@ -110,7 +128,7 @@ const LiveChatClient = () => {
 				}
 
 				wsRef.current = new WebSocket(
-					`ws://127.0.0.1:8001/ws/chat/${conversationData.id}/` // ${conversationData.id}
+					`ws://127.0.0.1:8001/ws/chat/${conversationData.id}/`
 				);
 
 				wsRef.current.onopen = () => {
@@ -132,7 +150,8 @@ const LiveChatClient = () => {
 							conversation_id: conversationData.id,
 							text: data.message,
 							timestamp: new Date().toISOString(),
-							senderPicture: selectedFriend.profile_picture || "./img/default.png",
+							senderPicture:
+								selectedFriend.profile_picture || "./img/default.png",
 						},
 					]);
 				};
@@ -147,13 +166,12 @@ const LiveChatClient = () => {
 				console.error("Erreur réseau :", error);
 			}
 		};
-	
+
 		fetchConversationId();
 		return () => {
 			wsRef.current?.close();
 		};
 	}, [selectedFriend, currentUser]);
-
 
 	const handleSendMessage = (message: string) => {
 		if (!wsRef.current) {
@@ -171,10 +189,12 @@ const LiveChatClient = () => {
 			return;
 		}
 
-		wsRef.current.send(JSON.stringify({ 
-			message,
-			sender: currentUser?.id
-		}));
+		wsRef.current.send(
+			JSON.stringify({
+				message,
+				sender: currentUser?.id,
+			})
+		);
 	};
 
 	const handleProfileClick = () => {
@@ -194,35 +214,36 @@ const LiveChatClient = () => {
 	return (
 		<div className="livechat-container">
 			{isUserLoggedIn() ? (
-				<div className="chat-wrapper">
-					<div className="friend-section">
-						<div className="search-bar-container">
-							<SearchBar />
+				<>
+					<div className="chat-wrapper">
+						<div className="friend-section">
+							<div className="search-bar-container">
+								<SearchBar />
+							</div>
+							<FriendAndInvitationList onSelectFriend={setSelectedFriend} />
 						</div>
-						<FriendAndInvitationList onSelectFriend={setSelectedFriend} />
 					</div>
-
 					<div className="current-chat">
 						{currentUser && selectedFriend ? (
 							<CurrentChat
-								friend={selectedFriend}
-								messages={messages}
-								currentUser={currentUser}
-							/>							
+							friend={selectedFriend}
+							messages={messages}
+							currentUser={currentUser}
+							/>
 							) : (
 								<p className="text-muted">Select a friend to start chatting</p>
-							)}
-							<MessageBar
-								onSendMessage={handleSendMessage}
-								onProfileClick={handleProfileClick}
-								onInviteClick={handleInviteClick}
-							/>
+								)}
+						<MessageBar
+							onSendMessage={handleSendMessage}
+							onProfileClick={handleProfileClick}
+							onInviteClick={handleInviteClick}
+						/>
 					</div>
-				</div>
+				</>
 			) : (
 				<div className="flex flex-col gap-4 justify-center items-center h-full w-full">
 					<p className="text-lg">
-						Please log in before starting a game. It won't even take a
+						Please log in before chatting. It won't even take a
 						minute!
 					</p>
 					<Link className="secondary-button" href="/login">

@@ -36,10 +36,6 @@ const CurrentChat: React.FC<CurrentChatProps> = ({
 		(a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
 	);
 
-	// useEffect(() => {
-	//     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-	// }, [messages]);
-
 	return (
 		<div
 			className="current-chat-container"

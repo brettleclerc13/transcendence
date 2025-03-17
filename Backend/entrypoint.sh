@@ -11,8 +11,7 @@ echo "PostgreSQL is up and running."
 redis-server --daemonize yes
 redis-cli -h 127.0.0.1 -p 6379 keys "room:*:*" | xargs -r redis-cli del
 
-echo "Applying migrations..."
-python manage.py makemigrations user
+python manage.py makemigrations user match tmatch
 python manage.py migrate
 
 #python manage.py runserver_plus --cert-file transcendence.pem --key-file transcendence.key 0.0.0.0:8001

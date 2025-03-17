@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import  UserProfile, Message, Match
+from .models import  UserProfile, Message
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from django.contrib.auth import authenticate
@@ -32,11 +32,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 	def validate(self, data):
 		# Check for duplicate email
-		if User.objects.filter(email=data.get('email')).exists():
+		if "email" in data and User.objects.filter(email=data.get('email')).exists():
 			raise serializers.ValidationError({"email": "A user with this email already exists."})
         
 		# Check for duplicate username
-		if User.objects.filter(username=data.get('username')).exists():
+		if "username" in data and User.objects.filter(username=data.get('username')).exists():
 			raise serializers.ValidationError({"username": "A user with this username already exists."})
 
 		return data
@@ -88,18 +88,25 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
 		except Exception as e:
 			raise serializers.ValidationError(str(e))
 
-class MatchSerializer(serializers.ModelSerializer):
-    class Meta:
-            model = Match
-            fields = ['id', 'user', 'opponent', 'date', 'score', 'opponent_score', 'result']
+class CustomTokenVerifySerializer(serializers.Serializer):
+	token = serializers.CharField()
 
-    def validate(self, data):
-        #so far Primary key is "id". here we using user to check.
-        #it's best if either we move primary key to user or change this line to use id.
-        # this should be decided intandem with frontend
-        if not User.objects.filter(user=data['user']).exists():
-            raise serializers.ValidationError("User does not exist.")
-        return data
+	def validate(self, attrs):
+		token = attrs.get("token")
+
+		try:
+			# Decode the token
+			decoded_token = UntypedToken(token)
+			user_id = decoded_token.payload.get("user_id")
+
+			# Ensure the user still exists
+			if not User.objects.filter(id=user_id).exists():
+				raise serializers.ValidationError("User does not exist")
+
+		except Exception as e:
+			raise serializers.ValidationError(str(e))
+
+		return attrs
 
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:

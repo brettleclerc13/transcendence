@@ -42,7 +42,8 @@ LOGGING = {
     },
 }
 
-ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["transcendence.fr", "transcendence.fr:8080", "backend", "backend:8001"]
 
 
 # Application definition
@@ -58,6 +59,8 @@ INSTALLED_APPS = [
     'channels',
     'user',
     'game',
+	'match',
+	'tmatch',
     'tournament',
 	'chat',
 ]

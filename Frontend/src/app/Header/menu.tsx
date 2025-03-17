@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import "./headerComponent.css";
-import { isUserLoggedIn } from "../utilities/userActions";
+import { isUserLoggedIn } from "../utilities/userClientActions";
 import lottie from "lottie-web";
 import { defineElement } from "@lordicon/element";
 
@@ -43,7 +43,7 @@ export default function Menu() {
 						<Link href="/" className="menu-button-select">
 							Home
 						</Link>
-						<Link key="play" href="/play" className="menu-button-select">
+						<Link key="lobby" href="/lobby" className="menu-button-select">
 							Game
 						</Link>
 						<Link key="aboutUs" href="/aboutUs" className="menu-button-select">
