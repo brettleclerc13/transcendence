@@ -41,6 +41,10 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 	const [blockedUserIds, setBlockedUserIds] = useState<Set<number>>(new Set());
 	const wsRef = useRef<WebSocket | null>(null);
 
+	const [popupMessage, setPopupMessage] = useState<string | null>(null);
+	const [showPopup, setShowPopup] = useState(false);
+
+
 	useEffect(() => {
 		const fetchData = async () => {
 			try {
@@ -97,6 +101,11 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 		
 			wsRef.current.onmessage = (event) => {
 			const data = JSON.parse(event.data);
+
+				if (data.type == "popup_tournament") {
+					setPopupMessage(data.message);
+					setShowPopup(true);
+				}
 
 				if (data.type === "notify_update" && data.update_type === "user_blocked") {
 					const blockedUser = {
@@ -194,6 +203,14 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 
 	return (
 		<div className="friend-invitation-list">
+			{showPopup && popupMessage && (
+				<div className="popup-tournament-overlay">
+					<div className="popup-tournament-message">
+						<p>{popupMessage}</p>
+						<button onClick={() => setShowPopup(false)}>Close</button>
+					</div>
+				</div>
+        	)}
 			<div className="switch-buttons">
 				<button onClick={() => setIsFriendsTab(true)} className={isFriendsTab ? "active" : ""}> Friends </button>
 				<button onClick={() => setIsFriendsTab(false)} className={!isFriendsTab ? "active" : ""} > Invitations </button>
