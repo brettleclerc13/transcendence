@@ -197,13 +197,6 @@ const LiveChatClient = () => {
 		);
 	};
 
-	const handleProfileClick = () => {
-		if (selectedFriend) {
-			console.log(`Profil de ${selectedFriend.username}`);
-			// Ajoutez ici la navigation ou autre logique pour afficher le profil.
-		}
-	};
-
 	const handleInviteClick = () => {
 		if (selectedFriend) {
 			console.log(`Inviter ${selectedFriend.username} à une partie de Pong`);
@@ -222,22 +215,23 @@ const LiveChatClient = () => {
 							</div>
 							<FriendAndInvitationList onSelectFriend={setSelectedFriend} />
 						</div>
-					</div>
-					<div className="current-chat">
-						{currentUser && selectedFriend ? (
-							<CurrentChat
-							friend={selectedFriend}
-							messages={messages}
-							currentUser={currentUser}
+					
+						<div className="current-chat">
+							{currentUser && selectedFriend ? (
+								<CurrentChat
+								friend={selectedFriend}
+								messages={messages}
+								currentUser={currentUser}
+								/>
+								) : (
+									<p className="text-muted">Select a friend to start chatting</p>
+									)}
+							<MessageBar
+								selectedFriend={selectedFriend}
+								onSendMessage={handleSendMessage}
+								onInviteClick={handleInviteClick}
 							/>
-							) : (
-								<p className="text-muted">Select a friend to start chatting</p>
-								)}
-						<MessageBar
-							onSendMessage={handleSendMessage}
-							onProfileClick={handleProfileClick}
-							onInviteClick={handleInviteClick}
-						/>
+						</div>
 					</div>
 				</>
 			) : (

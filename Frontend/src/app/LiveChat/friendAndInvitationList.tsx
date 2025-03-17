@@ -49,6 +49,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 				const friendListResponse = await FetchFriends();
 				if (friendListResponse.status === true && Array.isArray(friendListResponse.data)) {
 					setFriends(friendListResponse.data);
+					console.log("Friends profile picture: ", friends);
 				} else if (friendListResponse.status === "warning") {
 					console.log("Warning:", friendListResponse.message);
 					setFriends([]);
@@ -199,7 +200,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 							friends.map((friend) => (
 								<li key={friend.id} className="list-group-item d-flex align-items-center justify-content-between">
 									<div onClick={() => onSelectFriend(friend)} style={{ cursor: "pointer", display: "flex", alignItems: "center"}}>
-										<img src={friend.profile_picture || "/img/default.png"} alt={`${friend.username}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10, }} />
+										<img src={friend.profile_picture || "./img/default.png"} alt={`${friend.username}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10, }} />
 										<span>{friend.username}</span>
 									</div>
 									<button className={`btn ${ blockedUsers.some((user) => user.id === friend.id) ? "btn-danger" : "btn-secondary" }`}
