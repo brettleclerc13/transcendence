@@ -42,7 +42,8 @@ LOGGING = {
     },
 }
 
-ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["transcendence.fr", "transcendence.fr:8080", "backend", "backend:8001"]
 
 
 # Application definition
@@ -98,7 +99,7 @@ CHANNEL_LAYERS = {
         'CONFIG': {
             'hosts': [('127.0.0.1', 6379)],  # Redis runs in the same container
             "capacity": 1000,
-            "expiry": 10,
+            "expiry": 3600,
         },
     },
 }
@@ -178,3 +179,9 @@ REST_FRAMEWORK = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+CORS_ALLOW_ALL_ORIGINS = True  # temporairement pour les tests
+
+CORS_ALLOWED_ORIGINS = [
+    "https://transcendence.fr",
+]

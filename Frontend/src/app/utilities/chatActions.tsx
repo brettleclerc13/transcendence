@@ -1,153 +1,186 @@
+"use server";
+
 import { fail } from "assert";
+import { cookies } from "next/headers";
 
-export const SearchFriend = async (searchValue: string) => {
+type ApiResponse<T = any> =
+	| { status: true; data?: T }
+	| { status: "warning"; message: string }
+	| { status: false; error: string };
+
+const getToken = async () => {
+	const cookieStore = await cookies();
+	return cookieStore.get("accessToken")?.value;
+};
+
+const handleResponse = async <T = any,>(
+	response: Response
+): Promise<ApiResponse<T>> => {
+	const text = await response.text();
+	let data = null;
+
+	if (!text && response.ok) {
+		return { status: true };
+	}
+
 	try {
-		const response = await fetch(`/api/search/?query=${searchValue}`, {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-			},
-		});
-		let data;
-		const text = await response.text();
-		try {
-			data = JSON.parse(text);
-		} catch {
-			throw new Error(`Unexpected response: ${response.status}`);
-		}
-		if (!response.ok) {
-			const errorMessage =
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to search for users.";
-			throw new Error(errorMessage);
-		} else {
-			return { data, status: true };
-		}
-	} catch (error) {
-		console.error("Erreur lors de la recherche :", error);
-		return { error, status: false };
+		data = JSON.parse(text);
+	} catch {
+		return {
+			status: false,
+			error: `Unexpected response: ${response.status} - ${text}`,
+		};
+	}
+
+	if (!response.ok) {
+		const errorMessage =
+			data?.error ||
+			data?.non_field_errors?.[0] ||
+			data?.message ||
+			data?.detail ||
+			"An unexpected error occurred.";
+		return { status: false, error: errorMessage };
+	}
+
+	if (data?.warning) {
+		return { status: "warning", message: data.warning };
+	}
+
+	return { status: true, data };
+};
+
+export const SearchFriend = async (
+	searchValue: string
+): Promise<ApiResponse<any[]>> => {
+	try {
+		const response = await fetch(
+			`http://backend:8001/search/?query=${searchValue}`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			}
+		);
+		return await handleResponse(response);
+	} catch (error: any) {
+		return {
+			status: false,
+			error: error.message || "An unexpected error occurred.",
+		};
 	}
 };
 
-export const FetchFriends = async () => {
-	const token = localStorage.getItem("accessToken");
-	if (!token) throw new Error("Access token missing");
+export const FetchFriends = async (): Promise<ApiResponse<any[]>> => {
+	const token = await getToken();
+	if (!token) return { status: false, error: "Access token missing" };
 
 	try {
-		const response = await fetch("/api/friends/", {
+		const response = await fetch("http://backend:8001/friends/", {
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${token}`,
 				"Content-Type": "application/json",
 			},
 		});
-
-		if (!response.ok) {
-			const data = await response.json();
-			const errorMessage =
-				data.error ||
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to update friend's list.";
-			throw new Error(errorMessage);
-		}
-		const data = await response.json();
-		return data;
-	} catch (error) {
-		throw new Error(String(error) || "Erreur réseau (friends)");
+		return await handleResponse(response);
+	} catch (error: any) {
+		return { status: false, error: error.message || "Network error (friends)" };
 	}
 };
 
-export const FetchInvitations = async () => {
-	const token = localStorage.getItem("accessToken");
-	if (!token) throw new Error("Access token missing");
+export const FetchInvitations = async (): Promise<ApiResponse<any[]>> => {
+	const token = await getToken();
+	if (!token) return { status: false, error: "Access token missing" };
 
 	try {
-		const response = await fetch("/api/friends/request/pending/", {
-			method: "GET",
-			headers: {
-				Authorization: `Bearer ${token}`,
-				"Content-Type": "application/json",
-			},
-		});
-		if (!response.ok) {
-			const data = await response.json();
-			const errorMessage =
-				data.error ||
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to update invitation list.";
-			throw new Error(errorMessage);
-		}
-		const data = await response.json();
-		return data;
-	} catch (error) {
-		throw new Error(String(error) || "Erreur réseau (invitations)");
+		const response = await fetch(
+			"http://backend:8001/friends/request/pending/",
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${token}`,
+					"Content-Type": "application/json",
+				},
+			}
+		);
+		return await handleResponse(response);
+	} catch (error: any) {
+		return {
+			status: false,
+			error: error.message || "Network error (invitations)",
+		};
 	}
 };
 
-export const AcceptInvitation = async (id: number) => {
-	const token = localStorage.getItem("accessToken");
-	if (!token) throw new Error("Access token missing");
+export const SendFriendRequest = async (
+	receiver_username: string
+): Promise<ApiResponse> => {
+	const token = await getToken();
+	if (!token) return { status: false, error: "Access token missing" };
 
 	try {
-		const response = await fetch(`/api/friends/request/accept/${id}/`, {
+		const response = await fetch("http://backend:8001/friends/request/send/", {
 			method: "POST",
 			headers: {
-				Authorization: `Bearer ${token}`,
 				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
 			},
+			body: JSON.stringify({ receiver_username }),
 		});
-
-		const data = await response.json();
-
-		if (!response.ok) {
-			const errorMessage =
-				data.error ||
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to accept invitation.";
-			throw new Error(errorMessage);
-		}
-
-		return data;
-	} catch (error) {
-		throw new Error(String(error) || "Erreur réseau (accept invitation)");
+		return await handleResponse(response);
+	} catch (error: any) {
+		return {
+			status: false,
+			error: error.message || "An unexpected error occurred.",
+		};
 	}
 };
 
-export const DeclineInvitation = async (id: number) => {
-	const token = localStorage.getItem("accessToken");
-	if (!token) throw new Error("Access token missing");
+export const AcceptInvitation = async (id: number): Promise<ApiResponse> => {
+	const token = await getToken();
+	if (!token) return { status: false, error: "Access token missing" };
 
 	try {
-		const response = await fetch(`/api/friends/request/decline/${id}/`, {
-			method: "POST",
-			headers: {
-				Authorization: `Bearer ${token}`,
-				"Content-Type": "application/json",
-			},
-		});
+		const response = await fetch(
+			`http://backend:8001/friends/request/accept/${id}/`,
+			{
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${token}`,
+					"Content-Type": "application/json",
+				},
+			}
+		);
+		return await handleResponse(response);
+	} catch (error: any) {
+		return {
+			status: false,
+			error: error.message || "Network error (accept invitation)",
+		};
+	}
+};
 
-		const data = await response.json();
+export const DeclineInvitation = async (id: number): Promise<ApiResponse> => {
+	const token = await getToken();
+	if (!token) return { status: false, error: "Access token missing" };
 
-		if (!response.ok) {
-			const errorMessage =
-				data.error ||
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to decline invitation.";
-			throw new Error(errorMessage);
-		}
-
-		return data;
-	} catch (error) {
-		throw new Error(String(error) || "Erreur réseau (decline invitation)");
+	try {
+		const response = await fetch(
+			`http://backend:8001/friends/request/decline/${id}/`,
+			{
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${token}`,
+					"Content-Type": "application/json",
+				},
+			}
+		);
+		return await handleResponse(response);
+	} catch (error: any) {
+		return {
+			status: false,
+			error: error.message || "Network error (decline invitation)",
+		};
 	}
 };

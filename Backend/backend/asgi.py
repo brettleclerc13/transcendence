@@ -33,3 +33,5 @@ application = ProtocolTypeRouter({
         )
     ),
 })
+
+print("WebSocket URL patterns loaded:", game.routing.websocket_urlpatterns, tournament.routing.websocket_urlpatterns, chat.routing.websocket_urlpatterns)

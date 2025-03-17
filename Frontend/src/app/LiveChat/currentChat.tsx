@@ -58,14 +58,14 @@ const CurrentChat: React.FC<CurrentChatProps> = ({
 						>
 							{!isSent && (
 								<img
-									src={`${friend.profile_picture}` || "./img/default.png"}
+									src={friend.profile_picture ? `${friend.profile_picture}` : "./img/default.png"}
 									alt={`${friend.username}'s avatar`}
 								/>
 							)}
 							<div className="message-bubble">{message.text}</div>
 							{isSent && (
 								<img
-									src={`http://127.0.0.1:8001${currentUser.profile_picture}` || "./img/default.png"}
+									src={currentUser.profile_picture ? `http://127.0.0.1:8001${currentUser.profile_picture}` : "./img/default.png"}
 									alt={`Your avatar`}
 								/>
 							)}

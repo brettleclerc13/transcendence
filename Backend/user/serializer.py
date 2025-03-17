@@ -18,6 +18,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 		
     def get_user(self, obj):
         return {"id": obj.user.id, "username": obj.user.username}
+	
 
 
 class UserSerializer(serializers.ModelSerializer):
