@@ -74,6 +74,12 @@ const LiveChatClient = () => {
 	}, []);
 
 	useEffect(() => {
+		const accessToken = getCookie("accessToken");
+
+		if (!accessToken) {
+			console.log("Access Token not retrieved in Game Canvas");
+			return;
+		}
 		if (!selectedFriend || !currentUser) return;
 
 		const fetchConversationId = async () => {
@@ -128,7 +134,7 @@ const LiveChatClient = () => {
 				}
 
 				wsRef.current = new WebSocket(
-					`ws://127.0.0.1:8001/ws/chat/${conversationData.id}/`
+					`wss://127.0.0.1:8080/ws/chat/${conversationData.id}/?token=${accessToken}`
 				);
 
 				wsRef.current.onopen = () => {
