@@ -42,8 +42,8 @@ LOGGING = {
     },
 }
 
-# ALLOWED_HOSTS = ['*']
-ALLOWED_HOSTS = ["transcendence.fr", "transcendence.fr:8080", "backend", "backend:8001"]
+ALLOWED_HOSTS = ['*']
+#ALLOWED_HOSTS = ["transcendence.fr", "transcendence.fr:8080", "backend", "backend:8001", "127.0.0.1:8080", "127.0.0.1"]
 
 
 # Application definition

@@ -12,7 +12,7 @@ ssl_context.verify_mode = ssl.CERT_NONE
 # Base URL for the backend API 
 #add back 8080 IN SCHOOL
 BASE_URL_DATA = "wss://127.0.0.1:8080/game"
-MATCH_API_URL = "http://transcendence.fr:8001/match-list/"
+MATCH_API_URL = "http://127.0.0.1:8001/match-list/"
 
 def get_active_matches():
     try:
@@ -61,6 +61,7 @@ async def get_game_state():
         print("⚠️ No active games with that room-name")
         return
     try:
+        print(f"{BASE_URL_DATA}/{room_name}/")
         async with websockets.connect(f"{BASE_URL_DATA}/{room_name}/", ssl=ssl_context) as websocket:
             response = await websocket.recv()
             game_data = json.loads(response)
@@ -79,7 +80,7 @@ async def get_game_state():
             print(f" - Player 2 Position: {game_data['game_state']['player2_position']}")
 
     except websockets.exceptions.WebSocketException as e:
-        print(f"❌ Connection failed! Room '{room_name}' does not exist or is closed.")
+        print(f"❌ Connection failed! Room '{room_name}' does not exist or is closed. | {e}")
     except OSError as e:
         print(f"❌ Network error: {e}")
     except json.JSONDecodeError:
