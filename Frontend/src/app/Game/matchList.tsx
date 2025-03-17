@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { fetchMatches, joinSimpleMatch } from "../utilities/matchActions";
+import { fetchTournaments, joinTournament } from "../utilities/tournamentActions";
 import "./match.css";
 
-type Match = {
+type Games = {
 	id: string;
 	created_at: string;
 	is_tournament: boolean;
@@ -12,26 +13,35 @@ type Match = {
 
 export default function MatchList({
 	setAlert,
-	setMatchID,
-	setIsReadyToPlay,
+	setGameID,
+	setGameType,
 }: {
 	setAlert: (alertMessage: { message: string; type: string } | null) => void;
-	setMatchID: (matchID: string) => void;
-	setIsReadyToPlay: (isReadyToPlay: boolean) => void;
+	setGameID: (matchID: string) => void;
+	setGameType: (isReadyToPlay: string) => void;
 }) {
-	const [matches, setMatches] = useState<Match[]>([]);
+	const [games, setGames] = useState<Games[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		const fetchMatchesAsync = async () => {
+			let filters, data;
 			try {
-				const filters = {
+				filters = {
 					is_ongoing: false,
 					is_finished: false,
 					player2: undefined,
-				};
-				const data = await fetchMatches(filters);
-				setMatches(data);
+				};	
+				data = await fetchMatches(filters);
+				setGames(data);
+
+				filters = {
+					is_ongoing: false,
+					is_finished: false,
+				}
+				data = await fetchTournaments(filters);
+				setGames((prevGames) => [...prevGames, ...data]);
+
 				setLoading(false);
 			} catch (error) {
 				setAlert({
@@ -44,20 +54,32 @@ export default function MatchList({
 		fetchMatchesAsync();
 	}, []);
 
-	const handleGameEntry = async (matchID: string) => {
+	const handleGameEntry = async (ID: string, is_tournament: boolean) => {
 		try {
-			await joinSimpleMatch(matchID);
-			setAlert({
-				message: "Game on!",
-				type: "success",
-			});
-			setMatchID(matchID);
-			setTimeout(() => {
-				setIsReadyToPlay(true);
-			}, 1000);
+			if (is_tournament) {
+				await joinTournament(ID);
+				setAlert({
+					message: "Best of luck!",
+					type: "success",
+				});
+				setGameID(ID)
+				setTimeout(() => {
+					setGameType("tournament");
+				}, 1000);
+			} else {
+				await joinSimpleMatch(ID);
+				setAlert({
+					message: "Game on!",
+					type: "success",
+				});
+				setGameID(ID);
+				setTimeout(() => {
+					setGameType("simple");
+				}, 1000);
+			}
 		} catch (error) {
 			setAlert({
-				message: `Failed to join match: ${error}`,
+				message: `Failed to join match/tournament: ${error}`,
 				type: "danger",
 			});
 			return;
@@ -81,21 +103,21 @@ export default function MatchList({
 						</tr>
 					</thead>
 					<tbody>
-						{matches.map((match) => (
-							<tr key={match.id}>
+						{games.map((game) => (
+							<tr key={game.id}>
 								<td>
 									{new Intl.DateTimeFormat("en-GB", {
 										dateStyle: "long",
 										timeStyle: "short",
-									}).format(new Date(match.created_at))}
+									}).format(new Date(game.created_at))}
 								</td>
-								<td>{match.is_tournament ? "Tournament" : "1v1"}</td>
-								<td>{match.player1_username}</td>
-								<td>{match.id}</td>
+								<td>{game.is_tournament ? "Tournament" : "1v1"}</td>
+								<td>{game.player1_username}</td>
+								<td>{game.id}</td>
 								<td>
 									<button
 										className="join-btn"
-										onClick={() => handleGameEntry(match.id)}
+										onClick={() => handleGameEntry(game.id, game.is_tournament)}
 									>
 										Join
 									</button>

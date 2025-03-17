@@ -32,8 +32,14 @@ urlpatterns = [
 
 	path('matches/', MatchAPIView.as_view(), name="Match-get-post"),
 	path('matches/<uuid:id>/', MatchRetrieveUpdateAPIView.as_view(), name="match-patch"),
-	path('match_history/', MatchHistoryView.as_view(), name="match-history-get"),
+	path('match-history/', MatchHistoryView.as_view(), name="match-history-get"),
     path('match-list/', MatchCLIView.as_view(), name="match-list-get"),
+	path('match-check/', MatchCheckView.as_view(), name="match-check-get"),
+
+	path('tournaments/', TournamentAPIView.as_view(), name="Tournament-get-post"),
+	path('tournaments/<uuid:id>/', TournamentRetrieveUpdateAPIView.as_view(), name="tournament-patch"),
+	path('tournament-history/', MatchHistoryView.as_view(), name="tournament-history-get"),
+	path('tournament-check/', TournamentCheckView.as_view(), name="tournament-check-get"),
 
 	path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
 	path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),

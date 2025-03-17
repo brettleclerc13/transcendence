@@ -78,37 +78,6 @@ class MatchAPIView(generics.ListCreateAPIView):
 		match = serializer.save(player1=self.request.user, invite_game=invite_game)
 		return Response({'match_id': match.id}, status=status.HTTP_201_CREATED)
 
-	def patch(self, request, *args, **kwargs):
-		"""
-		Allows player2 to join a match.
-		"""
-		print("Received PATCH request with data:", request.data)
-		match_id = kwargs.get('pk')
-		print("Match ID:", match_id)
-		user = request.user
-
-		try:
-			with transaction.atomic():
-				match = Match.objects.select_for_update().get(id=match_id)
-
-				# Ensure player2 is not already set
-				if match.player2 is not None:
-					return Response({'error': 'Player2 has already joined this match.'}, status=status.HTTP_400_BAD_REQUEST)
-
-				# Prevent player1 from joining as player2
-				if match.player1 == user:
-					return Response({'error': 'You cannot join your own match as player2.'}, status=status.HTTP_400_BAD_REQUEST)
-
-				# Assign player2 and set match as ongoing
-				match.player2 = user
-				match.is_ongoing = True
-				match.save()
-
-			return Response(MatchSerializer(match).data, status=status.HTTP_200_OK)
-
-		except Match.DoesNotExist:
-			return Response({'error': 'Match not found.'}, status=status.HTTP_404_NOT_FOUND)
-
 class MatchRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 	"""
 	Handles retrieving and updating a single match.
@@ -158,6 +127,10 @@ class MatchHistoryView(APIView):
 			Q(winner=user) | Q(looser=user),
 			is_finished=True
 		)
+
+		if not matches.exists():
+			return Response([], status=status.HTTP_200_OK)
+
 		serializer = MatchSerializer(matches, many=True)
 		return Response(serializer.data)
 
@@ -182,3 +155,5 @@ class MatchCLIView(APIView):
 
 		serializer = MatchSummarySerializer(queryset, many=True)
 		return Response(serializer.data)
+
+class MatchCheckView()

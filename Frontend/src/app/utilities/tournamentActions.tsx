@@ -2,19 +2,15 @@
 
 import { cookies } from "next/headers";
 
-type MatchFilterProps = {
+type TournamentFilterProps = {
 	id?: string;
-	player1?: string;
-	player2?: string | undefined;
-	winner?: string;
-	looser?: string;
+	players?: object;
 	is_ongoing?: boolean;
 	is_finished?: boolean;
 	is_tournament?: boolean;
 };
 
-
-export const fetchMatches = async (filters: MatchFilterProps = {}) => {
+export const fetchTournaments = async (filters: TournamentFilterProps = {}) => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
 	if (!token) throw new Error("Access token missing");
@@ -22,7 +18,7 @@ export const fetchMatches = async (filters: MatchFilterProps = {}) => {
 	try {
 		const queryString = Object.keys(filters)
 			.map((key) => {
-				const value = filters[key as keyof MatchFilterProps];
+				const value = filters[key as keyof TournamentFilterProps];
 
 				if (typeof value === "boolean") {
 					return `${key}=${value ? "1" : "0"}`;
@@ -35,7 +31,7 @@ export const fetchMatches = async (filters: MatchFilterProps = {}) => {
 			.join("&");
 
 		const response = await fetch(
-			`http://backend:8001/matches/?${queryString}`,
+			`http://backend:8001/tournaments/?${queryString}`,
 			{
 				method: "GET",
 				headers: {
@@ -58,29 +54,29 @@ export const fetchMatches = async (filters: MatchFilterProps = {}) => {
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
-				"Failed to fetch matches.";
+				"Failed to fetch tournaments.";
 			throw new Error(errorMessage);
 		} else {
 			return data;
 		}
 	} catch (error) {
-		throw new Error(String(error) || "Failed to fetch matches.");
+		throw new Error(String(error) || "Failed to fetch tournaments.");
 	}
 };
 
-export const createSimpleMatch = async (invite_game?: boolean) => {
+export const createTournament = async () => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch("http://backend:8001/matches/", {
+		const response = await fetch("http://backend:8001/tournaments/", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 				Authorization: `Bearer ${token}`,
 			},
-			body: invite_game ? JSON.stringify({ invite_game }) : JSON.stringify({}),
+			body: JSON.stringify({}),
 		});
 
 		let data;
@@ -89,7 +85,7 @@ export const createSimpleMatch = async (invite_game?: boolean) => {
 			data = JSON.parse(text);
 		} catch {
 			throw new Error(
-				`Unexpected response concerning simple match creation: ${response.status}`
+				`Unexpected response concerning tournament creation: ${response.status}`
 			);
 		}
 		if (!response.ok) {
@@ -97,25 +93,25 @@ export const createSimpleMatch = async (invite_game?: boolean) => {
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
-				"Failed to create simple match.";
+				"Failed to create tournament.";
 			throw new Error(errorMessage);
 		} else {
 			console.log("create Match data: ", data);
-			if (data.id) return { matchID: data.id as string };
-			else throw new Error("MatchID not found");
+			if (data.id) return { tournamentID: data.id as string };
+			else throw new Error("TournamentID not found");
 		}
 	} catch (error) {
-		throw new Error(String(error) || "Failed to create simple match.");
+		throw new Error(String(error) || "Failed to create tournament.");
 	}
-};
+}
 
-export const joinSimpleMatch = async (matchID: string) => {
+export const joinTournament = async (tournamentID: string) => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch(`http://backend:8001/matches/${matchID}/`, {
+		const response = await fetch(`http://backend:8001/matches/${tournamentID}/`, {
 			method: "PATCH",
 			headers: {
 				"Content-Type": "application/json",
@@ -144,15 +140,15 @@ export const joinSimpleMatch = async (matchID: string) => {
 	} catch (error) {
 		throw new Error(String(error) || "Failed to join simple match.");
 	}
-};
+}
 
-export const fetchSimpleMatchHistory = async () => {
+export const fetchTournamentHistory = async () => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch(`http://backend:8001/match-history/`, {
+		const response = await fetch(`http://backend:8001/tournament-history/`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
@@ -166,7 +162,7 @@ export const fetchSimpleMatchHistory = async () => {
 			data = JSON.parse(text);
 		} catch {
 			throw new Error(
-				`Unexpected response when trying to fetch user 1v1 match history: ${response.status}`
+				`Unexpected response when trying to fetch user tournament history: ${response.status}`
 			);
 		}
 		if (!response.ok) {
@@ -175,7 +171,7 @@ export const fetchSimpleMatchHistory = async () => {
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
-				"Failed to fetch user 1v1 match history.";
+				"Failed to fetch user tournament history.";
 			throw new Error(errorMessage);
 		} else {
 			return data;
@@ -184,18 +180,18 @@ export const fetchSimpleMatchHistory = async () => {
 		return {
 			ok: false,
 			error:
-				(error as Error).message || "Failed to fetch user 1v1 match history.",
+				(error as Error).message || "Failed to fetch user tournament history.",
 		};
 	}
 };
 
-export const checkMatches = async () => {
+export const checkTournaments = async () => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch(`http://backend:8001/match-check/`, {
+		const response = await fetch(`http://backend:8001/tournament-check/`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
@@ -209,7 +205,7 @@ export const checkMatches = async () => {
 			data = JSON.parse(text);
 		} catch {
 			throw new Error(
-				`Unexpected response when trying to check user's active 1v1 matches: ${response.status}`
+				`Unexpected response when trying to check user's active tournaments: ${response.status}`
 			);
 		}
 		if (!response.ok) {
@@ -218,7 +214,7 @@ export const checkMatches = async () => {
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
-				"Failed to check user 1v1 active matches.";
+				"Failed to check user's active tournaments.";
 			throw new Error(errorMessage);
 		} else {
 			return data;
@@ -227,7 +223,7 @@ export const checkMatches = async () => {
 		return {
 			ok: false,
 			error:
-				(error as Error).message || "Failed to check user 1v1 active matches.",
+				(error as Error).message || "Failed to check user's active tournaments.",
 		};
 	}
 }

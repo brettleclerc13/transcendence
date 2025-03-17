@@ -9,6 +9,7 @@ class TournamentMatch(models.Model):
 	max_players = models.IntegerField(default=4)
 	is_finished = models.BooleanField(default=False)
 	is_ongoing = models.BooleanField(default=False)
+	is_tournament = models.BooleanField(default=True)
 	tournament_winner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="tournament_wins")
 	created_at = models.DateTimeField(auto_now_add=True)
 
