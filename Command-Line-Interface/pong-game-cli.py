@@ -11,7 +11,7 @@ ssl_context.verify_mode = ssl.CERT_NONE
 
 # Base URL for the backend API 
 #add back 8080 IN SCHOOL
-BASE_URL_DATA = "wss://127.0.0.1/game"
+BASE_URL_DATA = "wss://127.0.0.1:8080/game"
 MATCH_API_URL = "http://transcendence.fr:8001/match-list/"
 
 def get_active_matches():

@@ -101,7 +101,7 @@ export default function GameCanvas(match: { ID: string }) {
 		}
 		const roomName = match.ID;
 		const ws = new WebSocket(
-			`wss://transcendence.fr/game/${roomName}/?token=${accessToken}`
+			`wss://127.0.0.1:8080/game/${roomName}/?token=${accessToken}`
 		);
 
 		ws.onopen = () => {
