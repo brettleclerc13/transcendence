@@ -13,7 +13,6 @@ type MatchFilterProps = {
 	is_tournament?: boolean;
 };
 
-
 export const fetchMatches = async (filters: MatchFilterProps = {}) => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
@@ -230,4 +229,4 @@ export const checkMatches = async () => {
 				(error as Error).message || "Failed to check user 1v1 active matches.",
 		};
 	}
-}
+};

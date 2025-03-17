@@ -10,11 +10,13 @@ import { z } from "zod";
 import { isUserLoggedIn } from "../utilities/userClientActions";
 import Link from "next/link";
 import { createSimpleMatch, checkMatches } from "../utilities/matchActions";
-import { createTournament, checkTournaments } from "../utilities/tournamentActions";
+import {
+	createTournament,
+	checkTournaments,
+} from "../utilities/tournamentActions";
 import GameCanvas from "./gameCanvas";
 import "./match.css";
 import TournamentCanvas from "./tournamentCanvas";
-
 
 export const profileSchema = z.object({
 	tournament_name: z
@@ -70,7 +72,7 @@ export default function Lobby() {
 			});
 			return;
 		}
-	}
+	};
 
 	useEffect(() => {
 		if (isUserLoggedIn()) {
@@ -100,7 +102,7 @@ export default function Lobby() {
 			});
 			return;
 		}
-	}
+	};
 
 	async function handleTournamentMatchCreation(
 		_previousState: unknown,
@@ -161,10 +163,7 @@ export default function Lobby() {
 			{gameType == "lobby" && (
 				<div className="lobby-container">
 					{alert && (
-						<div
-							className={`alert alert-${alert.type} alert-box`}
-							role="alert"
-						>
+						<div className={`alert alert-${alert.type} alert-box`} role="alert">
 							{alert.message}
 							<button
 								type="button"
@@ -224,8 +223,7 @@ export default function Lobby() {
 			{gameType == "notLoggedIn" && (
 				<div className="flex flex-col gap-4 justify-center items-center h-full w-full">
 					<p className="text-lg">
-						Please log in before starting a game. It won't even take a
-						minute!
+						Please log in before starting a game. It won't even take a minute!
 					</p>
 					<Link className="secondary-button" href="/login">
 						Connect

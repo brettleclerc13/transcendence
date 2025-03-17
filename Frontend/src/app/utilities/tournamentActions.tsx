@@ -103,7 +103,7 @@ export const createTournament = async () => {
 	} catch (error) {
 		throw new Error(String(error) || "Failed to create tournament.");
 	}
-}
+};
 
 export const joinTournament = async (tournamentID: string) => {
 	const cookieStore = await cookies();
@@ -111,13 +111,16 @@ export const joinTournament = async (tournamentID: string) => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch(`http://backend:8001/matches/${tournamentID}/`, {
-			method: "PATCH",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
-			},
-		});
+		const response = await fetch(
+			`http://backend:8001/matches/${tournamentID}/`,
+			{
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+			}
+		);
 
 		let data;
 		const text = await response.text();
@@ -140,7 +143,7 @@ export const joinTournament = async (tournamentID: string) => {
 	} catch (error) {
 		throw new Error(String(error) || "Failed to join simple match.");
 	}
-}
+};
 
 export const fetchTournamentHistory = async () => {
 	const cookieStore = await cookies();
@@ -223,7 +226,8 @@ export const checkTournaments = async () => {
 		return {
 			ok: false,
 			error:
-				(error as Error).message || "Failed to check user's active tournaments.",
+				(error as Error).message ||
+				"Failed to check user's active tournaments.",
 		};
 	}
-}
+};

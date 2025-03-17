@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { fetchMatches, joinSimpleMatch } from "../utilities/matchActions";
-import { fetchTournaments, joinTournament } from "../utilities/tournamentActions";
+import {
+	fetchTournaments,
+	joinTournament,
+} from "../utilities/tournamentActions";
 import "./match.css";
 
 type Games = {
@@ -25,20 +28,20 @@ export default function MatchList({
 
 	useEffect(() => {
 		const fetchMatchesAsync = async () => {
-			let filters, data;
+			let filters, data: Games[];
 			try {
 				filters = {
 					is_ongoing: false,
 					is_finished: false,
 					player2: undefined,
-				};	
+				};
 				data = await fetchMatches(filters);
 				setGames(data);
 
 				filters = {
 					is_ongoing: false,
 					is_finished: false,
-				}
+				};
 				data = await fetchTournaments(filters);
 				setGames((prevGames) => [...prevGames, ...data]);
 
@@ -62,7 +65,7 @@ export default function MatchList({
 					message: "Best of luck!",
 					type: "success",
 				});
-				setGameID(ID)
+				setGameID(ID);
 				setTimeout(() => {
 					setGameType("tournament");
 				}, 1000);

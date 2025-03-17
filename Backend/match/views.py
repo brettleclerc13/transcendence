@@ -156,4 +156,10 @@ class MatchCLIView(APIView):
 		serializer = MatchSummarySerializer(queryset, many=True)
 		return Response(serializer.data)
 
-class MatchCheckView()
+class MatchCheckView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		ongoing_matches = Match.objects.filter(is_ongoing=True)
+		serializer = MatchSerializer(ongoing_matches, many=True)
+		return Response(serializer.data)
