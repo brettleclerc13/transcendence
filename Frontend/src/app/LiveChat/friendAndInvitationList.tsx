@@ -50,7 +50,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 				const friendListResponse = await FetchFriends();
 				if (friendListResponse.status === true && Array.isArray(friendListResponse.data)) {
 					setFriends(friendListResponse.data);
-					console.log("Friends profile picture: ", friends);
+					// console.log("Friends profile picture: ", friends);
 				} else if (friendListResponse.status === "warning") {
 					console.log("Warning:", friendListResponse.message);
 					setFriends([]);

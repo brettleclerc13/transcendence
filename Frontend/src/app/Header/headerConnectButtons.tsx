@@ -82,6 +82,11 @@ export default function HeaderConnectButtons() {
 	};
 
 	const handleLogout = async () => {
+		try {
+			await updateUserProfile({ is_online: false });
+		} catch (error) {
+			console.error("Error updating status:", error);
+		}
 		const logoutStatus = await backendLogout();
 		if (logoutStatus) router.push("/");
 		else console.error("Error logging out backend side");
