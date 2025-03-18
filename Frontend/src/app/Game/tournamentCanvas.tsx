@@ -2,41 +2,35 @@ import { useEffect, useState } from "react";
 import { getCookie } from "cookies-next/client";
 import { leaveTournament } from "../utilities/tournamentActions";
 import GameCanvas from "./gameCanvas";
-import { match } from "assert";
 
 type TournamentPlayer = {
-	id: string | null;
-	tournament_name: string | null;
+	id: string;
+	tournament_name: string;
 	profile_picture: string | null;
 	is_on_page: boolean;
-}
-
+};
 
 export default function TournamentCanvas({
 	tournamentID,
 	setGameType,
 }: {
-		tournamentID : string;
-		setGameType: (isReadyToPlay: string) => void;
-	}) {
+	tournamentID: string;
+	setGameType: (isReadyToPlay: string) => void;
+}) {
 	const [socket, setSocket] = useState<WebSocket | null>(null);
-	const [players, setPlayers] = useState<TournamentPlayer[]>([]);
-	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
-		null
-	);
+	const [playersMap, setPlayersMap] = useState<Record<string, TournamentPlayer>>({});
+	const [displayedPlayers, setDisplayedPlayers] = useState<string[]>(["NA", "NA", "NA", "NA", "NA", "NA", "NA"]);
 	const [matchID, setMatchID] = useState<string>("");
-	const [gameOn, setGameOn] = useState<boolean>(false);
 
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
-
 		if (!accessToken) {
 			console.log("Access Token not retrieved in Game Canvas");
 			return;
 		}
-		const roomName = tournamentID;
+
 		const ws = new WebSocket(
-			`wss://127.0.0.1:8080/ws/tournament/${roomName}/?token=${accessToken}`
+			`wss://127.0.0.1:8080/ws/tournament/${tournamentID}/?token=${accessToken}`
 		);
 
 		ws.onopen = () => {
@@ -45,12 +39,9 @@ export default function TournamentCanvas({
 
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
-			console.log("data: ", data);
-			if (data.type) {
-				console.log("Data type received: ", data.type);
-			}
+			console.log("Received WebSocket message: ", data);
 
-			if (data.type ==="Connected to tournament") {
+			if (data.type === "Connected to tournament") {
 				console.log("Ready to send data");
 				ws.send(
 					JSON.stringify({
@@ -59,36 +50,59 @@ export default function TournamentCanvas({
 				);
 			}
 
+			// Handle when a new user joins
 			if (data.type === "new_user") {
-				console.log("data new user: ", data);
+				console.log("New user data: ", data);
 
-				// Récupérer tous les joueurs sous forme de tableau
-				const newPlayers = Object.values(data.users) as TournamentPlayer[];
+				// Convert user object into a dictionary with "player_1", "player_2", etc.
+				const newPlayers: Record<string, TournamentPlayer> = {};
+				Object.entries(data.users).forEach(([key, player]: [string, any]) => {
+					newPlayers[key] = {
+						id: player.user_id.toString(),
+						tournament_name: player.tournament_name,
+						profile_picture: player.profile_picture || null,
+						is_on_page: true,
+					};
+				});
 
-				setPlayers((prevPlayers) => {
-					// Ajouter uniquement les nouveaux joueurs qui ne sont pas déjà dans la liste
-					const updatedPlayers = newPlayers.filter(
-						(newPlayer) => !prevPlayers.some((player) => player.id === newPlayer.id)
-					  );
+				// Update players mapping
+				setPlayersMap(prev => ({ ...prev, ...newPlayers }));
 
-					// Limiter à 4 joueurs
-					return prevPlayers.length + updatedPlayers.length <= 4
-            			? [...prevPlayers, ...updatedPlayers]
-            			: prevPlayers;
+				// Display them immediately (just the first 4 players)
+				const firstFour = Object.values(newPlayers).slice(0, 4).map(p => p.tournament_name);
+				setDisplayedPlayers((prev) => {
+					let updated = [...prev];
+					for (let i = 0; i < firstFour.length; i++) {
+						updated[i] = firstFour[i];
+					}
+					return updated;
 				});
 			}
 
-			if (data.type === "user_left") {
-				//grey out the user
-			}
-
+			// Handle tournament state updates
 			if (data.type === "tournament_display_update") {
-				//player update map
+				console.log("Tournament display update: ", data.state);
+
+				// Extracting tournament IDs from the state
+				const layers = [
+					"first_layer_1", "first_layer_2", "first_layer_3", "first_layer_4",
+					"second_layer_1", "second_layer_2",
+					"third_layer"
+				];
+
+				// Map player IDs to tournament names
+				const updatedNames = layers.map(layer => {
+					const playerNumber = data.state[layer];
+					return playersMap[playerNumber]?.tournament_name || "NA"; // Default to NA if not found
+				});
+
+				// Update displayed player names
+				setDisplayedPlayers(updatedNames);
 			}
 
+			// Handle when a match is created
 			if (data.type === "tournament_match_created") {
 				setMatchID(data.match_id);
-
 			}
 		};
 
@@ -98,7 +112,6 @@ export default function TournamentCanvas({
 		};
 
 		setSocket(ws);
-
 		return () => ws.close();
 	}, []);
 
@@ -107,94 +120,67 @@ export default function TournamentCanvas({
 			console.error("WebSocket is not connected");
 			return;
 		}
-	
-		// Envoyer le message de déconnexion
-		socket.send(
-			JSON.stringify({
-				type: "user_disconnected",
-			})
-		);
+
+		socket.send(JSON.stringify({ type: "user_disconnected" }));
 
 		try {
 			const response = await leaveTournament(tournamentID);
 			console.log("Tournament exit response: ", response);
-			setAlert({
-				message: "Bye bye!",
-				type: "success",
-			});
 		} catch (error) {
-			setAlert({
-				message: `Error leaving the tournament: ${error}`,
-				type: "danger",
-			});
+			console.error("Error leaving the tournament:", error);
 		}
-		socket.close();
 
-		setInterval(() => {
-			setGameType("lobby");
-		}, 1000)	
-	}
-	
+		socket.close();
+		setTimeout(() => setGameType("lobby"), 1000);
+	};
+
 	return (
 		<>
-			{gameOn ? <GameCanvas ID={matchID}/> : (
-			<section className="flex justify-center items-center h-full w-full">
-				{alert && (
-					<div className={`alert alert-${alert.type} alert-box`} role="alert">
-						{alert.message}
+			{matchID ? <GameCanvas ID={matchID} /> : (
+				<section className="flex justify-center items-center h-full w-full">
+					<div className="flex flex-col-reverse gap-5">
 						<button
-							type="button"
-							className="close"
-							onClick={() => setAlert(null)}
-							aria-label="Close"
+							className="mb-4 px-4 py-2 bg-red-500 w-fit pr-10 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition"
+							onClick={handleTournamentExit}
 						>
-							<span aria-hidden="true">&times;</span>
+							❌ Quit Tournament
 						</button>
-					</div>
-				)}
-				<div className="flex flex-col-reverse gap-5">
-					<button
-					className="mb-4 px-4 py-2 bg-red-500 w-fit pr-10 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition"
-					onClick={handleTournamentExit}
-					>
-						❌ Quitter le tournoi
-					</button>
-					<div className="grid grid-cols-3 gap-8 items-center">
-					{/* Colonne de gauche (4 joueurs) */}
-						<div className="flex flex-col gap-4">
-							<PlayerBox player={players[0]} />
-							<span className="text-xxl font-bold text-center">VS</span>
-							<PlayerBox player={players[1]} />
-							<div className="h-8"></div> {/* Espacement */}
-							<PlayerBox player={players[2]} />
-							<span className="text-xxl font-bold text-center">VS</span>
-							<PlayerBox player={players[3]} />
+
+						<div className="grid grid-cols-3 gap-8 items-center">
+							{/* Left column (first 4 players) */}
+							<div className="flex flex-col gap-4">
+								<PlayerBox name={displayedPlayers[0]} />
+								<span className="text-xxl font-bold text-center">VS</span>
+								<PlayerBox name={displayedPlayers[1]} />
+								<div className="h-8"></div> {/* Spacing */}
+								<PlayerBox name={displayedPlayers[2]} />
+								<span className="text-xxl font-bold text-center">VS</span>
+								<PlayerBox name={displayedPlayers[3]} />
+							</div>
+
+							{/* Middle column (2 winners) */}
+							<div className="flex flex-col gap-16">
+								<PlayerBox name={displayedPlayers[4]} />
+								<span className="text-xl font-bold text-center">VS</span>
+								<PlayerBox name={displayedPlayers[5]} />
+							</div>
+
+							{/* Right column (Final winner) */}
+							<div className="flex flex-col gap-16 justify-center">
+								<PlayerBox name={displayedPlayers[6]} />
+							</div>
 						</div>
-
-					{/* Colonne du centre (2 gagnants) */}
-					<div className="flex flex-col gap-16">
-						<PlayerBox player={undefined} />
-						<span className="text-xl font-bold text-center">VS</span>
-						<PlayerBox player={undefined} />
 					</div>
-
-					{/* Colonne de droite (Gagnant final) */}
-					<div className="flex flex-col gap-16 justify-center">
-						<PlayerBox player={undefined} />
-					</div>
-				</div>
-			</div>
-			</section>
-			)};
+				</section>
+			)}
 		</>
 	);
 }
 
-function PlayerBox({ player }: { player: TournamentPlayer | undefined }) {
+function PlayerBox({ name }: { name: string }) {
 	return (
 		<div className="w-32 h-16 flex items-center justify-center bg-blue-500 text-white font-bold rounded-lg shadow-md">
-			{player ? `🎮 ${player.tournament_name}` : "NA"}
+			{name}
 		</div>
 	);
 }
-

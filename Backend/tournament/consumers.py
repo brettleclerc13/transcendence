@@ -22,8 +22,9 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         if not self.user:
             await self.close(code=4001)  
             return
+        check =  await self.is_returning_user(self.user.id)
         players = await RedisManager.get_all_users_list_map(user_key)
-        if len(players) > 4:
+        if check == None and len(players) >= 4:
             print("Room Full", flush=True)
             await self.close(code=4000)
             return
@@ -82,11 +83,8 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 players = await RedisManager.get_all_users_list_map(user_key)
                 self.tournament_id = f"player_{len(players) + 1}"
                 await RedisManager.store_user_data_map(user_key, self.tournament_id, user_data)
-            else:
-                await RedisManager.update_user_data_map(user_key, self.tournament_id, "is_on_page", True)
-            connected_users = await RedisManager.get_all_users_json(user_key)
-
-            await self.channel_layer.group_send(
+                connected_users = await RedisManager.get_all_users_json(user_key)
+                await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     "type": "new_user_joined",
@@ -94,9 +92,12 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     "id": self.tournament_id
                 }
             )
+            else:
+                await RedisManager.update_user_data_map(user_key, self.tournament_id, "is_on_page", True)
             await self.update_tournament_state()
         elif message_type == "user_disconnected":
             if self.tournament_id != None and await RedisManager.get_state(state_key) in ["waiting for players", "unknown"]:
+                self.tournament_id = None
                 await RedisManager.delete_user_data_map(user_key, self.tournament_id)
             
     
@@ -325,7 +326,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                         absent_players.append(victor1[1])
                 if victor2[1].get("is_on_page", "false") != "true":
                         absent_players.append(victor2[1])
-                if not absent_players:lobby
+                if not absent_players:
                     await handle_finals_start(self.room_id)
                 else:
                     asyncio.create_task(notify_and_wait_for_reconnect(self.room_id, absent_players))
