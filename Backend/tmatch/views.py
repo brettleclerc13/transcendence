@@ -62,6 +62,32 @@ class TournamentRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 			return Response(TournamentSerializer(tournament).data, status=status.HTTP_200_OK)
 		except TournamentMatch.DoesNotExist:
 			return Response({'error': 'Tournament not found.'}, status=status.HTTP_404_NOT_FOUND)
+	
+	def put(self, request, *args, **kwargs):
+		tournament_id = kwargs.get('id')
+		user = request.user
+
+		try:
+			with transaction.atomic():
+				tournament = TournamentMatch.objects.select_for_update().get(id=tournament_id)
+
+				if tournament.is_finished:
+					return Response({'error': 'Tournament already finished.'}, status=status.HTTP_400_BAD_REQUEST)
+
+				if user not in tournament.players.all():
+					return Response({'error': 'You are not in this tournament.'}, status=status.HTTP_400_BAD_REQUEST)
+
+				tournament.players.remove(user)
+
+				# Check if the tournament should still be ongoing
+				if tournament.players.count() < tournament.max_players:
+					tournament.is_ongoing = False
+					tournament.save()
+
+			return Response(TournamentSerializer(tournament).data, status=status.HTTP_200_OK)
+		except TournamentMatch.DoesNotExist:
+			return Response({'error': 'Tournament not found.'}, status=status.HTTP_404_NOT_FOUND)
+
 
 class TournamentHistoryView(APIView):
 	permission_classes = [IsAuthenticated]

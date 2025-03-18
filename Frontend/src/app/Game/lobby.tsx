@@ -163,7 +163,7 @@ export default function Lobby() {
 	return (
 		<>
 			{gameType == "simple" && <GameCanvas ID={gameID} />}
-			{gameType == "tournament" && <TournamentCanvas ID={gameID} />}
+			{gameType == "tournament" && <TournamentCanvas tournamentID={gameID} setGameType={setGameType} />}
 			{gameType == "lobby" && (
 				<div className="lobby-container">
 					{alert && (

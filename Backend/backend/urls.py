@@ -38,7 +38,7 @@ urlpatterns = [
 	path('match-check/', MatchCheckView.as_view(), name="match-check-get"),
 
 	path('tournaments/', TournamentAPIView.as_view(), name="Tournament-get-post"),
-	path('tournaments/<uuid:id>/', TournamentRetrieveUpdateAPIView.as_view(), name="tournament-patch"),
+	path('tournaments/<uuid:id>/', TournamentRetrieveUpdateAPIView.as_view(), name="tournament-patch-put"),
 	path('tournament-history/', TournamentHistoryView.as_view(), name="tournament-history-get"),
 	path('tournament-check/', TournamentCheckView.as_view(), name="tournament-check-get"),
 
