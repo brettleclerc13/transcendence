@@ -129,7 +129,7 @@ export default function GameCanvas(match: { ID: string }) {
 			}
 
 			if (data.type === "reconnected"){
-				socket?.send(
+				ws.send(
 					JSON.stringify({
 						type: "restart",
 						game_parametres: {
