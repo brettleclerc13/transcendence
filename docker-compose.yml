@@ -15,11 +15,7 @@ services:
     build:
       context: ./Backend
     environment:
-      - DJANGO_SETTINGS_MODULE=backend.settings
-      - DATABASE_HOST=db
-      - DATABASE_NAME=transcendence
-      - DATABASE_USER=postgres
-      - DATABASE_PASSWORD=postgres
+      - .env
     ports:
       - "8001:8001"
     networks:
@@ -32,9 +28,7 @@ services:
   db:
     image: postgres:14
     environment:
-      - POSTGRES_DB=transcendence
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - .env
     ports:
       - "5432:5432"
     networks:
