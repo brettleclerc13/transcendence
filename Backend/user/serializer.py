@@ -14,6 +14,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
 		model = UserProfile
 		fields = ['user' ,'nationality', 'bio', 'age', 'profile_picture', 'tournament_name', 'is_online']
 
+	def validate_profile_picture(self, value):
+		max_size = 2 * 1024 * 1024  # 2MB
+
+		if value and value.size > max_size:
+			raise serializers.ValidationError("The image file size should not exceed 2MB.")
+        
+		return value
+
 	def get_profile_picture(self, obj):
 		return obj.profile_picture.url if obj.profile_picture else None
 		
@@ -127,12 +135,12 @@ def to_representation(self, instance):
 			data[field] = clean(value, tags=[])
 	return data
 
-serializers = [
+serializer_classes = [
     UserProfileSerializer,
     UserSerializer,
     MessageSerializer,
 ]
 
-for serializer in serializers:
+for serializer in serializer_classes:
 	if hasattr(serializer, 'Meta'):
 		serializer.to_representation = to_representation

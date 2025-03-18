@@ -20,6 +20,12 @@ export default function ProfileImage({
 		const file = event.target.files?.[0];
 		if (!file) return;
 
+		const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+		if (file.size > maxSize) {
+			setAlert({ message: "File size must be under 2MB.", type: "danger" });
+			return;
+		}
+
 		const formData = new FormData();
 		formData.append("profile_picture", file);
 
@@ -41,12 +47,12 @@ export default function ProfileImage({
 				});
 			}
 		} catch (error) {
-			console.error("Failed to update profile picture:", error);
+			setAlert({
+				message: "Failed to update profile picture:",
+				type: "danger",
+			});
 		} finally {
 			setLoading(false);
-			// setTimeout(() => {
-			// 	setShowAlert(false);
-			// }, 4000);
 		}
 	};
 
