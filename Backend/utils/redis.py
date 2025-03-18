@@ -76,6 +76,23 @@ class RedisManager:
         print(f"deleted room: {room_name}", flush=True)
     
     @classmethod
+    async def delete_tournament_data(cls, room_name: str):
+        redis = await cls.get_redis()
+        pattern = f"tournament:{room_name}:*"
+
+        cursor = b'0'
+
+        while cursor:
+            cursor, keys = await redis.scan(cursor, match=pattern, count=100)
+            if keys:
+                await redis.delete(*keys)
+            
+            if cursor == b'0':
+                break
+        
+        print(f"deleted room: {room_name}", flush=True)
+    
+    @classmethod
     async def store_user_data_map(cls, tournament_key, user_id, user_data):
         redis = await cls.get_redis()
         user_data_json = json.dumps(user_data)
@@ -96,6 +113,30 @@ class RedisManager:
             print(f"Error retrieving JSON from Redis: {e}", flush=True)
             return {"message": "Error retrieving data"}
     
+    @classmethod
+    async def add_json(cls, key, new_data):
+        try:
+            redis = await cls.get_redis()
+
+            json_data = await redis.execute("GET", key)
+
+            if json_data is not None:
+                existing_data = json.loads(json_data.decode("utf-8"))
+            else:
+                existing_data = {}  
+
+            if isinstance(existing_data, dict) and isinstance(new_data, dict):
+                existing_data.update(new_data)  
+            else:
+                print("error :Invalid data format. Expected a JSON object.", flush=True)
+
+            await redis.execute("SET", key, json.dumps(existing_data))
+
+            return print("message : Data added successfully")
+
+        except Exception as e:
+            print(f"Error adding JSON to Redis: {e}", flush=True)
+
     @classmethod
     async def get_all_users_list_map(cls, key):
         redis = await cls.get_redis()
@@ -149,4 +190,4 @@ class RedisManager:
     async def get_state(cls, key: str):
         redis = await cls.get_redis()
         value = await redis.get(key, encoding="utf-8")
-        return value if value is not None else "Unknown"
+        return value if value is not None else "unknown"

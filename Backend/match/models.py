@@ -13,7 +13,7 @@ class Match(models.Model):
 	is_finished = models.BooleanField(default=False)
 	is_ongoing = models.BooleanField(default=False)
 	is_tournament = models.BooleanField(default=False)
-	tournament = models.ForeignKey(TournamentMatch, on_delete=models.SET_NULL, null=True, blank=True, related_name="tournament_id")
+	is_finale = models.BooleanField(default=False)
 	winner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="match_wins")
 	looser = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="match_losses")
 	invite_game = models.BooleanField(default=False)
