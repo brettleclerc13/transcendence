@@ -20,7 +20,11 @@ export default function TournamentCanvas({
 	const [socket, setSocket] = useState<WebSocket | null>(null);
 	const [playersMap, setPlayersMap] = useState<Record<string, TournamentPlayer>>({});
 	const [displayedPlayers, setDisplayedPlayers] = useState<string[]>(["NA", "NA", "NA", "NA", "NA", "NA", "NA"]);
-	const [matchID, setMatchID] = useState<string>("");
+	const [matchID, setMatchID] = useState<string | undefined>(undefined);
+	const [gameOn, setGameOn] = useState<boolean>(false);
+	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
+		null
+	);
 
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
@@ -53,21 +57,28 @@ export default function TournamentCanvas({
 			// Handle when a new user joins
 			if (data.type === "new_user") {
 				console.log("New user data: ", data);
-
+			
 				// Convert user object into a dictionary with "player_1", "player_2", etc.
 				const newPlayers: Record<string, TournamentPlayer> = {};
+			
 				Object.entries(data.users).forEach(([key, player]: [string, any]) => {
+					// Prevent errors if player is undefined or missing user_id
+					if (!player || !player.id) {
+						console.warn(`Invalid player data for ${key}:`, player);
+						return; // Skip this entry
+					}
+			
 					newPlayers[key] = {
-						id: player.user_id.toString(),
-						tournament_name: player.tournament_name,
+						id: String(player.id), // Ensure it is always a string
+						tournament_name: player.tournament_name || "Unknown",
 						profile_picture: player.profile_picture || null,
 						is_on_page: true,
 					};
 				});
-
+			
 				// Update players mapping
 				setPlayersMap(prev => ({ ...prev, ...newPlayers }));
-
+			
 				// Display them immediately (just the first 4 players)
 				const firstFour = Object.values(newPlayers).slice(0, 4).map(p => p.tournament_name);
 				setDisplayedPlayers((prev) => {
@@ -102,7 +113,9 @@ export default function TournamentCanvas({
 
 			// Handle when a match is created
 			if (data.type === "tournament_match_created") {
+				console.log(data.match_id);
 				setMatchID(data.match_id);
+				setGameOn(true);
 			}
 		};
 
@@ -136,8 +149,16 @@ export default function TournamentCanvas({
 
 	return (
 		<>
-			{matchID ? <GameCanvas ID={matchID} /> : (
+			{gameOn ? (
+				<GameCanvas ID={matchID} />
+			) : (
 				<section className="flex justify-center items-center h-full w-full">
+					{alert && (
+						<div className={`alert alert-${alert.type} alert-box`} role="alert">
+							{alert.message}
+						</div>
+					)}
+
 					<div className="flex flex-col-reverse gap-5">
 						<button
 							className="mb-4 px-4 py-2 bg-red-500 w-fit pr-10 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition"
@@ -152,7 +173,7 @@ export default function TournamentCanvas({
 								<PlayerBox name={displayedPlayers[0]} />
 								<span className="text-xxl font-bold text-center">VS</span>
 								<PlayerBox name={displayedPlayers[1]} />
-								<div className="h-8"></div> {/* Spacing */}
+								<div className="h-8"></div>
 								<PlayerBox name={displayedPlayers[2]} />
 								<span className="text-xxl font-bold text-center">VS</span>
 								<PlayerBox name={displayedPlayers[3]} />
