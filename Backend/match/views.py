@@ -160,6 +160,13 @@ class MatchCheckView(APIView):
 	permission_classes = [IsAuthenticated]
 
 	def get(self, request):
-		ongoing_matches = Match.objects.filter(is_ongoing=True)
+		user = request.user
+		ongoing_matches = Match.objects.filter(
+			is_ongoing=True,
+			player1=user
+		) | Match.objects.filter(
+			is_ongoing=True,
+			player2=user
+		)
 		serializer = MatchSerializer(ongoing_matches, many=True)
 		return Response(serializer.data)

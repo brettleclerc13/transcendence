@@ -19,7 +19,7 @@ class TournamentAPIView(generics.ListCreateAPIView):
 		return context
 
 	def perform_create(self, serializer):
-		print("Received tournament data:", self.request.data)
+		print("Received tournamentdata:", self.request.data)
 		try:
 			tournament = serializer.save()
 			return Response({'tournament_id': tournament.id}, status=status.HTTP_201_CREATED)
@@ -76,6 +76,7 @@ class TournamentCheckView(APIView):
 	permission_classes = [IsAuthenticated]
 
 	def get(self, request):
-		ongoing_tournaments = TournamentMatch.objects.filter(is_ongoing=True)
+		user = request.user
+		ongoing_tournaments = TournamentMatch.objects.filter(is_ongoing=True, players=user)
 		serializer = TournamentSerializer(ongoing_tournaments, many=True)
 		return Response(serializer.data)

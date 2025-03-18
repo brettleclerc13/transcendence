@@ -30,7 +30,7 @@ export default function Lobby() {
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
 		null
 	);
-	const [gameType, setGameType] = useState<string>("lobby");
+	const [gameType, setGameType] = useState<string>("");
 	const [gameID, setGameID] = useState<string>("");
 	const [tournamentData, tournamentAction, tournamentPending] = useActionState(
 		handleTournamentMatchCreation,
@@ -48,6 +48,7 @@ export default function Lobby() {
 				message: `Error fetching your profile info: ${error}`,
 				type: "danger",
 			});
+			setGameType("lobby")
 			return;
 		}
 	};
@@ -58,18 +59,21 @@ export default function Lobby() {
 			if (matchResults.ok) {
 				setGameID(matchResults.matchID);
 				setGameType("match");
+				return;
 			}
-
 			const tournamentResults = await checkTournaments();
 			if (tournamentResults.ok) {
 				setGameID(tournamentResults.tournamentID);
 				setGameType("tournament");
+				return;
 			}
+			setGameType("lobby");
 		} catch (error) {
 			setAlert({
 				message: `Error checking for ongoing matches: ${error}`,
 				type: "danger",
 			});
+			setGameType("lobby")
 			return;
 		}
 	};

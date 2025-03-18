@@ -21,6 +21,7 @@ To delete users:
 DELETE FROM user_userprofile WHERE user_id IN (SELECT id FROM auth_user);
 DELETE FROM auth_user;
 
+SELECT tablename FROM pg_tables WHERE schemaname = 'public';
 
 
 LIVE CHAT

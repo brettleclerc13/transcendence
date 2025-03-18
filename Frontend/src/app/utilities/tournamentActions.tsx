@@ -98,7 +98,7 @@ export const createTournament = async () => {
 				"Failed to create tournament.";
 			throw new Error(errorMessage);
 		} else {
-			console.log("create Match data: ", data);
+			console.log("create tournament data: ", data);
 			if (data.id) return { tournamentID: data.id as string };
 			else throw new Error("TournamentID not found");
 		}
@@ -222,7 +222,12 @@ export const checkTournaments = async () => {
 				"Failed to check user's active tournaments.";
 			throw new Error(errorMessage);
 		} else {
-			return data;
+			console.log("CHECK TOURNAMENT data received: ", data);
+			if (data && data[0].id) {
+				console.log("data id exists: ", data[0].id);
+				return { ok: true, tournamentID: data[0].id};	
+			}
+			else return data;
 		}
 	} catch (error) {
 		return {

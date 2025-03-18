@@ -18,12 +18,14 @@ class TournamentSerializer(serializers.ModelSerializer):
 		request = self.context.get("request")
 		if not request or not request.user.is_authenticated:
 			raise serializers.ValidationError({"players": "User must be authenticated."})
+		data["is_ongoing"] = True
 		return data
 
 	def create(self, validated_data):
 		request = self.context.get("request")
 		tournament = TournamentMatch.objects.create(**validated_data)
 		tournament.players.add(request.user)
+		tournament.save()
 		return tournament
 
 	def get_players_usernames(self, obj):

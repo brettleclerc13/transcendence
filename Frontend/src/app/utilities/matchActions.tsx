@@ -194,6 +194,7 @@ export const checkMatches = async () => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
+		console.log("Checking 1v1 matches");
 		const response = await fetch(`http://backend:8001/match-check/`, {
 			method: "GET",
 			headers: {
@@ -220,7 +221,11 @@ export const checkMatches = async () => {
 				"Failed to check user 1v1 active matches.";
 			throw new Error(errorMessage);
 		} else {
-			return data;
+			console.log("CHECK MATCH data received: ", data);
+			if (data && data[0].id) {
+				return { ok: true, matchID: data[0].id};	
+			}
+			else return data;
 		}
 	} catch (error) {
 		return {

@@ -28,22 +28,28 @@ export default function MatchList({
 
 	useEffect(() => {
 		const fetchMatchesAsync = async () => {
-			let filters, data: Games[];
 			try {
-				filters = {
+				const matchFilters = {
 					is_ongoing: false,
 					is_finished: false,
 					player2: undefined,
 				};
-				data = await fetchMatches(filters);
-				setGames(data);
-
-				filters = {
+				const tournamentFilters = {
 					is_ongoing: false,
 					is_finished: false,
 				};
-				data = await fetchTournaments(filters);
-				setGames((prevGames) => [...prevGames, ...data]);
+
+				const [matchData, tournamentData] = await Promise.all([
+					fetchMatches(matchFilters),
+					fetchTournaments(tournamentFilters),
+				]);
+
+				const uniqueGamesMap = new Map();
+				[...matchData, ...tournamentData].forEach((game) => {
+					uniqueGamesMap.set(game.id, game);
+				});
+
+				setGames(Array.from(uniqueGamesMap.values()));
 
 				setLoading(false);
 			} catch (error) {
