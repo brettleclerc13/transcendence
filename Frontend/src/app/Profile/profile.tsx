@@ -277,7 +277,10 @@ export default function Profile({
 					<div className="separator"></div>
 
 					<div className="right-informations">
-						<MatchHistory setAlert={setAlert} />
+						<MatchHistory
+							setAlert={setAlert}
+							username={userProfile.username || undefined}
+						/>
 					</div>
 					<div className="button-container">
 						<button
