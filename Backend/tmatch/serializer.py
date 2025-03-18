@@ -8,17 +8,23 @@ class TournamentSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = TournamentMatch
 		fields = '__all__'
+		extra_kwargs = {
+            "players": {"required": False},  # Allow creation without sending players
+            "matches": {"required": False},  # Matches should not be required
+        }
 		read_only_fields = ['id', 'created_at', 'tournament_winner', 'is_ongoing', 'is_finished']
-    
-	def get_players_usernames(self, obj):
-		return [player.username for player in obj.players.all()]
 
-	def create(self, validated_data):
+	def validate(self, data):
 		request = self.context.get("request")
 		if not request or not request.user.is_authenticated:
 			raise serializers.ValidationError({"players": "User must be authenticated."})
-        
-		tournament = TournamentMatch.objects.create()
-		tournament.players.add(request.user)  # Add creator as the first player
+		return data
+
+	def create(self, validated_data):
+		request = self.context.get("request")
+		tournament = TournamentMatch.objects.create(**validated_data)
+		tournament.players.add(request.user)
 		return tournament
-	
+
+	def get_players_usernames(self, obj):
+		return [player.username for player in obj.players.all()]

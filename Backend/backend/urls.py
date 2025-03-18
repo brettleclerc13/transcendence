@@ -19,7 +19,8 @@ from django.conf import settings
 from django.urls import path
 from django.conf.urls.static import static
 from chat.consumers import ContactConsumer
-from match.views import MatchAPIView, MatchRetrieveUpdateAPIView, MatchHistoryView, MatchCLIView
+from match.views import MatchAPIView, MatchRetrieveUpdateAPIView, MatchHistoryView, MatchCLIView, MatchCheckView
+from tmatch.views import TournamentAPIView, TournamentRetrieveUpdateAPIView, TournamentHistoryView, TournamentCheckView
 from user.views import RegisterAPIView, LogoutAPIView, ProfileAPIView, PublicProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView
 
 urlpatterns = [
@@ -38,7 +39,7 @@ urlpatterns = [
 
 	path('tournaments/', TournamentAPIView.as_view(), name="Tournament-get-post"),
 	path('tournaments/<uuid:id>/', TournamentRetrieveUpdateAPIView.as_view(), name="tournament-patch"),
-	path('tournament-history/', MatchHistoryView.as_view(), name="tournament-history-get"),
+	path('tournament-history/', TournamentHistoryView.as_view(), name="tournament-history-get"),
 	path('tournament-check/', TournamentCheckView.as_view(), name="tournament-check-get"),
 
 	path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),

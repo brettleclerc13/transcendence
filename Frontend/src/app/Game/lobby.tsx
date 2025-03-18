@@ -92,7 +92,7 @@ export default function Lobby() {
 			});
 			setGameID(response.matchID);
 			setTimeout(() => {
-				setGameType("match");
+				setGameType("simple");
 			}, 1000);
 			return;
 		} catch (error) {
@@ -121,7 +121,7 @@ export default function Lobby() {
 			return {
 				previousValues: { tournament_name },
 				tournamentNameError: validationResult.error.errors.find(
-					(err) => err.path[0] === "tournament_name"
+					(err: { path: string[]; }) => err.path[0] === "tournament_name"
 				)?.message,
 			};
 
@@ -149,7 +149,7 @@ export default function Lobby() {
 			return;
 		} catch (error) {
 			setAlert({
-				message: `Error creating a 1v1 game: ${error}`,
+				message: `Error creating a tournament: ${error}`,
 				type: "danger",
 			});
 			return { previousValues: { tournament_name } };
@@ -203,19 +203,20 @@ export default function Lobby() {
 									<button
 										className="button-tournament"
 										type="submit"
-										onClick={() => handleTournamentMatchCreation}
 										disabled={tournamentPending}
 									>
 										Create tournament match
 									</button>
-									<button
-										className="button-simple"
-										onClick={() => handleSimpleMatchCreation}
-									>
-										Create 1v1 match
-									</button>
 								</div>
 							</form>
+							<div className="lobby-button-container">
+								<button
+									className="button-simple"
+									onClick={handleSimpleMatchCreation}
+								>
+									Create 1v1 match
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>

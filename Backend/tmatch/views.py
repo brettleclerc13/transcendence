@@ -12,15 +12,23 @@ class TournamentAPIView(generics.ListCreateAPIView):
 
 	def get_queryset(self):
 		return TournamentMatch.objects.all()
-    
+
 	def get_serializer_context(self):
 		context = super().get_serializer_context()
 		context.update({"request": self.request})
 		return context
 
 	def perform_create(self, serializer):
-		tournament = serializer.save()
-		return Response({'tournament_id': tournament.id}, status=status.HTTP_201_CREATED)
+		print("Received tournament data:", self.request.data)
+		try:
+			tournament = serializer.save()
+			return Response({'tournament_id': tournament.id}, status=status.HTTP_201_CREATED)
+		except ValidationError as e:
+			print("Validation Error:", e.detail)  # Logs to console
+			return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+		except Exception as e:
+			print("Unexpected Error:", str(e))  # Logs unexpected errors
+			return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class TournamentRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 	serializer_class = TournamentSerializer

@@ -70,6 +70,7 @@ export const createTournament = async () => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
+		console.log("Creating tournament...");
 		const response = await fetch("http://backend:8001/tournaments/", {
 			method: "POST",
 			headers: {
@@ -81,6 +82,7 @@ export const createTournament = async () => {
 
 		let data;
 		const text = await response.text();
+		console.log("creating tournament response text: ", text);
 		try {
 			data = JSON.parse(text);
 		} catch {
@@ -112,7 +114,7 @@ export const joinTournament = async (tournamentID: string) => {
 
 	try {
 		const response = await fetch(
-			`http://backend:8001/matches/${tournamentID}/`,
+			`http://backend:8001/tournaments/${tournamentID}/`,
 			{
 				method: "PATCH",
 				headers: {
@@ -128,7 +130,7 @@ export const joinTournament = async (tournamentID: string) => {
 			data = JSON.parse(text);
 		} catch {
 			throw new Error(
-				`Unexpected response when trying to join simple match: ${response.status}`
+				`Unexpected response when trying to join a tournament: ${response.status}`
 			);
 		}
 		if (!response.ok) {
@@ -137,11 +139,11 @@ export const joinTournament = async (tournamentID: string) => {
 				data.non_field_errors?.[0] || // First item in non_field_errors array
 				data.message || // Fallback to a generic message
 				data.detail || // Another common key for error messages
-				"Failed to join simple match.";
+				"Failed to join tournament.";
 			throw new Error(errorMessage);
 		}
 	} catch (error) {
-		throw new Error(String(error) || "Failed to join simple match.");
+		throw new Error(String(error) || "Failed to join tournament.");
 	}
 };
 
