@@ -5,6 +5,8 @@ import {
 	joinTournament,
 } from "../utilities/tournamentActions";
 import "./match.css";
+import { z } from "zod";
+import { updateUserProfile } from "../utilities/profileActions";
 
 type Games = {
 	id: string;
@@ -14,15 +16,24 @@ type Games = {
 	// Add other properties here
 };
 
+export const profileSchema = z.object({
+	tournament_name: z
+		.string()
+		.min(3, "Alias name must be at least 3 characters long")
+		.max(32, "Alias name is too long"),
+});
+
 export default function MatchList({
 	setAlert,
 	setGameID,
 	setGameType,
 	alias,
+	setAlias,
 }: {
 	setAlert: (alertMessage: { message: string; type: string } | null) => void;
 	setGameID: (matchID: string) => void;
 	setGameType: (isReadyToPlay: string) => void;
+	setAlias: (alias: string | undefined) => void;
 	alias: string | undefined;
 }) {
 	const [games, setGames] = useState<Games[]>([]);
@@ -37,7 +48,7 @@ export default function MatchList({
 					player2: undefined,
 				};
 				const tournamentFilters = {
-					is_ongoing: false,
+					is_ongoing: true,
 					is_finished: false,
 				};
 
@@ -66,15 +77,39 @@ export default function MatchList({
 	}, []);
 
 	const handleGameEntry = async (ID: string, is_tournament: boolean) => {
-		try {
-			if (is_tournament) {
-				if (!alias) {
-					setAlert({
-						message: "Cannot join tournament without an alias!",
-						type: "danger",
-					});
-					return;
-				}
+		if (is_tournament) {
+			if (!alias) {
+				setAlert({
+					message: "Cannot join tournament without an alias!",
+					type: "danger",
+				});
+				return;
+			}
+
+			const tournament_name = alias;
+			const validationResult = profileSchema.safeParse({ tournament_name });
+			if (!validationResult.success) {
+				setAlert({
+					message: String(validationResult.error.errors.find(
+						(err) => err.path[0] === "tournament_name"
+					)?.message),
+					type: "danger",
+				});
+				return;
+			}
+
+			try {
+				await updateUserProfile(validationResult.data);
+				setAlias(alias);
+			} catch (error) {
+				setAlert({
+					message: `Error updating your alias name: ${error}`,
+					type: "danger",
+				});
+				return;
+			}
+
+			try {
 				await joinTournament(ID);
 				setAlert({
 					message: "Best of luck!",
@@ -84,7 +119,15 @@ export default function MatchList({
 				setTimeout(() => {
 					setGameType("tournament");
 				}, 1000);
-			} else {
+			} catch (error) {
+				setAlert({
+					message: `Failed to join match/tournament: ${error}`,
+					type: "danger",
+				});
+				return;
+			}
+		} else {
+			try {
 				await joinSimpleMatch(ID);
 				setAlert({
 					message: "Game on!",
@@ -94,13 +137,13 @@ export default function MatchList({
 				setTimeout(() => {
 					setGameType("simple");
 				}, 1000);
+			} catch (error) {
+				setAlert({
+					message: `Failed to join match: ${error}`,
+					type: "danger",
+				});
+				return;
 			}
-		} catch (error) {
-			setAlert({
-				message: `Failed to join match/tournament: ${error}`,
-				type: "danger",
-			});
-			return;
 		}
 	};
 

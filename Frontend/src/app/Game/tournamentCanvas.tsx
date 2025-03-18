@@ -30,7 +30,7 @@ export default function TournamentCanvas({
 		}
 
 		const ws = new WebSocket(
-			`wss://127.0.0.1:8080/ws/tournament/${tournamentID}/?token=${accessToken}`
+			`wss://c3r2p3:8080/ws/tournament/${tournamentID}/?token=${accessToken}`
 		);
 
 		ws.onopen = () => {

@@ -55,10 +55,11 @@ class TournamentRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 
 				tournament.players.add(user)
 
-				if tournament.players.count() == tournament.max_players:
+				if tournament.players.count() > 1:
 					tournament.is_ongoing = True
 					tournament.save()
-
+			
+			tournament.refresh_from_db()
 			return Response(TournamentSerializer(tournament).data, status=status.HTTP_200_OK)
 		except TournamentMatch.DoesNotExist:
 			return Response({'error': 'Tournament not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -84,6 +85,7 @@ class TournamentRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 					tournament.is_ongoing = False
 					tournament.save()
 
+			tournament.refresh_from_db()
 			return Response(TournamentSerializer(tournament).data, status=status.HTTP_200_OK)
 		except TournamentMatch.DoesNotExist:
 			return Response({'error': 'Tournament not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -103,6 +105,7 @@ class TournamentCheckView(APIView):
 
 	def get(self, request):
 		user = request.user
-		ongoing_tournaments = TournamentMatch.objects.filter(is_ongoing=True, players=user)
+		ongoing_tournaments = TournamentMatch.objects.filter(is_ongoing=True, players__in=[user])
+		print(f"User {user} tournaments:", ongoing_tournaments)  # Debug log
 		serializer = TournamentSerializer(ongoing_tournaments, many=True)
 		return Response(serializer.data)
