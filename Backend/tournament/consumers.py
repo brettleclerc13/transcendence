@@ -70,10 +70,10 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         state_key = f"tournament:{self.room_id}:state"
 
         if message_type == "user_connected":
-            self.tournament_id = self.is_returning_user(self.user.id)
+            self.tournament_id =  await self.is_returning_user(self.user.id)
             if self.tournament_id == None:
                 user_data = {
-                    "id": self.user.id,  #questonable
+                    "id": self.user.id,  
                     "tournament_name": await sync_to_async(lambda: self.user.tournament_name)(),
                     "profile_picture": await sync_to_async(lambda: self.user.profile_picture.url if self.user.profile_picture else None)(),
                     "is_on_page": True,
@@ -94,7 +94,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     "id": self.tournament_id
                 }
             )
-            self.update_tournament_state()
+            await self.update_tournament_state()
         elif message_type == "user_disconnected":
             if self.tournament_id != None and await RedisManager.get_state(state_key) in ["waiting for players", "unknown"]:
                 await RedisManager.delete_user_data_map(user_key, self.tournament_id)
@@ -124,20 +124,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             user = await asyncio.get_event_loop().run_in_executor(
                 None, lambda: UserProfile.objects.get(id=user_id)
             )
-
-            # Extract fields safely using sync_to_async for potentially blocking operations
-            tournament_name = await sync_to_async(lambda: user.tournament_name)()
-            profile_picture = await sync_to_async(lambda: user.profile_picture.url if user.profile_picture else None)()
-
-            user_data = {
-                "id": user.id,
-                "tournament_name": tournament_name,
-                "profile_picture": profile_picture,
-                "is_on_page": True,
-                "is_waiting_finals": False
-            }
-
-            return user_data
+            return user
         except ObjectDoesNotExist:
             return None
 
@@ -170,7 +157,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             #Notify users NOT on page and Start Tournament.
             asyncio.create_task(notify_absent_players_and_wait(self.room_name))
         elif previous_state == "playing finals":
-            winner = self.get_tournament_winner_id()
+            winner = await self.get_tournament_winner_id()
             if winner != None:
                 was_set = await self.redis.execute("SET", save_tournament_key, self.channel_name, "NX")
                 if was_set:
@@ -378,7 +365,10 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         }))
 
     async def new_user_joined(self, event):
-        await self.send(text_data=json.dumps({is_waiting_finals
+        await self.send(text_data=json.dumps({
+            "type": "new_user",
+            "users": event["users"],
+            "id": event["id"]
         }))
 
     async def user_disconnected(self, event):
@@ -581,7 +571,7 @@ async def two_players_start(room_id, present_players):
         )
 
 
-        create_tournament_match(room_id, players[0], players[1], true)
+        await create_tournament_match(room_id, players[0], players[1], true)
 
 async def create_tournament_match(room_id: str, tournament_id_1: str, tournament_id_2: str, is_finale: bool):
     try:
@@ -638,7 +628,7 @@ async def notify_and_wait_for_reconnect(room_id, absent_players):
             user_key = f"tournament:{room_id}:users"
 
             for player in absent_players:
-                await self.send_chat_notification(room_id, player["id"], "⚠️ You need to reconnect to play the tournament finals!")
+                await send_chat_notification(room_id, player["id"], "⚠️ You need to reconnect to play the tournament finals!")
 
             await asyncio.sleep(30)
 

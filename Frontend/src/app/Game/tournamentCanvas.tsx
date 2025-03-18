@@ -2,11 +2,16 @@ import { useEffect, useState } from "react";
 import { getCookie } from "cookies-next/client";
 
 interface TournamentPlayer {
-	user_id: string | null,
-	tournament_name: string | null,
-	profile_picture: string |null,
-	is_on_page: boolean
+	user_id: string | null;
+	tournament_name: string | null;
+	profile_picture: string | null;
+	is_on_page: boolean;
 }
+
+interface TournamentPlayers {
+	[key: string]: TournamentPlayer;
+}
+
 
 export default function TournamentCanvas( tournament: { ID: string } ) {
 	const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -37,7 +42,7 @@ export default function TournamentCanvas( tournament: { ID: string } ) {
 
 			if (data.type ==="Connected to tournament") {
 				console.log("Ready to send data");
-				socket?.send(
+				ws.send(
 					JSON.stringify({
 						type: "user_connected"
 					})
@@ -45,14 +50,22 @@ export default function TournamentCanvas( tournament: { ID: string } ) {
 			}
 
 			if (data.type === "new_user") {
+				console.log("data new user: ", data);
+
+				// Récupérer tous les joueurs sous forme de tableau
+				const newPlayers = Object.values(data.users) as TournamentPlayer[];
+
 				setPlayers((prevPlayers) => {
-					if (prevPlayers.some(player => player.user_id === data.user.user_id)) {
-						return prevPlayers;
-					}
-					if (prevPlayers.length < 4) {
-						return [...prevPlayers, data.user];
-					}
-					return prevPlayers;
+					// Ajouter uniquement les nouveaux joueurs qui ne sont pas déjà dans la liste
+					const uniquePlayers = newPlayers.filter(
+						(newPlayer) =>
+							!prevPlayers.some((player) => player.user_id === newPlayer.user_id)
+					);
+
+					// Limiter à 4 joueurs
+					return prevPlayers.length + uniquePlayers.length <= 4
+						? [...prevPlayers, ...uniquePlayers]
+						: prevPlayers;
 				});
 			}
 
@@ -67,15 +80,15 @@ export default function TournamentCanvas( tournament: { ID: string } ) {
 		setSocket(ws);
 
 		return () => ws.close();
-	}, []);
+	}, [tournament]);
 	
 	return (
 		<section className="flex w-full h-full justify-center items-center">
 			<p className="mb-4 text-lg font-bold">This is the tournament waiting room</p>
 			<ul>
 				{players.map((player, index) => (
-					<li key={player.user_id || index} className="text-center">
-						🎮 Player {index + 1}: {player.user_id}
+					<li key={player.user_id || `player-${index}`} className="text-center">
+						🎮 Player {index + 1}: {player.user_id ?? "Unknow"}
 					</li>
 				))}
 			</ul>
