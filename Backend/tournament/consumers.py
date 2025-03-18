@@ -1,5 +1,6 @@
 import json
 import asyncio
+import random
 from utils.redis import RedisManager
 from urllib.parse import parse_qs
 from user.models import UserProfile
@@ -8,21 +9,28 @@ from rest_framework_simplejwt.tokens import AccessToken
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from channels.layers import get_channel_layer
+from tmatch.models import TournamentMatch
 
 class TournamentConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
         self.room_group_name = f"tournament_{self.room_id}"
         user_key = f"tournament:{self.room_id}:users"
+        state_key = f"tournament:{self.room_id}:state"
 
         self.user = await self.authenticate_user()
         if not self.user:
             await self.close(code=4001)  
             return
         players = await RedisManager.get_all_users_list_map(user_key)
-        if len(players) >= 4:
+        if len(players) > 4:
             print("Room Full", flush=True)
             await self.close(code=4000)
+            return
+        
+        if await RedisManager.get_state(state_key)  == "tournament finished":
+            print("tournament is finished", flush=True)
+            await self.close(code=4002)
             return
 
         self.tournament_id = None
@@ -38,48 +46,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             "room_id": self.room_id,
         }))
 
-    async def disconnect(self, close_code):async def create_tournament_match(room_id: str, player1_id: int, player2_id: int):
-    try:
-        # ✅ Fetch the tournament object (sync-to-async required)
-        tournament = await sync_to_async(TournamentMatch.objects.get)(id=room_id)
-
-        # ✅ Fetch the user objects for player1 and player2
-        player1 = await sync_to_async(User.objects.get)(id=player1_id)
-        player2 = await sync_to_async(User.objects.get)(id=player2_id)
-
-        # ✅ Create a new match entry
-        new_match = await sync_to_async(Match.objects.create)(
-            player1=player1,
-            player2=player2,
-            is_ongoing=True,  
-            is_finished=False,
-            is_tournament=True  # Mark as tournament game
-        )
-
-        # ✅ Link the match to the tournament's ManyToManyField
-        await sync_to_async(tournament.matches.add)(new_match)
-
-        # ✅ Notify players about the match
-        channel_layer = get_channel_layer()
-        await channel_layer.group_send(
-            f"tournament_{room_id}",  # Tournament group name
-            {
-                "type": "tournament_match_created",
-                "match_id": str(new_match.id),
-                "player1": player1.username,
-                "player2": player2.username,
-                "message": f"⚔️ A match has been created! {player1.username} vs {player2.username}",
-            }
-        )
-
-        print(f"✅ Match {new_match.id} created for tournament {room_id}: {player1.username} vs {player2.username}", flush=True)
-
-    except TournamentMatch.DoesNotExist:
-        print(f"❌ Tournament {room_id} not found!", flush=True)
-    except User.DoesNotExist:
-        print(f"❌ One or both players not found! (IDs: {player1_id}, {player2_id})", flush=True)
-    except Exception as e:
-        print(f"❌ Error creating match: {e}", flush=True)
+    async def disconnect(self, close_code):
         user_key = f"tournament:{self.room_id}:users"
         if self.tournament_id != None:
             await RedisManager.update_user_data_map(user_key, self.tournament_id, "is_on_page", False)
@@ -124,6 +91,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 {
                     "type": "new_user_joined",
                     "users": connected_users,
+                    "id": self.tournament_id
                 }
             )
         elif message_type == "user_disconnected":
@@ -150,17 +118,26 @@ class TournamentConsumer(AsyncWebsocketConsumer):
 
     async def get_user(self, user_id):
         try:
-            return await asyncio.get_event_loop().run_in_executor(user_data = {
-                    "id": self.user.id,  #questonable
-                    "tournament_name": await sync_to_async(lambda: self.user.tournament_name)(),
-                    "profile_picture": await sync_to_async(lambda: self.user.profile_picture.url if self.user.profile_picture else None)(),
-                    "is_on_page": True,
-                    "is_waiting_finals": False
-                
+            user = await asyncio.get_event_loop().run_in_executor(
                 None, lambda: UserProfile.objects.get(id=user_id)
             )
-        except ObjectDoesNotExist:
-            return None
+
+            # Extract fields safely using sync_to_async for potentially blocking operations
+            tournament_name = await sync_to_async(lambda: user.tournament_name)()
+            profile_picture = await sync_to_async(lambda: user.profile_picture.url if user.profile_picture else None)()
+
+            user_data = {
+                "id": user.id,
+                "tournament_name": tournament_name,
+                "profile_picture": profile_picture,is_waiting_finals
+                "is_on_page": True,
+                "is_waiting_finals": False
+            }
+
+            return user_data
+
+    except ObjectDoesNotExist:
+        return None
 
     async def is_returning_user(self, new_user_id):
         user_key = f"tournament:{self.room_id}:users"
@@ -205,11 +182,23 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     )
                     tournament_users = await RedisManager.get_all_users_json(user_key)
                     winner_data = tournament_users.get(winner)
-                    save_tournament_outcome(self.room_name, True, False, int(winner_data["id"]))
+                    await save_tournament_outcome(self.room_name, True, False, int(winner_data["id"]))
                     new_state = "tournament finished"
                     await RedisManager.delete_keys(save_tournament_key)
+                else:
+                    print(f"{self.tournament_id} tried to run playing finals case to save the tournament outcome", flush=True)
+                    new_state = await RedisManager.get_state(state_key)
             else:
                 new_state = "playing finals"
+        elif: previous_state == "playing first stage":
+            was_set = await self.redis.execute("SET", save_tournament_key, self.channel_name, "NX")
+            if was_set:
+                check = await self.check_non_final_match_winners()
+                print(f"after check non final match got {check}")
+                new_state = await RedisManager.get_state(state_key)
+            else:
+                print(f"{self.tournament_id} tried to run playing first stage case to run check non final match winners", flush=True)
+                new_state = await RedisManager.get_state(state_key)
         else:
             new_state = await RedisManager.get_state(state_key)
 
@@ -224,36 +213,163 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             }
         )
 
+    async def check_non_final_match_winners(self):
+        try:
+            user_key = f"tournament:{self.room_id}:users"
+            display_state_key = f"tournament:{self.room_id}:display_state"
+
+            tournament = await sync_to_async(TournamentMatch.objects.prefetch_related("matches").get)(id=self.room_id)
+
+            non_final_matches = await sync_to_async(
+                lambda: list(tournament.matches.filter(is_finale=False, is_ongoing=False, is_finished=True))
+            )()
+
+            if not non_final_matches:
+                print(f"⚠️ No finished non-final matches for tournament {self.room_id}.", flush=True)
+                return "nope"
+
+            tournament_users = await RedisManager.get_all_users_json(user_key)
+            display_state = await RedisManager.get_json(display_state_key)
+
+            winners = []
+            for match in non_final_matches:
+                winner = await sync_to_async(lambda: match.winner)()
+                if winner:
+                    winners.append(winner)
+
+            if not winners:
+                print(f"⚠️ No winners yet in non-final matches for tournament {self.room_id}.", flush=True)
+                return  "nope"
+            print(f"🏆 Found {len(winners)} winners in tournament {self.room_id} non-finals.", flush=True)
+
+            if len(winners) == 1:
+                victor = None
+                for tournament_id, user_data in tournament_users.items():
+                    if user_data.get("id", None) == str(winners[0].id):
+                        victor = (tournament_id, user_data)
+                        break
+                
+                waiting_players = []
+                    for tournament_id, user_data in tournament_users.items():
+                        if user_data.get("is_waiting_finals", "false") == "true":  
+                            waiting_players.append((tournament_id, user_data)) 
+                if victor[0] in [display_state["first_layer_1"],display_state["first_layer_2"]]:
+                    display_state["second_layer_1"] = victor_tournament_id
+                elif victor[0] in [display_state["first_layer_3"],display_state["first_layer_4"]]:
+                    display_state["second_layer_2"] = victor_tournament_id
+                else:
+                    print(f"⚠️ Victor {victor_tournament_id} not found in the expected first layer positions.", flush=True)
+                    return "nope"
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        "type": "tournament_display_update",
+                        "state": display_state
+                    }
+                )
+
+                if not waiting_players:
+                    await RedisManager.update_user_field(user_key, victor[0], "is_waiting_finals", "true")
+                    return "nope"
+                if len(waiting_players) == 1 and waiting_players[0][0] == victor[0]:
+                    return "nope"
+
+                if len(waiting_players) == 1 and waiting_players[0][0] != victor[0]:
+                    await RedisManager.update_user_field(user_key, victor[0], "is_waiting_finals", "true")
+                    absent_players = []
+                    if waiting_for_players[0][1].get("is_on_page", "false") != "true":
+                        absent_players.append(waiting_players[0][1])
+                    if victor[1].get("is_on_page", "false") != "true":
+                        absent_players.append(victor[1])
+                    if not absent_players:
+                        await handle_finals_start(self.room_id)
+                    else:
+                        asyncio.create_task(notify_and_wait_for_reconnect(self.room_id, absent_players))
+                    return "nope"
+                if len(waiting_players) > 1:
+                    print (f"something went wrong! first waiting player: {waiting_players[0][0]} second: {waiting_players[1][0]} and the victor: {victor[0]}")    
+            elif len(winners) == 2:
+                victor1 = None
+                victor2 = None
+                for tournament_id, user_data in tournament_users.items():
+                    if user_data.get("id", None) == str(winners[0].id):
+                        victor1 = (tournament_id, user_data)
+                    if user_data.get("id", None) == str(winners[1].id):
+                        victor2 = (tournament_id, user_data)
+                if victor1 == None or victor2 == None:
+                    print("one of the 2 victors is none even though there are 2 winners", flush=True)
+                    return "nope"
+                await RedisManager.update_user_field(user_key, victor1[0], "is_waiting_finals", "true")
+                await RedisManager.update_user_field(user_key, victor2[0], "is_waiting_finals", "true")
+                if victor1[0] in [display_state["first_layer_1"],display_state["first_layer_2"]]:
+                    display_state["second_layer_1"] = victor_tournament_id
+                elif victor1[0] in [display_state["first_layer_3"],display_state["first_layer_4"]]:
+                    display_state["second_layer_2"] = victor_tournament_id
+                else:
+                    print(f"⚠️ Victor {victor_tournament_id} not found in the expected first layer positions.", flush=True)
+                    return "nope"
+                if victor2[0] in [display_state["first_layer_1"],display_state["first_layer_2"]]:
+                    display_state["second_layer_1"] = victor_tournament_id
+                elif victor2[0] in [display_state["first_layer_3"],display_state["first_layer_4"]]:
+                    display_state["second_layer_2"] = victor_tournament_id
+                else:
+                    print(f"⚠️ Victor {victor_tournament_id} not found in the expected first layer positions.", flush=True)
+                    return "nope"
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        "type": "tournament_display_update",
+                        "state": display_state
+                    }
+                )
+                absent_players = []
+                if victor1[1].get("is_on_page", "false") != "true":
+                        absent_players.append(victor1[1])
+                if victor2[1].get("is_on_page", "false") != "true":
+                        absent_players.append(victor2[1])
+                if not absent_players:
+                    await handle_finals_start(self.room_id)
+                else:
+                    asyncio.create_task(notify_and_wait_for_reconnect(self.room_id, absent_players))
+                return "nope"
+        except TournamentMatch.DoesNotExist:
+            print(f"❌ Tournament {self.room_id} not found!", flush=True)
+        except Exception as e:
+            print(f"❌ Error in check_non_final_match_winners: {e}", flush=True)
+    
     async def get_tournament_winner_id(self):
-    try:
-        tournament = await sync_to_async(TournamentMatch.objects.prefetch_related("matches").get)(id=self.room_id)
+        try:
+            tournament = await sync_to_async(TournamentMatch.objects.prefetch_related("matches").get)(id=self.room_id)
 
-        final_match = await sync_to_async(lambda: tournament.matches.filter(is_finale=True, is_ongoing=False, is_finished=True).first())()
+            final_match = await sync_to_async(lambda: tournament.matches.filter(is_finale=True, is_ongoing=False, is_finished=True).first())()
 
-        if not final_match:
-            print(f"❌ No final match found. final match is still ongoing tournament: {self.room_id}.", flush=True)
+            if not final_match:
+                print(f"❌ No final match found. final match is still ongoing tournament: {self.room_id}.", flush=True)
+                return None
+
+            winner = await sync_to_async(lambda: final_match.winner)()
+            if not winner:
+                print(f"⚠️ Tournament {self.room_id} final match has No winner", flush=True)
+                return None
+
+            user_key = f"tournament:{self.room_id}:users"
+            tournament_users = await RedisManager.get_all_users_json(user_key)
+
+            for tournament_id, user_data in tournament_users.items():
+                if str(user_data.get("id")) == str(winner.id):
+                    print(f"🏆 Tournament {self.room_id} has a winner! Tournament ID: {tournament_id}, User: {winner.username}", flush=True)
+                    return tournament_id  
+            print(f"⚠️ Winner {winner.username} not found in Redis for Tournament {self.room_id}.", flush=True)
+            return None
+        except TournamentMatch.DoesNotExist:
+            print(f"❌ Tournament {self.room_id} not found!", flush=True)
+            return None
+        except Exception as e:
+            print(f"❌ Error checking tournament winner: {e}", flush=True)
             return None
 
-        winner = await sync_to_async(lambda: final_match.winner)()
-        if not winner:
-            print(f"⚠️ Tournament {self.room_id} final match has No winner", flush=True)
-            return None
+    async def notified_finals_start(self, event):
 
-        user_key = f"tournament:{self.room_id}:users"
-        tournament_users = await RedisManager.get_all_users_json(user_key)
-
-        for tournament_id, user_data in tournament_users.items():
-            if str(user_data.get("id")) == str(winner.id):
-                print(f"🏆 Tournament {self.room_id} has a winner! Tournament ID: {tournament_id}, User: {winner.username}", flush=True)
-                return tournament_id  
-        print(f"⚠️ Winner {winner.username} not found in Redis for Tournament {self.room_id}.", flush=True)
-        return None
-    except TournamentMatch.DoesNotExist:
-        print(f"❌ Tournament {self.room_id} not found!", flush=True)
-        return None
-    except Exception as e:
-        print(f"❌ Error checking tournament winner: {e}", flush=True)
-        return None
 
     async def tournament_state_update(self, event):
         await self.send(text_data=json.dumps({
@@ -262,9 +378,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         }))
 
     async def new_user_joined(self, event):
-        await self.send(text_data=json.dumps({
-            "type": "new_user",
-            "users": event["users"]
+        await self.send(text_data=json.dumps({is_waiting_finals
         }))
 
     async def user_disconnected(self, event):
@@ -302,13 +416,145 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             "message": event["message"]
         }))
 
-    async def three_players_start(self, event):
-        state_key = f"tournament:{self.room_id}:state"
-    
-    async def two_players_start(self, event):
-        state_key = f"tournament:{self.room_id}:state"
+######################################################################################################################################################################################
+async def handle_finals_start(room_id):
+    try:
+        user_key = f"tournament:{room_id}:users"
+        state_key = f"tournament:{room_id}:state"
+        display_state_key = f"tournament:{self.room_id}:display_state"
 
-        players = event["players"]
+        tournament_users = await RedisManager.get_all_users_json(user_key)
+        display_state = await RedisManager.get_json(display_state_key)
+
+        waiting_players = [
+            (tournament_id, user_data)
+            for tournament_id, user_data in tournament_users.items()
+            if user_data.get("is_waiting_finals", "false") == "true"
+        ]
+
+        if len(waiting_players) != 2:
+            print(f"⚠️ Tournament {room_id} does not have exactly 2 finalists. Ending tournament.", flush=True)
+            await RedisManager.set_state(state_key, "tournament finished")
+            return
+
+        present_players = [player for player in waiting_players if player[1].get("is_on_page", "false") == "true"]
+
+        if len(present_players) == 1:
+            winner_tournament_id, winner_data = present_players[0]
+            await RedisManager.set_state(state_key, "tournament finished")
+            print(f"🏆 Tournament {room_id} winner by default: {winner_data['id']}", flush=True)
+            display_state["third_layer"] = winner_tournament_id
+            await channel_layer.group_send(
+                f"tournament_{room_id}",
+                {
+                    "type": "tournament_display_update",
+                    "state": display_state
+                }
+            )
+            await save_tournament_outcome(room_id, True, False, int(winner_data["id"]))
+            return
+
+        if len(present_players) == 0:
+            print(f"🚫 Tournament {room_id} ended: No players showed up for the finals.", flush=True)
+            await save_tournament_outcome(room_id, True, False, None)
+            return
+
+        player_1, player_2 = waiting_players[0][0], waiting_players[1][0]  # Extract tournament_ids
+        print(f"🔥 Finals starting between {player_1} and {player_2}!", flush=True)
+
+        await RedisManager.set_state(state_key, "playing finals")
+        await create_tournament_match(room_id, player_1, player_2, is_finale=True)
+
+
+    except Exception as e:
+        print(f"❌ Error in handle_finals_start: {e}", flush=True)
+
+
+async def four_players_start(room_id, present_players):
+    state_key = f"tournament:{room_id}:state"
+    await RedisManager.set_state(state_key, "playing first stage")
+    channel_layer = get_channel_layer()
+
+    if len(present_players) != 4:
+        print(f"❌ Error: Expected 4 players, but got {len(present_players)}", flush=True)
+        return
+
+    random.shuffle(present_players)
+    match_1 = (present_players[0], present_players[1])
+    match_2 = (present_players[2], present_players[3])
+
+    display_state = {
+        "first_layer_1": match_1[0],
+        "first_layer_2": match_1[1],
+        "first_layer_3": match_2[0],
+        "first_layer_4": match_2[1],
+        "second_layer_1": "none",
+        "second_layer_2": "none",
+        "third_layer": "none",
+    }
+
+    await RedisManager.add_json(f"tournament:{room_id}:display_state", display_state)
+
+    await channel_layer.group_send(
+        f"tournament_{room_id}",
+        {
+            "type": "tournament_display_update",
+            "state": display_state
+        }
+    )
+
+    # Start the two matches
+    await create_tournament_match(room_id, match_1[0], match_1[1], is_finale=False)
+    await create_tournament_match(room_id, match_2[0], match_2[1], is_finale=False)
+
+    print(f"✅ Tournament progressing: Matches - {match_1[0]} vs {match_1[1]} & {match_2[0]} vs {match_2[1]}", flush=True)
+
+
+
+async def three_players_start(room_id, present_players):
+        state_key = f"tournament:{room_id}:state"
+        await RedisManager.set_state(state_key, "playing first stage")
+        channel_layer = get_channel_layer()
+
+        players = present_players 
+        all_ids = ["player_1", "player_2", "player_3", "player_4"]
+        if len(players) != 3:
+            print(f"❌ Error: Expected 3 players, but got {len(players)}", flush=True)
+            return
+
+        match_players = random.sample(players, 2)
+        waiting_player = [player for player in players if player not in match_players][0]
+        last_player = [player for player in all_ids if not in match_players and not waiting_player][0]
+
+        user_key = f"tournament:{room_id}:users"
+        await RedisManager.update_user_data_map(user_key, waiting_player, "is_waiting_finals", True)
+
+
+        await channel_layer.group_send(
+            f"tournament_{room_name}",
+            {
+                "type": "tournament_display_update",
+                "state": {
+                    "first_layer_1": match_players[0],
+                    "first_layer_2": match_players[1],
+                    "first_layer_3": waiting_player,
+                    "first_layer_4": last_player,
+                    "second_layer_1": "none",
+                    "second_layer_2": waiting_player,
+                    "third_layer": "none",
+                }
+            }
+        )
+
+        await create_tournament_match(room_id, match_players[0], match_players[1], is_finale=False)
+        print(f"✅ Tournament progressing: Match between {match_players[0]} vs {match_players[1]}, {waiting_player} advances to finals!", flush=True)
+
+async def two_players_start(room_id, present_players):
+        state_key = f"tournament:{room_id}:state"
+        await RedisManager.set_state(state_key, "playing finals")
+        channel_layer = get_channel_layer()
+
+        players = present_players
         all_ids = ["player_1", "player_2", "player_3", "player_4"]
         first_layer_1 = players[0]
         first_layer_3 = players[1]
@@ -318,8 +564,8 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 if id != first_layer_2:
                     first_layer_4 = id
         
-        await self.channel_layer.group_send(
-            self.room_group_name,
+        await channel_layer.group_send(
+            f"tournament_{room_name}",
             {
                 "type": "tournament_display_update",
                 "state": {
@@ -334,15 +580,8 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             }
         )
 
-        await RedisManager.set_state(state_key, "playing finals")
 
-        create_tournament_match(self.room_name, players[0], players[1], true)
-
-
-
-        
-
-######################################################################################################################################################################################
+        create_tournament_match(room_id, players[0], players[1], true)
 
 async def create_tournament_match(room_id: str, tournament_id_1: str, tournament_id_2: str, is_finale: bool):
     try:
@@ -394,6 +633,18 @@ async def create_tournament_match(room_id: str, tournament_id_1: str, tournament
     except Exception as e:
         print(f"❌ Error creating match: {e}", flush=True)
 
+async def notify_and_wait_for_reconnect(room_id, absent_players):
+        try:
+            user_key = f"tournament:{room_id}:users"
+
+            for player in absent_players:
+                await self.send_chat_notification(room_id, player["id"], "⚠️ You need to reconnect to play the tournament finals!")
+
+            await asyncio.sleep(30)
+
+            await handle_finals_start(room_id)
+        except Exception as e:
+            print(f"❌ Error in notify_and_wait_for_reconnect: {e}", flush=True)
 
 async def notify_absent_players_and_wait(room_name):
     user_key = f"tournament:{room_id}:users"
@@ -403,11 +654,11 @@ async def notify_absent_players_and_wait(room_name):
     players = await RedisManager.get_all_users_json(user_key)
     absent_players = [user for user in players.values() if user["is_on_page"].lower() != "true"]
 
-    for player in absent_players:three_players_start
+    for player in absent_players:
         await send_chat_notification(room_name, player["id"], "⚠️ Tournament is starting! Please join now!")
 
 
-     channel_layer = get_channel_layer()
+    channel_layer = get_channel_layer()
 
     # Send the message to the group
     await channel_layer.group_send(
@@ -426,33 +677,47 @@ async def notify_absent_players_and_wait(room_name):
     present_tournament_ids  = [user_id for user_id, user in players_after_wait.items() if user["is_on_page"].lower() == "True"]
 
     if len(present_players) == 0:
-        save_tournament_outcome(room_name, True, False, None)
+        await save_tournament_outcome(room_name, True, False, None)
     elif len(present_players) == 1:
-        save_tournament_outcome(room_name, True, False, present_players[0]["id"])
+        display = {
+                "first_layer_1": "player_1",
+                "first_layer_2": "player_2",
+                "first_layer_3": "player_3",
+                "first_layer_4": "player_4",
+                "second_layer_1": "player_1",
+                "second_layer_2": "player_1",
+                "third_layer": "player_1",
+        }
+        if present_tournament_ids[0] == "player_1":
+            display["second_layer_1"] = "player_1"
+            display["second_layer_2"] = "player_3"
+            display["third_layer"] = "player_1"
+        elif present_tournament_ids[0] == "player_2":
+            display["second_layer_1"] = "player_2"
+            display["second_layer_2"] = "player_3"
+            display["third_layer"] = "player_2"
+        elif present_tournament_ids[0] == "player_3":
+            display["second_layer_1"] = "player_1"
+            display["second_layer_2"] = "player_3"
+            display["third_layer"] = "player_3"
+        elif present_tournament_ids[0] == "player_4":
+            display["second_layer_1"] = "player_1"
+            display["second_layer_2"] = "player_4"
+            display["third_layer"] = "player_4"
+        await channel_layer.group_send(
+            f"tournament_{room_name}",  
+            {
+                "type": "tournament_display_update",
+                "state": display
+            }
+        )
+        await save_tournament_outcome(room_name, True, False, int(present_players[0]["id"]))
     elif len(present_players) == 2:
-        await channel_layer.group_send(
-        f"tournament_{room_name}",  
-        {
-            "type": "two_players_start",
-            "players": present_tournament_ids 
-        }
-    )
+        await two_players_start(room_name, present_tournament_ids)
     elif len(present_players) == 3:
-        await channel_layer.group_send(
-        f"tournament_{room_name}", 
-        {
-            "type": "three_players_start",
-            "players": present_tournament_ids 
-        }
-    )
+        await three_players_start(room_name, present_tournament_ids)
     elif len(present_players) == 4:
-        await channel_layer.group_send(
-        f"tournament_{room_name}",
-        {  
-            "type": "four_players_start",
-            "players": present_tournament_ids 
-        }
-    )
+        await four_players_start(room_name, present_tournament_ids)
 
 
 async def save_tournament_outcome(room_name: str, is_finished: bool, is_ongoing: bool, winner: int | None):
@@ -477,12 +742,12 @@ async def save_tournament_outcome(room_name: str, is_finished: bool, is_ongoing:
     
     
 async def send_chat_notification(room_name, user_id, message):
-    chat_group_name = f"chat_{user_id}"
+    chat_group_name = f"contacts_{user_id}"
 
     await self.channel_layer.group_send(
         chat_group_name,
         {
-            "type": "chat.message",
+            "type": "popup_tournament",
             "message": message
         }
     )
