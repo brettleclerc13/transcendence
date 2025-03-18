@@ -325,7 +325,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                         absent_players.append(victor1[1])
                 if victor2[1].get("is_on_page", "false") != "true":
                         absent_players.append(victor2[1])
-                if not absent_players:
+                if not absent_players:lobby
                     await handle_finals_start(self.room_id)
                 else:
                     asyncio.create_task(notify_and_wait_for_reconnect(self.room_id, absent_players))
@@ -348,7 +348,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             winner = await sync_to_async(lambda: final_match.winner)()
             if not winner:
                 print(f"⚠️ Tournament {self.room_id} final match has No winner", flush=True)
-                return None
+                return Nonelobby
 
             user_key = f"tournament:{self.room_id}:users"
             tournament_users = await RedisManager.get_all_users_json(user_key)
