@@ -3,20 +3,65 @@ import json
 import websockets
 import requests
 import ssl
+from asgiref.sync import sync_to_async
 
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
 
-# Base URL for the backend API
+# Base URL for the backend API 
+#add back 8080 IN SCHOOL
 BASE_URL_DATA = "wss://127.0.0.1:8080/game"
+MATCH_API_URL = "http://127.0.0.1:8001/match-list/"
+
+def get_active_matches():
+    try:
+        params = {
+            "is_ongoing": "True",
+            "is_finished": "False"
+        }
+        response = requests.get(MATCH_API_URL, params=params)
+
+        if response.status_code == 200:
+            matches = response.json()
+            return matches
+        else:
+            print(f"❌ Failed to fetch matches. Status Code: {response.status_code}")
+            return None
+
+    except requests.RequestException as e:
+        print(f"❌ Network error: {e}")
+        return None
 
 def list_games():
-    print("🚧 Under Construction 🚧")
-
+    active_matches = get_active_matches()
+    if active_matches:
+        print("🎮 Active Matches:")
+        for match in active_matches:
+            print(f"Match: |   {match.get('id', 'Unknown ID')}   |, "
+              f"Player 1: {match.get('player1_username', 'Unknown')}, "
+              f"Player 2: {match.get('player2_username', 'Waiting...')}")
+    else:
+        print("⚠️ No active matches found.")
+    
+def is_valid_roomname(room_name: str):
+    active_games = get_active_matches()
+    if active_games:
+        for match in active_games:
+            if match['id'] == room_name:
+                return True
+        return False
+    else:
+        return False
+    
 async def get_game_state():
     room_name = input("Enter room name: ")
+    is_valid = await sync_to_async(lambda: is_valid_roomname(room_name))()
+    if not is_valid:
+        print("⚠️ No active games with that room-name")
+        return
     try:
+        print(f"{BASE_URL_DATA}/{room_name}/")
         async with websockets.connect(f"{BASE_URL_DATA}/{room_name}/", ssl=ssl_context) as websocket:
             response = await websocket.recv()
             game_data = json.loads(response)
@@ -35,7 +80,7 @@ async def get_game_state():
             print(f" - Player 2 Position: {game_data['game_state']['player2_position']}")
 
     except websockets.exceptions.WebSocketException as e:
-        print(f"❌ Connection failed! Room '{room_name}' does not exist or is closed.")
+        print(f"❌ Connection failed! Room '{room_name}' does not exist or is closed. | {e}")
     except OSError as e:
         print(f"❌ Network error: {e}")
     except json.JSONDecodeError:
@@ -56,8 +101,8 @@ async def get_connections():
                 print(f"❌ Error: {game_data['error']}, the game has not started yet!")
                 return
 
-            print(f"\n📊 Number of players in {room_name}:")
-            print(f" - number of players: {game_data['number_of_players']}")
+            print(f"\n📊 Connected players in {room_name}:")
+            print(f" - Connected players: {game_data['number_of_players']}")
             
 
     except websockets.exceptions.WebSocketException as e:

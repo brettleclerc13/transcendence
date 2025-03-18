@@ -101,7 +101,7 @@ export default function GameCanvas(match: { ID: string }) {
 		}
 		const roomName = match.ID;
 		const ws = new WebSocket(
-			`wss://transcendence.fr:8080/game/${roomName}/?token=${accessToken}`
+			`wss://127.0.0.1:8080/game/${roomName}/?token=${accessToken}`
 		);
 
 		ws.onopen = () => {
@@ -111,18 +111,41 @@ export default function GameCanvas(match: { ID: string }) {
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
 
-			if (data.type === "game_end")
-				console.log("data type sent in:", data.type);
+			if (data.type === "game_ending" || data.type === "game_pause")
+				console.log("Game Stopped! reason:", data.reason);
 
 			if (data.type === "initializer_pack") {
 				console.log("player name:", data.player_role);
 				setPlayerRole(data.player_role);
+			}
+
+			if (data.type === "get-ready") {
 				setStatus("ready");
 			}
 
 			if (data.type === "start_game") {
 				console.log("received start game");
 				setStatus("playing");
+			}
+
+			if (data.type === "reconnected"){
+				socket?.send(
+					JSON.stringify({
+						type: "restart",
+						game_parametres: {
+							ball_diametre: 1.5,
+							paddle_speed: 25,
+							paddle_height: 12,
+							paddle_width: 1.5,
+							ball_speed: 35,
+							paddle_xposition: 0.007,
+							screen_width: 800,
+							screen_height: 592,
+							resolution: 8,
+							point_goal: 10,
+						},
+					})
+				);
 			}
 
 			if (data.type === "game_update") {

@@ -9,9 +9,14 @@ import {
 import { z } from "zod";
 import { isUserLoggedIn } from "../utilities/userClientActions";
 import Link from "next/link";
-import { createSimpleMatch } from "../utilities/matchActions";
+import { createSimpleMatch, checkMatches } from "../utilities/matchActions";
+import {
+	createTournament,
+	checkTournaments,
+} from "../utilities/tournamentActions";
 import GameCanvas from "./gameCanvas";
 import "./match.css";
+import TournamentCanvas from "./tournamentCanvas";
 
 export const profileSchema = z.object({
 	tournament_name: z
@@ -25,10 +30,10 @@ export default function Lobby() {
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
 		null
 	);
-	const [isReadyToPlay, setIsReadyToPlay] = useState<boolean>(false);
-	const [matchID, setmatchID] = useState<string>("");
-	const [gameData, gameAction, gamePending] = useActionState(
-		handleSimpleMatchCreation,
+	const [gameType, setGameType] = useState<string>("lobby");
+	const [gameID, setGameID] = useState<string>("");
+	const [tournamentData, tournamentAction, tournamentPending] = useActionState(
+		handleTournamentMatchCreation,
 		undefined
 	);
 
@@ -47,11 +52,59 @@ export default function Lobby() {
 		}
 	};
 
+	const checkGames = async () => {
+		try {
+			const matchResults = await checkMatches();
+			if (matchResults.ok) {
+				setGameID(matchResults.matchID);
+				setGameType("match");
+			}
+
+			const tournamentResults = await checkTournaments();
+			if (tournamentResults.ok) {
+				setGameID(tournamentResults.tournamentID);
+				setGameType("tournament");
+			}
+		} catch (error) {
+			setAlert({
+				message: `Error checking for ongoing matches: ${error}`,
+				type: "danger",
+			});
+			return;
+		}
+	};
+
 	useEffect(() => {
-		fetchProfile();
+		if (isUserLoggedIn()) {
+			checkGames();
+			fetchProfile();
+		} else {
+			setGameType("notLoggedIn");
+		}
 	}, []);
 
-	async function handleSimpleMatchCreation(
+	const handleSimpleMatchCreation = async () => {
+		try {
+			const response = await createSimpleMatch();
+			setAlert({
+				message: "Game on!",
+				type: "success",
+			});
+			setGameID(response.matchID);
+			setTimeout(() => {
+				setGameType("simple");
+			}, 1000);
+			return;
+		} catch (error) {
+			setAlert({
+				message: `Error creating a 1v1 game: ${error}`,
+				type: "danger",
+			});
+			return;
+		}
+	};
+
+	async function handleTournamentMatchCreation(
 		_previousState: unknown,
 		formData: FormData
 	) {
@@ -68,7 +121,7 @@ export default function Lobby() {
 			return {
 				previousValues: { tournament_name },
 				tournamentNameError: validationResult.error.errors.find(
-					(err) => err.path[0] === "tournament_name"
+					(err: { path: string[]; }) => err.path[0] === "tournament_name"
 				)?.message,
 			};
 
@@ -84,19 +137,19 @@ export default function Lobby() {
 		}
 
 		try {
-			const response = await createSimpleMatch();
+			const response = await createTournament();
 			setAlert({
 				message: "Game on!",
 				type: "success",
 			});
-			setmatchID(response.matchID);
+			setGameID(response.tournamentID);
 			setTimeout(() => {
-				setIsReadyToPlay(true);
+				setGameType("tournament");
 			}, 1000);
 			return;
 		} catch (error) {
 			setAlert({
-				message: `Error creating a 1v1 game: ${error}`,
+				message: `Error creating a tournament: ${error}`,
 				type: "danger",
 			});
 			return { previousValues: { tournament_name } };
@@ -105,83 +158,77 @@ export default function Lobby() {
 
 	return (
 		<>
-			{isReadyToPlay && <GameCanvas ID={matchID} />}
-			{!isReadyToPlay && (
+			{gameType == "simple" && <GameCanvas ID={gameID} />}
+			{gameType == "tournament" && <TournamentCanvas ID={gameID} />}
+			{gameType == "lobby" && (
 				<div className="lobby-container">
-					{isUserLoggedIn() ? (
-						<>
-							{alert && (
-								<div
-									className={`alert alert-${alert.type} alert-box`}
-									role="alert"
-								>
-									{alert.message}
-									<button
-										type="button"
-										className="close"
-										onClick={() => setAlert(null)}
-										aria-label="Close"
-									>
-										<span aria-hidden="true">&times;</span>
-									</button>
-								</div>
-							)}
-							<div className="lobby-sub-container">
-								<div className="basis-3/5">
-									<MatchList
-										setAlert={setAlert}
-										setMatchID={setmatchID}
-										setIsReadyToPlay={setIsReadyToPlay}
-									/>
-								</div>
-								<div className="basis-2/5">
-									<form action={gameAction}>
-										<h3>Tournament alias name</h3>
-										<input
-											type="text"
-											name="tournamentName"
-											defaultValue={
-												gameData?.previousValues?.tournament_name || alias
-											}
-											className="border rounded-md p-2 mb-4 w-full"
-										/>
-										{gameData?.tournamentNameError && (
-											<p className="input-error">
-												{gameData?.tournamentNameError}
-											</p>
-										)}
-										<div className="lobby-button-container">
-											<button
-												className="button-tournament"
-												type="submit"
-												// onClick={() => handleTournamentMatchCreation}
-												disabled={gamePending}
-											>
-												Create tournament match
-											</button>
-											<button
-												className="button-simple"
-												onClick={() => handleSimpleMatchCreation}
-												disabled={gamePending}
-											>
-												Create 1v1 match
-											</button>
-										</div>
-									</form>
-								</div>
-							</div>
-						</>
-					) : (
-						<div className="flex flex-col gap-4 justify-center items-center h-full w-full">
-							<p className="text-lg">
-								Please log in before starting a game. It won't even take a
-								minute!
-							</p>
-							<Link className="secondary-button" href="/login">
-								Connect
-							</Link>
+					{alert && (
+						<div className={`alert alert-${alert.type} alert-box`} role="alert">
+							{alert.message}
+							<button
+								type="button"
+								className="close"
+								onClick={() => setAlert(null)}
+								aria-label="Close"
+							>
+								<span aria-hidden="true">&times;</span>
+							</button>
 						</div>
 					)}
+					<div className="lobby-sub-container">
+						<div className="basis-3/5">
+							<MatchList
+								setAlert={setAlert}
+								setGameID={setGameID}
+								setGameType={setGameType}
+							/>
+						</div>
+						<div className="basis-2/5">
+							<form action={tournamentAction}>
+								<h3>Tournament alias name</h3>
+								<input
+									type="text"
+									name="tournamentName"
+									defaultValue={
+										tournamentData?.previousValues?.tournament_name || alias
+									}
+									className="border rounded-md p-2 mb-4 w-full"
+								/>
+								{tournamentData?.tournamentNameError && (
+									<p className="input-error">
+										{tournamentData?.tournamentNameError}
+									</p>
+								)}
+								<div className="lobby-button-container">
+									<button
+										className="button-tournament"
+										type="submit"
+										disabled={tournamentPending}
+									>
+										Create tournament match
+									</button>
+								</div>
+							</form>
+							<div className="lobby-button-container">
+								<button
+									className="button-simple"
+									onClick={handleSimpleMatchCreation}
+								>
+									Create 1v1 match
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+			{gameType == "notLoggedIn" && (
+				<div className="flex flex-col gap-4 justify-center items-center h-full w-full">
+					<p className="text-lg">
+						Please log in before starting a game. It won't even take a minute!
+					</p>
+					<Link className="secondary-button" href="/login">
+						Connect
+					</Link>
 				</div>
 			)}
 		</>
