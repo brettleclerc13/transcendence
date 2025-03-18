@@ -37,7 +37,7 @@ async function verifyToken(token: string, request: NextRequest) {
 
 		return response.ok; // True if token is valid, false otherwise
 	} catch (error) {
-		console.error("Error verifying token:", error);
+		console.warn("Error verifying token:", error);
 		return false;
 	}
 }

@@ -17,7 +17,7 @@ export const FetchBlockedUsers = async () => {
 		if (!response.ok) throw new Error("Failed to fetch blocked users");
 		return await response.json();
 	} catch (error) {
-		console.error("Error fetching blocked users:", error);
+		console.warn("Error fetching blocked users:", error);
 		return [];
 	}
 };
@@ -36,7 +36,7 @@ export const BlockUser = async (userId: number) => {
 		});
 		if (!response.ok) throw new Error("Failed to block user");
 	} catch (error) {
-		console.error("Error blocking user:", error);
+		console.warn("Error blocking user:", error);
 	}
 };
 
@@ -54,6 +54,6 @@ export const UnblockUser = async (userId: number) => {
 		});
 		if (!response.ok) throw new Error("Failed to unblock user");
 	} catch (error) {
-		console.error("Error unblocking user:", error);
+		console.warn("Error unblocking user:", error);
 	}
 };

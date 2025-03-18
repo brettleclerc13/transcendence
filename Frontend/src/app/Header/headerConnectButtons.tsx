@@ -33,7 +33,7 @@ export default function HeaderConnectButtons() {
 			setUserProfile(profileResults);
 			console.log(profileResults);
 		} catch (err) {
-			console.error("Error fetching user profile:", err);
+			console.warn("Error fetching user profile:", err);
 		}
 		//finally { setLoading(false)}
 	};
@@ -66,7 +66,7 @@ export default function HeaderConnectButtons() {
 
 	const handleSwitchToggle = async () => {
 		if (!userProfile) {
-			console.error("User profile does not exist");
+			console.warn("User profile does not exist");
 			return;
 		}
 
@@ -77,7 +77,7 @@ export default function HeaderConnectButtons() {
 
 			setUserProfile({ ...userProfile, is_online: newStatus });
 		} catch (error) {
-			console.error("Error updating status:", error);
+			console.warn("Error updating status:", error);
 		}
 	};
 
@@ -85,11 +85,11 @@ export default function HeaderConnectButtons() {
 		try {
 			await updateUserProfile({ is_online: false });
 		} catch (error) {
-			console.error("Error updating status:", error);
+			console.warn("Error updating status:", error);
 		}
 		const logoutStatus = await backendLogout();
 		if (logoutStatus) router.push("/");
-		else console.error("Error logging out backend side");
+		else console.warn("Error logging out backend side");
 	};
 
 	return (

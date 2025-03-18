@@ -73,11 +73,11 @@ export async function backendLogout() {
 		});
 
 		if (response.ok) console.log("Logout successful");
-		else console.error("Logout unsuccessful");
+		else console.warn("Logout unsuccessful");
 
 		return response.ok;
 	} catch (error) {
-		console.error("Error: issue while logging out", error);
+		console.warn("Error: issue while logging out", error);
 		return false;
 	}
 }

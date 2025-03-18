@@ -23,7 +23,7 @@ export default function PublicProfile( { username }: { username: string | undefi
                     setPublicProfile(response);
                     console.log(publicProfile);
                 } catch {
-                    console.error("An error happened while trying to fetch user public profile");
+                    console.warn("An error happened while trying to fetch user public profile");
                 }
             }
             // } else {

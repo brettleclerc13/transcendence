@@ -83,7 +83,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 				};
 				fetchBlockedUsers();
 			} catch (error) {
-				console.error("Error fetching data:", error);
+				console.warn("Error fetching data:", error);
 			}
 		};
 		fetchData();
@@ -139,7 +139,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 							setInvitations([]);
 						}
 					}).catch((error) => {
-						console.error("Erreur lors de la mise à jour des invitations :", error);
+						console.warn("Erreur lors de la mise à jour des invitations :", error);
 					});
 				}
 
@@ -151,7 +151,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 							setFriends([]);
 						}
 					}).catch((error) => {
-						console.error("Erreur lors de la mise à jour des amis :", error);
+						console.warn("Erreur lors de la mise à jour des amis :", error);
 					});
 				}
 			
@@ -172,7 +172,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 			await AcceptInvitation(id);
 			setInvitations((prevInvitations) => prevInvitations.filter((invite) => invite.id !== id));
 		} catch (error) {
-			console.error("Erreur lors de l'acceptation de l'invitation :", error);
+			console.warn("Erreur lors de l'acceptation de l'invitation :", error);
 		}
 	};
 
@@ -181,7 +181,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 			await DeclineInvitation(id);
 			setInvitations((prevInvitations) => prevInvitations.filter((invite) => invite.id !== id));
 		} catch (error) {
-			console.error("Erreur lors du refus de l'invitation :", error);
+			console.warn("Erreur lors du refus de l'invitation :", error);
 		}
 	};
 

@@ -55,7 +55,7 @@ const LiveChatClient = () => {
 					},
 				});
 				if (!response.ok) {
-					console.error(
+					console.warn(
 						"Erreur lors de la récupération de l'utilisateur :",
 						response.statusText
 					);
@@ -64,7 +64,7 @@ const LiveChatClient = () => {
 				const data = await response.json();
 				setCurrentUser(data);
 			} catch (error) {
-				console.error(
+				console.warn(
 					"Erreur réseau lors de la récupération de l'utilisateur :",
 					error
 				);
@@ -101,13 +101,13 @@ const LiveChatClient = () => {
 				});
 
 				if (!response.ok) {
-					console.error("Erreur lors de la récupération de la conversation.");
+					console.warn("Erreur lors de la récupération de la conversation.");
 					return;
 				}
 
 				const conversationData = await response.json();
 				if (!conversationData.id) {
-					console.error("Aucune conversation trouvée ou créée.");
+					console.warn("Aucune conversation trouvée ou créée.");
 					return;
 				}
 
@@ -125,12 +125,12 @@ const LiveChatClient = () => {
 					const data = await messagesRetrieve.json();
 					setMessages(data);
 				} else {
-					console.error(
+					console.warn(
 						`Erreur lors de la récupération des messages : ${response.statusText}`
 					);
 				}
 				if (!messagesRetrieve.ok) {
-					console.error("Erreur lors de la récupération des messages.");
+					console.warn("Erreur lors de la récupération des messages.");
 					return;
 				}
 
@@ -163,14 +163,14 @@ const LiveChatClient = () => {
 					]);
 				};
 				wsRef.current.onerror = (error: Event) => {
-					console.error("Erreur WebSocket :", error);
+					console.warn("Erreur WebSocket :", error);
 				};
 
 				wsRef.current.onclose = (event: CloseEvent) => {
 					console.warn("WebSocket fermé :", event.code, event.reason);
 				};
 			} catch (error) {
-				console.error("Erreur réseau :", error);
+				console.warn("Erreur réseau :", error);
 			}
 		};
 
@@ -182,17 +182,17 @@ const LiveChatClient = () => {
 
 	const handleSendMessage = (message: string) => {
 		if (!wsRef.current) {
-			console.error("❌ WebSocket non initialisé !");
+			console.warn("WebSocket non initialisé !");
 			return;
 		}
 
 		if (wsRef.current.readyState === WebSocket.CONNECTING) {
-			console.warn("⌛ WebSocket en cours de connexion... Attends un peu !");
+			console.warn("WebSocket en cours de connexion... Attends un peu !");
 			return;
 		}
 
 		if (wsRef.current.readyState !== WebSocket.OPEN) {
-			console.error("❌ WebSocket fermé. Impossible d'envoyer un message.");
+			console.warn("WebSocket fermé. Impossible d'envoyer un message.");
 			return;
 		}
 
