@@ -1,28 +1,38 @@
 {
-  "name": "transcendence_front",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "bootstrap": "^5.3.3",
-    "next": "14.2.15",
-    "react": "^18",
-    "react-dom": "^18"
-  },
-  "devDependencies": {
-    "@types/bootstrap": "^5.2.10",
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.15",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5"
-  }
+	"name": "transcendence_front",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"dev": "next dev",
+		"build": "next build",
+		"start": "next start",
+		"lint": "next lint",
+		"postinstall": "sed -i 's|/*# sourceMappingURL=bootstrap.min.css.map||g' node_modules/bootstrap/dist/css/bootstrap.min.css || true"
+	},
+	"dependencies": {
+		"@lordicon/element": "^1.10.1",
+		"bootstrap": "^5.3.3",
+		"cookies-next": "^5.1.0",
+		"framer-motion": "^12.4.4",
+		"jwt-decode": "^4.0.0",
+		"lottie-web": "^5.12.2",
+		"lucide-react": "^0.475.0",
+		"motion": "^12.0.6",
+		"next": "15.1.4",
+		"react": "^19",
+		"react-chartjs-2": "^5.3.0",
+		"react-dom": "^19",
+		"zod": "^3.24.1"
+	},
+	"devDependencies": {
+		"@types/bootstrap": "^5.2.10",
+		"@types/node": "^20",
+		"@types/react": "^18",
+		"@types/react-dom": "^18",
+		"eslint": "^9",
+		"eslint-config-next": "15.1.4",
+		"postcss": "^8",
+		"tailwindcss": "^3.4.1",
+		"typescript": "^5"
+	}
 }
