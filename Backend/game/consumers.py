@@ -338,7 +338,30 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             "type": "game_update",
             "game_state": event["game_state"],
-        })) 
+        }))
+    
+    async def wait_for_reconnection(self, username):
+        try:
+            await asyncio.sleep(self.reconnection_timer)  
+            current_players = await RedisManager.get_list_of_list(f"room:{self.room_name}:players")
+
+            if username in current_players:
+                print(f"User {username} reconnected!", flush=True)
+                return  
+
+            print(f"User {username} did NOT reconnect. Ending game.", flush=True)
+            await RedisManager.set_state(f"room:{self.room_name}:state", "game over")
+
+            winner = "player_2" if self.player_number == "player_1" else "player_1"
+            if await RedisManager.get_state(f"room:{self.room_name}:prev_state") == "waiting for players":
+                print("The Game did not Happen", flush=True)
+                winner = None
+            await self.handle_game_end(winner, "a player won, game_over")
+            return
+
+        except Exception as e:
+            print(f"Error in wait_for_reconnection: {e}", flush=True)
+
 
     ''' 
     async def dispatch(self, message):

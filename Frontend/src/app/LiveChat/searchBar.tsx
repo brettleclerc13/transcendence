@@ -53,7 +53,7 @@ const SearchBar = () => {
 				setMessage("An unexpected response format was received.");
 			}
 		} catch (error) {
-			console.error("Error sending friend request:", error);
+			console.warn("Error sending friend request:", error);
 			setMessage("An unexpected error occurred. Please try again.");
 		} finally {
 			setLoading(false);
@@ -103,9 +103,17 @@ const SearchBar = () => {
 			)}
 			{message && (
 				<div
-					className={`alert ${invitationSent ? "alert-success" : "alert-danger"}`}
-					role="alert"
-				>
+				className={`alert ${invitationSent ? "alert-success" : "alert-danger"}`}
+				role="alert"
+				style={{
+					position: "absolute",
+					top: "-40px",
+					left: "50%",
+					transform: "translateX(-50%)",
+					zIndex: 1050, // S'assurer qu'il passe au-dessus des autres éléments
+					whiteSpace: "nowrap", // Empêche le texte de forcer un retour à la ligne
+				}}
+			>
 					{message}
 				</div>
 			)}

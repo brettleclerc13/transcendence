@@ -9,6 +9,7 @@ import CurrentChat from "./currentChat";
 import MessageBar from "./messageBar";
 import SearchBar from "./searchBar";
 import { getCookie } from "cookies-next/client";
+import { createSimpleMatch } from "../utilities/matchActions";
 
 interface User {
 	id: number;
@@ -54,7 +55,7 @@ const LiveChatClient = () => {
 					},
 				});
 				if (!response.ok) {
-					console.error(
+					console.warn(
 						"Erreur lors de la récupération de l'utilisateur :",
 						response.statusText
 					);
@@ -63,7 +64,7 @@ const LiveChatClient = () => {
 				const data = await response.json();
 				setCurrentUser(data);
 			} catch (error) {
-				console.error(
+				console.warn(
 					"Erreur réseau lors de la récupération de l'utilisateur :",
 					error
 				);
@@ -100,13 +101,13 @@ const LiveChatClient = () => {
 				});
 
 				if (!response.ok) {
-					console.error("Erreur lors de la récupération de la conversation.");
+					console.warn("Erreur lors de la récupération de la conversation.");
 					return;
 				}
 
 				const conversationData = await response.json();
 				if (!conversationData.id) {
-					console.error("Aucune conversation trouvée ou créée.");
+					console.warn("Aucune conversation trouvée ou créée.");
 					return;
 				}
 
@@ -124,12 +125,12 @@ const LiveChatClient = () => {
 					const data = await messagesRetrieve.json();
 					setMessages(data);
 				} else {
-					console.error(
+					console.warn(
 						`Erreur lors de la récupération des messages : ${response.statusText}`
 					);
 				}
 				if (!messagesRetrieve.ok) {
-					console.error("Erreur lors de la récupération des messages.");
+					console.warn("Erreur lors de la récupération des messages.");
 					return;
 				}
 
@@ -162,14 +163,14 @@ const LiveChatClient = () => {
 					]);
 				};
 				wsRef.current.onerror = (error: Event) => {
-					console.error("Erreur WebSocket :", error);
+					console.warn("Erreur WebSocket :", error);
 				};
 
 				wsRef.current.onclose = (event: CloseEvent) => {
 					console.warn("WebSocket fermé :", event.code, event.reason);
 				};
 			} catch (error) {
-				console.error("Erreur réseau :", error);
+				console.warn("Erreur réseau :", error);
 			}
 		};
 
@@ -181,17 +182,17 @@ const LiveChatClient = () => {
 
 	const handleSendMessage = (message: string) => {
 		if (!wsRef.current) {
-			console.error("❌ WebSocket non initialisé !");
+			console.warn("WebSocket non initialisé !");
 			return;
 		}
 
 		if (wsRef.current.readyState === WebSocket.CONNECTING) {
-			console.warn("⌛ WebSocket en cours de connexion... Attends un peu !");
+			console.warn("WebSocket en cours de connexion... Attends un peu !");
 			return;
 		}
 
 		if (wsRef.current.readyState !== WebSocket.OPEN) {
-			console.error("❌ WebSocket fermé. Impossible d'envoyer un message.");
+			console.warn("WebSocket fermé. Impossible d'envoyer un message.");
 			return;
 		}
 
@@ -203,12 +204,34 @@ const LiveChatClient = () => {
 		);
 	};
 
-	const handleInviteClick = () => {
-		if (selectedFriend) {
-			console.log(`Inviter ${selectedFriend.username} à une partie de Pong`);
-			// Ajoutez ici la logique pour envoyer une invitation à une partie.
+	const handleInviteClick = async () => {
+		if (!selectedFriend || !wsRef.current) {
+			console.warn("Aucun ami sélectionné ou WebSocket non initialisé.");
+			return;
 		}
-	};
+		
+		try {
+			const response = await createSimpleMatch(true);
+			if (response.matchID) {
+				const inviteMessage = `Join me to play a Pong Game ! (Match ID: ${response.matchID})`;
+				if (wsRef.current.readyState === WebSocket.OPEN) {
+					wsRef.current.send(
+						JSON.stringify({
+							message: inviteMessage,
+							sender: currentUser?.id,
+						})
+					);
+				} else {
+					console.warn(" WebSocket fermé. Impossible d'envoyer l'invitation.");
+				}
+			} else {
+				console.warn("Invite game creation not possible");
+			}
+		} catch (error) {
+			console.warn("Invite game creation not possible", error);
+		}
+	}
+
 
 	return (
 		<div className="livechat-container">

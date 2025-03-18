@@ -35,7 +35,14 @@ class RegisterAPIView(APIView):  # User registration and management
 
 class LogoutAPIView(APIView):
     def post(self, request):
+        user = request.user
+
+        if hasattr(user, 'profile'):
+            user.profile.is_online = False
+            user.profile.save()
+
         logout(request)
+        
         return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
 
 class CustomTokenObtainPairView(TokenObtainPairView):

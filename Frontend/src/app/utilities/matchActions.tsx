@@ -99,7 +99,7 @@ export const createSimpleMatch = async (invite_game?: boolean) => {
 				"Failed to create simple match.";
 			throw new Error(errorMessage);
 		} else {
-			console.log("create Match data: ", data);
+			// console.log("create Match data: ", data);
 			if (data.id) return { matchID: data.id as string };
 			else throw new Error("MatchID not found");
 		}

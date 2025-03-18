@@ -23,7 +23,7 @@ export default function PublicProfile( { username }: { username: string | undefi
                     setPublicProfile(response);
                     console.log(publicProfile);
                 } catch {
-                    console.error("An error happened while trying to fetch user public profile");
+                    console.warn("An error happened while trying to fetch user public profile");
                 }
             }
             // } else {
@@ -41,7 +41,7 @@ export default function PublicProfile( { username }: { username: string | undefi
     return (
         <div className="profile-container">
             <div className="profile-header">
-                <img src={`/api/${publicProfile.profile_picture}` || "./img/default.png"} alt="Profile" className="profile-image" />
+                <img src={publicProfile.profile_picture ? `/api/${publicProfile.profile_picture}` : "./img/default.png"} alt="Profile" className="profile-image" />
                 <h2>{username}</h2>
                 <p className={publicProfile.is_online ? "status-online" : "status-offline"}>
                     {publicProfile.is_online ? "Online" : "Offline"}
