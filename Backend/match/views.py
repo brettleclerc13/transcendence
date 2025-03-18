@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from uuid import UUID
 from rest_framework.views import APIView
 from django.db.models import Q
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.permissions import AllowAny
 
 class MatchAPIView(generics.ListCreateAPIView):

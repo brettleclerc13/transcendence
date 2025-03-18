@@ -63,7 +63,12 @@ INSTALLED_APPS = [
 	'tmatch',
     'tournament',
 	'chat',
+	'bleach',
 ]
+
+BLEACH_ALLOWED_TAGS = ['p', 'span', 'br', 'strong', 'em', 'u']
+BLEACH_ALLOWED_ATTRIBUTES = ['style']
+BLEACH_STRIP_COMMENTS = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

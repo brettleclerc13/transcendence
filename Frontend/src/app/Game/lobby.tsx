@@ -48,7 +48,7 @@ export default function Lobby() {
 				message: `Error fetching your profile info: ${error}`,
 				type: "danger",
 			});
-			setGameType("lobby")
+			setGameType("lobby");
 			return;
 		}
 	};
@@ -73,7 +73,7 @@ export default function Lobby() {
 				message: `Error checking for ongoing matches: ${error}`,
 				type: "danger",
 			});
-			setGameType("lobby")
+			setGameType("lobby");
 			return;
 		}
 	};
@@ -125,7 +125,7 @@ export default function Lobby() {
 			return {
 				previousValues: { tournament_name },
 				tournamentNameError: validationResult.error.errors.find(
-					(err: { path: string[]; }) => err.path[0] === "tournament_name"
+					(err) => err.path[0] === "tournament_name"
 				)?.message,
 			};
 
