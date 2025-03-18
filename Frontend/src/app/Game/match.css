@@ -66,10 +66,7 @@ input:focus {
 
 .lobby-button-container {
 	display: flex;
-	justify-content: space-between;
-	bottom: 20px; /* Place les boutons à 10px du bas */
-	right: 20px; /* Place les boutons à 10px du côté droit */
-	display: flex; /* Aligne les boutons côte à côte */
+	flex-direction: column;
 	gap: 15px; /* Ajoute un espace entre les boutons */
 }
 
@@ -118,6 +115,7 @@ input:focus {
 	cursor: pointer;
 	padding: 0.75rem 1.4rem;
 	text-decoration: none;
+	margin-top: 4%;
 }
 
 .button-simple:hover {

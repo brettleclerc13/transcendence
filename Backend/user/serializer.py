@@ -4,20 +4,29 @@ from .models import  UserProfile, Message
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from django.contrib.auth import authenticate
+from bleach import clean
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField()
-    profile_picture = serializers.SerializerMethodField()
+	user = serializers.SerializerMethodField()
+	profile_picture = serializers.SerializerMethodField()
 
-    class Meta:
-        model = UserProfile
-        fields = ['user' ,'nationality', 'bio', 'age', 'profile_picture', 'tournament_name', 'is_online']
+	class Meta:
+		model = UserProfile
+		fields = ['user' ,'nationality', 'bio', 'age', 'profile_picture', 'tournament_name', 'is_online']
 
-    def get_profile_picture(self, obj):
-        return obj.profile_picture.url if obj.profile_picture else None
+	def validate_profile_picture(self, value):
+		max_size = 2 * 1024 * 1024  # 2MB
+
+		if value and value.size > max_size:
+			raise serializers.ValidationError("The image file size should not exceed 2MB.")
+        
+		return value
+
+	def get_profile_picture(self, obj):
+		return obj.profile_picture.url if obj.profile_picture else None
 		
-    def get_user(self, obj):
-        return {"id": obj.user.id, "username": obj.user.username}
+	def get_user(self, obj):
+		return {"id": obj.user.id, "username": obj.user.username}
 	
 
 
@@ -109,6 +118,29 @@ class CustomTokenVerifySerializer(serializers.Serializer):
 		return attrs
 
 class MessageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Message
-        fields = '__all__'
+	class Meta:
+		model = Message
+		fields = '__all__'
+
+	def to_representation(self, instance):
+		data = super().to_representation(instance)
+		data['content'] = clean(data['content'], tags=[])
+		return data
+
+def to_representation(self, instance):
+	data = super(self.__class__, self).to_representation(instance)
+	for field in self.Meta.fields:
+		value = data.get(field)
+		if isinstance(value, str):
+			data[field] = clean(value, tags=[])
+	return data
+
+serializer_classes = [
+    UserProfileSerializer,
+    UserSerializer,
+    MessageSerializer,
+]
+
+for serializer in serializer_classes:
+	if hasattr(serializer, 'Meta'):
+		serializer.to_representation = to_representation
