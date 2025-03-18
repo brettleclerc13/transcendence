@@ -9,6 +9,7 @@ import CurrentChat from "./currentChat";
 import MessageBar from "./messageBar";
 import SearchBar from "./searchBar";
 import { getCookie } from "cookies-next/client";
+import { createSimpleMatch } from "../utilities/matchActions";
 
 interface User {
 	id: number;
@@ -203,12 +204,34 @@ const LiveChatClient = () => {
 		);
 	};
 
-	const handleInviteClick = () => {
-		if (selectedFriend) {
-			console.log(`Inviter ${selectedFriend.username} à une partie de Pong`);
-			// Ajoutez ici la logique pour envoyer une invitation à une partie.
+	const handleInviteClick = async () => {
+		if (!selectedFriend || !wsRef.current) {
+			console.warn("Aucun ami sélectionné ou WebSocket non initialisé.");
+			return;
 		}
-	};
+		
+		try {
+			const response = await createSimpleMatch(true);
+			if (response.matchID) {
+				const inviteMessage = `Join me to play a Pong Game ! (Match ID: ${response.matchID})`;
+				if (wsRef.current.readyState === WebSocket.OPEN) {
+					wsRef.current.send(
+						JSON.stringify({
+							message: inviteMessage,
+							sender: currentUser?.id,
+						})
+					);
+				} else {
+					console.warn(" WebSocket fermé. Impossible d'envoyer l'invitation.");
+				}
+			} else {
+				console.warn("Invite game creation not possible");
+			}
+		} catch (error) {
+			console.warn("Invite game creation not possible", error);
+		}
+	}
+
 
 	return (
 		<div className="livechat-container">
