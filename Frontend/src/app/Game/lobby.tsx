@@ -58,7 +58,7 @@ export default function Lobby() {
 			const matchResults = await checkMatches();
 			if (matchResults.ok) {
 				setGameID(matchResults.matchID);
-				setGameType("match");
+				setGameType("simple");
 				return;
 			}
 			const tournamentResults = await checkTournaments();
@@ -125,7 +125,7 @@ export default function Lobby() {
 			return {
 				previousValues: { tournament_name },
 				tournamentNameError: validationResult.error.errors.find(
-					(err: { path: string[]; }) => err.path[0] === "tournament_name"
+					(err) => err.path[0] === "tournament_name"
 				)?.message,
 			};
 

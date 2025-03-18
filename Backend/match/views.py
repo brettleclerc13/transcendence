@@ -168,5 +168,6 @@ class MatchCheckView(APIView):
 			is_ongoing=True,
 			player2=user
 		)
+		print(f"ongoing matches: {ongoing_matches}")
 		serializer = MatchSerializer(ongoing_matches, many=True)
 		return Response(serializer.data)
