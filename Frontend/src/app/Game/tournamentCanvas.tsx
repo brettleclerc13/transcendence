@@ -23,8 +23,7 @@ export default function TournamentCanvas({
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
 		null
 	);
-	const [matchID, setMatchID] = useState<string>("");
-	const [gameOn, setGameOn] = useState<boolean>(false);
+	const [matchID, setMatchID] = useState<string | undefined>(undefined);
 
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
@@ -87,7 +86,6 @@ export default function TournamentCanvas({
 
 			if (data.type === "tournament_match_created") {
 				setMatchID(data.match_id);
-				setGameOn(true);
 			}
 		};
 
@@ -135,7 +133,7 @@ export default function TournamentCanvas({
 	
 	return (
 		<>
-			{gameOn ? <GameCanvas ID={matchID}/> : (
+			{matchID ? <GameCanvas ID={matchID}/> : (
 			<section className="flex justify-center items-center h-full w-full">
 				{alert && (
 					<div className={`alert alert-${alert.type} alert-box`} role="alert">
