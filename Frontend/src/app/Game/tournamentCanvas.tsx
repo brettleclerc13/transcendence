@@ -30,8 +30,21 @@ export default function TournamentCanvas( tournament: { ID: string } ) {
 
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
+			console.log("data: ", data);
+			if (data.type) {
+				console.log("Data type received: ", data.type);
+			}
 
-			if (data.type == "new_user") {
+			if (data.type ==="Connected to tournament") {
+				console.log("Ready to send data");
+				socket?.send(
+					JSON.stringify({
+						type: "user_connected"
+					})
+				);
+			}
+
+			if (data.type === "new_user") {
 				setPlayers((prevPlayers) => {
 					if (prevPlayers.some(player => player.user_id === data.user.user_id)) {
 						return prevPlayers;
@@ -42,6 +55,8 @@ export default function TournamentCanvas( tournament: { ID: string } ) {
 					return prevPlayers;
 				});
 			}
+
+
 		};
 
 		ws.onclose = (event) => {
