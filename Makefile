@@ -19,6 +19,7 @@ fclean: down
 	docker volume rm $$(docker volume ls -q);\
 	docker system prune -a --force
 	rm -Rf ./Volume
+	rm -Rf ./Backend/authentication/__pycache__
 	rm -Rf ./Backend/user/migrations
 	rm -Rf ./Backend/user/__pycache__
 	rm -Rf ./Backend/backend/__pycache__

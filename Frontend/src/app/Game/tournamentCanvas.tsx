@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getCookie } from "cookies-next/client";
 
 interface TournamentPlayer {
-	user_id: string | null;
+	id: string | null;
 	tournament_name: string | null;
 	profile_picture: string | null;
 	is_on_page: boolean;
@@ -57,15 +57,14 @@ export default function TournamentCanvas( tournament: { ID: string } ) {
 
 				setPlayers((prevPlayers) => {
 					// Ajouter uniquement les nouveaux joueurs qui ne sont pas déjà dans la liste
-					const uniquePlayers = newPlayers.filter(
-						(newPlayer) =>
-							!prevPlayers.some((player) => player.user_id === newPlayer.user_id)
-					);
+					const updatedPlayers = newPlayers.filter(
+						(newPlayer) => !prevPlayers.some((player) => player.id === newPlayer.id)
+					  );
 
 					// Limiter à 4 joueurs
-					return prevPlayers.length + uniquePlayers.length <= 4
-						? [...prevPlayers, ...uniquePlayers]
-						: prevPlayers;
+					return prevPlayers.length + updatedPlayers.length <= 4
+            			? [...prevPlayers, ...updatedPlayers]
+            			: prevPlayers;
 				});
 			}
 
@@ -83,15 +82,40 @@ export default function TournamentCanvas( tournament: { ID: string } ) {
 	}, [tournament]);
 	
 	return (
-		<section className="flex w-full h-full justify-center items-center">
-			<p className="mb-4 text-lg font-bold">This is the tournament waiting room</p>
-			<ul>
-				{players.map((player, index) => (
-					<li key={player.user_id || `player-${index}`} className="text-center">
-						🎮 Player {index + 1}: {player.user_id ?? "Unknow"}
-					</li>
-				))}
-			</ul>
+		<section className="flex justify-center items-center h-full w-full">
+			<div className="grid grid-cols-3 gap-8 items-center">
+			{/* Colonne de gauche (4 joueurs) */}
+				<div className="flex flex-col gap-4">
+					<PlayerBox player={players[0]} />
+					<span className="text-xxl font-bold text-center">VS</span>
+					<PlayerBox player={players[1]} />
+					<div className="h-8"></div> {/* Espacement */}
+					<PlayerBox player={players[2]} />
+					<span className="text-xxl font-bold text-center">VS</span>
+					<PlayerBox player={players[3]} />
+				</div>
+
+			{/* Colonne du centre (2 gagnants) */}
+			<div className="flex flex-col gap-16">
+				<PlayerBox player={undefined} />
+				<span className="text-xl font-bold text-center">VS</span>
+				<PlayerBox player={undefined} />
+			</div>
+
+			{/* Colonne de droite (Gagnant final) */}
+			<div className="flex flex-col gap-16 justify-center">
+				<PlayerBox player={undefined} />
+			</div>
+		</div>
 		</section>
 	);
 }
+
+function PlayerBox({ player }: { player: TournamentPlayer | undefined }) {
+	return (
+		<div className="w-32 h-16 flex items-center justify-center bg-blue-500 text-white font-bold rounded-lg shadow-md">
+			{player ? `🎮 ${player.tournament_name}` : "NA"}
+		</div>
+	);
+}
+
