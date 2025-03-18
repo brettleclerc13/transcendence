@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { getCookie } from "cookies-next/client";
 import { leaveTournament } from "../utilities/tournamentActions";
 import GameCanvas from "./gameCanvas";
-import { match } from "assert";
 
 type TournamentPlayer = {
 	id: string | null;
@@ -88,7 +87,7 @@ export default function TournamentCanvas({
 
 			if (data.type === "tournament_match_created") {
 				setMatchID(data.match_id);
-
+				setGameOn(true);
 			}
 		};
 
@@ -128,9 +127,8 @@ export default function TournamentCanvas({
 				type: "danger",
 			});
 		}
-		socket.close();
 
-		setInterval(() => {
+		setTimeout(() => {
 			setGameType("lobby");
 		}, 1000)	
 	}

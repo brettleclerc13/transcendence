@@ -186,6 +186,7 @@ export default function Lobby() {
 								setGameID={setGameID}
 								setGameType={setGameType}
 								alias={alias}
+								setAlias={setAlias}
 							/>
 						</div>
 						<div className="basis-2/5">
