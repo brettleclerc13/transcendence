@@ -226,6 +226,14 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 winner = await sync_to_async(lambda: match.winner)()
                 if winner:
                     winners.append(winner)
+                else:
+                    await save_tournament_outcome(self.room_id, True, False, None)
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            "type": "tournament_crashed",
+                        }
+                    )
 
             if not winners:
                 print(f"⚠️ No winners yet in non-final matches for tournament {self.room_id}.", flush=True)
@@ -362,6 +370,11 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             "type": "tournament_state",
             "state": event["state"]
+        }))
+    
+    async def tournament_crashed(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "tournament_crashed",
         }))
 
     async def new_user_joined(self, event):
