@@ -103,9 +103,17 @@ const SearchBar = () => {
 			)}
 			{message && (
 				<div
-					className={`alert ${invitationSent ? "alert-success" : "alert-danger"}`}
-					role="alert"
-				>
+				className={`alert ${invitationSent ? "alert-success" : "alert-danger"}`}
+				role="alert"
+				style={{
+					position: "absolute",
+					top: "-40px",
+					left: "50%",
+					transform: "translateX(-50%)",
+					zIndex: 1050, // S'assurer qu'il passe au-dessus des autres éléments
+					whiteSpace: "nowrap", // Empêche le texte de forcer un retour à la ligne
+				}}
+			>
 					{message}
 				</div>
 			)}
