@@ -93,7 +93,7 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 			};
 		}
 	} catch (error) {
-		console.error("updateUserProfileError: ", error);
+		console.warn("updateUserProfileError: ", error);
 		return {
 			ok: false,
 			error: (error as Error).message || "Failed to update profile.",

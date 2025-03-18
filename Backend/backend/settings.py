@@ -9,7 +9,8 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+from dotenv import load_dotenv
+load_dotenv()
 from pathlib import Path
 import os
 
@@ -21,10 +22,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-6#8c!#@(j+&&y*+fwnu0%5==s33(!8v0=hm&*01xy$z#45hxl('
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG')
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
 LOGGING = {
@@ -42,7 +43,7 @@ LOGGING = {
     },
 }
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 #ALLOWED_HOSTS = ["transcendence.fr", "transcendence.fr:8080", "backend", "backend:8001", "127.0.0.1:8080", "127.0.0.1"]
 
 
@@ -120,7 +121,7 @@ DATABASES = {
         'USER': os.getenv('DATABASE_USER', 'postgres'),
         'PASSWORD': os.getenv('DATABASE_PASSWORD', 'postgres'),
         'HOST': os.getenv('DATABASE_HOST', 'db'),
-        'PORT': '5432',
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),
     }
 }
 

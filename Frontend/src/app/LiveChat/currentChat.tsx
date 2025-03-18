@@ -64,7 +64,7 @@ const CurrentChat: React.FC<CurrentChatProps> = ({
 							<div className="message-bubble">{message.text}</div>
 							{isSent && (
 								<img
-									src={currentUser.profile_picture ? `${currentUser.profile_picture}` : "./img/default.png"}
+									src={currentUser.profile_picture ? `/api/${currentUser.profile_picture}` : "./img/default.png"}
 									alt={`Your avatar`}
 								/>
 							)}

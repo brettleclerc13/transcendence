@@ -42,8 +42,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
         await self.send(text_data=json.dumps({
-            "message": f"Connected to tournament {self.room_id}",
-            "room_id": self.room_id,
+            "type": "Connected to tournament",
         }))
 
     async def disconnect(self, close_code):
@@ -65,15 +64,16 @@ class TournamentConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
+        print(f"Data received: {data}", flush=True)
         message_type = data.get("type")
         user_key = f"tournament:{self.room_id}:users"
         state_key = f"tournament:{self.room_id}:state"
 
         if message_type == "user_connected":
-            self.tournament_id = self.is_returning_user(self.user.id)
+            self.tournament_id =  await self.is_returning_user(self.user.id)
             if self.tournament_id == None:
                 user_data = {
-                    "id": self.user.id,  #questonable
+                    "id": self.user.id,  
                     "tournament_name": await sync_to_async(lambda: self.user.tournament_name)(),
                     "profile_picture": await sync_to_async(lambda: self.user.profile_picture.url if self.user.profile_picture else None)(),
                     "is_on_page": True,
@@ -94,6 +94,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     "id": self.tournament_id
                 }
             )
+            await self.update_tournament_state()
         elif message_type == "user_disconnected":
             if self.tournament_id != None and await RedisManager.get_state(state_key) in ["waiting for players", "unknown"]:
                 await RedisManager.delete_user_data_map(user_key, self.tournament_id)
@@ -116,28 +117,17 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             print(f"JWT Authentication Error: {e}")
             return None  
 
+
     async def get_user(self, user_id):
+
         try:
             user = await asyncio.get_event_loop().run_in_executor(
                 None, lambda: UserProfile.objects.get(id=user_id)
             )
+            return user
+        except ObjectDoesNotExist:
+            return None
 
-            # Extract fields safely using sync_to_async for potentially blocking operations
-            tournament_name = await sync_to_async(lambda: user.tournament_name)()
-            profile_picture = await sync_to_async(lambda: user.profile_picture.url if user.profile_picture else None)()
-
-            user_data = {
-                "id": user.id,
-                "tournament_name": tournament_name,
-                "profile_picture": profile_picture,is_waiting_finals
-                "is_on_page": True,
-                "is_waiting_finals": False
-            }
-
-            return user_data
-
-    except ObjectDoesNotExist:
-        return None
 
     async def is_returning_user(self, new_user_id):
         user_key = f"tournament:{self.room_id}:users"
@@ -167,7 +157,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             #Notify users NOT on page and Start Tournament.
             asyncio.create_task(notify_absent_players_and_wait(self.room_name))
         elif previous_state == "playing finals":
-            winner = self.get_tournament_winner_id()
+            winner = await self.get_tournament_winner_id()
             if winner != None:
                 was_set = await self.redis.execute("SET", save_tournament_key, self.channel_name, "NX")
                 if was_set:
@@ -190,7 +180,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     new_state = await RedisManager.get_state(state_key)
             else:
                 new_state = "playing finals"
-        elif: previous_state == "playing first stage":
+        elif previous_state == "playing first stage":
             was_set = await self.redis.execute("SET", save_tournament_key, self.channel_name, "NX")
             if was_set:
                 check = await self.check_non_final_match_winners()
@@ -250,9 +240,9 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                         break
                 
                 waiting_players = []
-                    for tournament_id, user_data in tournament_users.items():
-                        if user_data.get("is_waiting_finals", "false") == "true":  
-                            waiting_players.append((tournament_id, user_data)) 
+                for tournament_id, user_data in tournament_users.items():
+                    if user_data.get("is_waiting_finals", "false") == "true":  
+                        waiting_players.append((tournament_id, user_data)) 
                 if victor[0] in [display_state["first_layer_1"],display_state["first_layer_2"]]:
                     display_state["second_layer_1"] = victor_tournament_id
                 elif victor[0] in [display_state["first_layer_3"],display_state["first_layer_4"]]:
@@ -368,9 +358,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             print(f"❌ Error checking tournament winner: {e}", flush=True)
             return None
 
-    async def notified_finals_start(self, event):
-
-
     async def tournament_state_update(self, event):
         await self.send(text_data=json.dumps({
             "type": "tournament_state",
@@ -378,7 +365,10 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         }))
 
     async def new_user_joined(self, event):
-        await self.send(text_data=json.dumps({is_waiting_finals
+        await self.send(text_data=json.dumps({
+            "type": "new_user",
+            "users": event["users"],
+            "id": event["id"]
         }))
 
     async def user_disconnected(self, event):
@@ -524,7 +514,7 @@ async def three_players_start(room_id, present_players):
 
         match_players = random.sample(players, 2)
         waiting_player = [player for player in players if player not in match_players][0]
-        last_player = [player for player in all_ids if not in match_players and not waiting_player][0]
+        last_player = [player for player in all_ids if player not in match_players and not waiting_player][0]
 
         user_key = f"tournament:{room_id}:users"
         await RedisManager.update_user_data_map(user_key, waiting_player, "is_waiting_finals", True)
@@ -581,7 +571,7 @@ async def two_players_start(room_id, present_players):
         )
 
 
-        create_tournament_match(room_id, players[0], players[1], true)
+        await create_tournament_match(room_id, players[0], players[1], true)
 
 async def create_tournament_match(room_id: str, tournament_id_1: str, tournament_id_2: str, is_finale: bool):
     try:
@@ -638,7 +628,7 @@ async def notify_and_wait_for_reconnect(room_id, absent_players):
             user_key = f"tournament:{room_id}:users"
 
             for player in absent_players:
-                await self.send_chat_notification(room_id, player["id"], "⚠️ You need to reconnect to play the tournament finals!")
+                await send_chat_notification(room_id, player["id"], "⚠️ You need to reconnect to play the tournament finals!")
 
             await asyncio.sleep(30)
 

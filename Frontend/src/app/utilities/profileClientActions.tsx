@@ -37,7 +37,7 @@ export const updateUserProfileImage = async (formData: FormData) => {
 			return response;
 		}
 	} catch (error) {
-		console.error("updateUserProfileImageError: ", error);
+		console.warn("updateUserProfileImageError: ", error);
 		throw new Error(String(error) || "Failed to update profile image.");
 	}
 };

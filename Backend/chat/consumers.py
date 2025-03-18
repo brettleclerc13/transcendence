@@ -162,6 +162,14 @@ class ContactConsumer(AsyncWebsocketConsumer):
         print(f"🔔 Mise à jour pour {self.user_id}: {event}")
         await self.send(text_data=json.dumps(event))
 
+    async def popup_tournament(self, event):
+        await self.send(text_data=json.dumps(
+            {
+                "type": popup_tournament,
+                "message": event["message"],
+            }
+        ))
+
     async def authenticate_user(self):
         try:
             query_params = parse_qs(self.scope["query_string"].decode())  

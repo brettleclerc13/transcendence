@@ -53,7 +53,7 @@ const SearchBar = () => {
 				setMessage("An unexpected response format was received.");
 			}
 		} catch (error) {
-			console.error("Error sending friend request:", error);
+			console.warn("Error sending friend request:", error);
 			setMessage("An unexpected error occurred. Please try again.");
 		} finally {
 			setLoading(false);

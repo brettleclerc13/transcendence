@@ -99,7 +99,7 @@ export const createSimpleMatch = async (invite_game?: boolean) => {
 				"Failed to create simple match.";
 			throw new Error(errorMessage);
 		} else {
-			console.log("create Match data: ", data);
+			// console.log("create Match data: ", data);
 			if (data.id) return { matchID: data.id as string };
 			else throw new Error("MatchID not found");
 		}
@@ -151,7 +151,7 @@ export const fetchSimpleMatchHistory = async () => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch(`http://backend:8001/match_history/`, {
+		const response = await fetch(`http://backend:8001/match-history/`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
@@ -184,6 +184,54 @@ export const fetchSimpleMatchHistory = async () => {
 			ok: false,
 			error:
 				(error as Error).message || "Failed to fetch user 1v1 match history.",
+		};
+	}
+};
+
+export const checkMatches = async () => {
+	const cookieStore = await cookies();
+	const token = cookieStore.get("accessToken")?.value;
+	if (!token) throw new Error("Access token missing");
+
+	try {
+		console.log("Checking 1v1 matches");
+		const response = await fetch(`http://backend:8001/match-check/`, {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+		});
+
+		let data;
+		const text = await response.text();
+		try {
+			data = JSON.parse(text);
+		} catch {
+			throw new Error(
+				`Unexpected response when trying to check user's active 1v1 matches: ${response.status}`
+			);
+		}
+		if (!response.ok) {
+			const errorMessage =
+				data.error ||
+				data.non_field_errors?.[0] || // First item in non_field_errors array
+				data.message || // Fallback to a generic message
+				data.detail || // Another common key for error messages
+				"Failed to check user 1v1 active matches.";
+			throw new Error(errorMessage);
+		} else {
+			console.log("CHECK MATCH data received: ", data);
+			if (data && data[0].id) {
+				return { ok: true, matchID: data[0].id};	
+			}
+			else return data;
+		}
+	} catch (error) {
+		return {
+			ok: false,
+			error:
+				(error as Error).message || "Failed to check user 1v1 active matches.",
 		};
 	}
 };

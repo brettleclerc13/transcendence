@@ -41,7 +41,7 @@ export default function ProfileImage({
 				});
 			}
 		} catch (error) {
-			console.error("Failed to update profile picture:", error);
+			console.warn("Failed to update profile picture:", error);
 		} finally {
 			setLoading(false);
 			// setTimeout(() => {

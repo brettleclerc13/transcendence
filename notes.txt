@@ -21,6 +21,11 @@ To delete users:
 DELETE FROM user_userprofile WHERE user_id IN (SELECT id FROM auth_user);
 DELETE FROM auth_user;
 
+SELECT tablename FROM pg_tables WHERE schemaname = 'public';
+
+DELETE FROM tmatch_tournamentmatch_players;
+DELETE FROM tmatch_tournamentmatch_matches;
+DELETE FROM tmatch_tournamentmatch;
 
 
 LIVE CHAT

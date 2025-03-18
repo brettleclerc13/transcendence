@@ -24,7 +24,7 @@ const MyCarousel = () => {
 					carouselInstance.dispose();
 				};
 			} else {
-				console.error("Bootstrap is not loaded");
+				console.warn("Bootstrap is not loaded");
 			}
 		}
 	}, [isBootstrapLoaded]);
