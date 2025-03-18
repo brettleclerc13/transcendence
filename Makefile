@@ -21,6 +21,10 @@ fclean: down
 	rm -Rf ./Volume
 	rm -Rf ./Backend/user/migrations
 	rm -Rf ./Backend/user/__pycache__
+	rm -Rf ./Backend/tournament/migrations
+	rm -Rf ./Backend/tournament/__pycache__
+	rm -Rf ./Backend/chat/migrations
+	rm -Rf ./Backend/chat/__pycache__
 	rm -Rf ./Backend/backend/__pycache__
 	rm -Rf ./Backend/utils/__pycache__
 	rm -Rf ./Backend/game/migrations

@@ -88,7 +88,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             else:
                 if self.debug_connections:
                     print(f"🌐 Web user connected: {self.channel_name}", flush=True)
-                
+                print("BOMBOGYAAAAAAAAAT", flush=True)
                 self.user = await self.authenticate_user()
                 if not self.user:
                     await self.close(code=4001)  
@@ -123,6 +123,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 
                 state_key = f"room:{self.room_name}:state"
                 if await RedisManager.get_state(state_key) == "waiting for reconnection":
+                    print(f"BOMBOOOOOOOOCLAAT: checking reconnect: {self.player_number}", flush=True)
                     await self.send(text_data=json.dumps({
                         "type": "reconnected",
                     }))
@@ -180,6 +181,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 #starting game needs upgrading
     async def receive(self, text_data):
         data = json.loads(text_data)
+
+        print(f"BOMBOCLAAT CHECKING: {data}", flush=True)
         
         players_key = f"room:{self.room_name}:players"
         game_started_key = f"room:{self.room_name}:game_running"
@@ -341,10 +344,11 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         }))
     
     async def wait_for_reconnection(self, username):
+        print("BOMBOCLAAAT", flush=True)
         try:
             await asyncio.sleep(self.reconnection_timer)  
             current_players = await RedisManager.get_list_of_list(f"room:{self.room_name}:players")
-
+            print(f"BOMBOCLAAAT: user: {username} | current players: {current_players}", flush=True)
             if username in current_players:
                 print(f"User {username} reconnected!", flush=True)
                 return  
@@ -369,28 +373,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         await super().dispatch(message)
     '''
     #needs refactoring.
-    async def wait_for_reconnection(self, username):
-        try:
-            await asyncio.sleep(self.reconnection_timer)  
-            current_players = await RedisManager.get_list_of_list(f"room:{self.room_name}:players")
-
-            if username in current_players:
-                print(f"User {username} reconnected!", flush=True)
-                return  
-
-            print(f"User {username} did NOT reconnect. Ending game.", flush=True)
-            await RedisManager.set_state(f"room:{self.room_name}:state", "game over")
-
-            winner = "player_2" if self.player_number == "player_1" else "player_1"
-            if await RedisManager.get_state(f"room:{self.room_name}:prev_state") == "waiting for players":
-                print("The Game did not Happen", flush=True)
-                winner = None
-            await self.handle_game_end(winner, "a player won, game_over")
-            return
-
-        except Exception as e:
-            print(f"Error in wait_for_reconnection: {e}", flush=True)
-
 
     async def handle_game_end(self, winner: str, msg: str):
         game_state_key = f"room:{self.room_name}:game_state"
