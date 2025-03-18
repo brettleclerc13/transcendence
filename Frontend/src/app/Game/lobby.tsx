@@ -185,6 +185,7 @@ export default function Lobby() {
 								setAlert={setAlert}
 								setGameID={setGameID}
 								setGameType={setGameType}
+								alias={alias}
 							/>
 						</div>
 						<div className="basis-2/5">
@@ -193,9 +194,8 @@ export default function Lobby() {
 								<input
 									type="text"
 									name="tournamentName"
-									defaultValue={
-										tournamentData?.previousValues?.tournament_name || alias
-									}
+									value={alias ?? ""}
+    								onChange={(e) => setAlias(e.target.value)}
 									className="border rounded-md p-2 mb-4 w-full"
 								/>
 								{tournamentData?.tournamentNameError && (

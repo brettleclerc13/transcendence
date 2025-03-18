@@ -18,10 +18,12 @@ export default function MatchList({
 	setAlert,
 	setGameID,
 	setGameType,
+	alias,
 }: {
 	setAlert: (alertMessage: { message: string; type: string } | null) => void;
 	setGameID: (matchID: string) => void;
 	setGameType: (isReadyToPlay: string) => void;
+	alias: string | undefined;
 }) {
 	const [games, setGames] = useState<Games[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
@@ -66,6 +68,13 @@ export default function MatchList({
 	const handleGameEntry = async (ID: string, is_tournament: boolean) => {
 		try {
 			if (is_tournament) {
+				if (!alias) {
+					setAlert({
+						message: "Cannot join tournament without an alias!",
+						type: "danger",
+					});
+					return;
+				}
 				await joinTournament(ID);
 				setAlert({
 					message: "Best of luck!",
