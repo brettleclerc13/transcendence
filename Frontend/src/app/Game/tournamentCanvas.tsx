@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getCookie } from "cookies-next/client";
 import { leaveTournament } from "../utilities/tournamentActions";
 import GameCanvas from "./gameCanvas";
+import "./tournament.css"
 
 type TournamentPlayer = {
 	id: string;
@@ -152,55 +153,62 @@ export default function TournamentCanvas({
 			{gameOn ? (
 				<GameCanvas ID={matchID} />
 			) : (
-				<section className="flex justify-center items-center h-full w-full">
+				<section className="tournament-container">
+					<h2 className="tournament-title">Tournament organisation :</h2>
+
 					{alert && (
-						<div className={`alert alert-${alert.type} alert-box`} role="alert">
+						<div className="alert-box" role="alert">
 							{alert.message}
 						</div>
 					)}
 
-					<div className="flex flex-col-reverse gap-5">
-						<button
-							className="mb-4 px-4 py-2 bg-red-500 w-fit pr-10 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition"
-							onClick={handleTournamentExit}
-						>
-							❌ Quit Tournament
-						</button>
-
-						<div className="grid grid-cols-3 gap-8 items-center">
-							{/* Left column (first 4 players) */}
-							<div className="flex flex-col gap-4">
-								<PlayerBox name={displayedPlayers[0]} />
-								<span className="text-xxl font-bold text-center">VS</span>
-								<PlayerBox name={displayedPlayers[1]} />
-								<div className="h-8"></div>
-								<PlayerBox name={displayedPlayers[2]} />
-								<span className="text-xxl font-bold text-center">VS</span>
-								<PlayerBox name={displayedPlayers[3]} />
+					<div className="tournament-grid">
+						{/* Left column (first 4 players) */}
+						<div className="round-container">
+							<h3 className="round-title">Round 1</h3>
+							<div className="round">
+								<PlayerBox className="player1" name={displayedPlayers[0]} />
+								<div className="match-line vertical vertical1"></div>
+								<div className="match-line horizontal horizontal1"></div>
+								<PlayerBox className="player2" name={displayedPlayers[1]} />
+								<PlayerBox className="player3" name={displayedPlayers[2]} />
+								<div className="match-line vertical vertical2"></div>
+								<div className="match-line horizontal horizontal2"></div>
+								<PlayerBox className="player4" name={displayedPlayers[3]} />
 							</div>
+						</div>
 
-							{/* Middle column (2 winners) */}
-							<div className="flex flex-col gap-16">
-								<PlayerBox name={displayedPlayers[4]} />
-								<span className="text-xl font-bold text-center">VS</span>
-								<PlayerBox name={displayedPlayers[5]} />
+						{/* Middle column (2 winners) */}
+						<div className="round-container">
+							<h3 className="round-title">Round 2</h3>
+							<div className="round">
+								<PlayerBox className="player5" name={displayedPlayers[4]} />
+								<div className="match-line vertical vertical3"></div>
+								<div className="match-line horizontal horizontal3"></div>
+								<PlayerBox className="player6" name={displayedPlayers[5]} />
 							</div>
+						</div>
 
-							{/* Right column (Final winner) */}
-							<div className="flex flex-col gap-16 justify-center">
-								<PlayerBox name={displayedPlayers[6]} />
+						{/* Right column (Winner) */}
+						<div className="round-container">
+							<h3 className="round-title">Winner!👑</h3>
+							<div className="round">
+								<PlayerBox className="player7" name={displayedPlayers[6]} />
 							</div>
 						</div>
 					</div>
+					<button className="quit-tournament-btn" onClick={handleTournamentExit}>
+						❌ Quit Tournament
+					</button>
 				</section>
 			)}
 		</>
 	);
 }
 
-function PlayerBox({ name }: { name: string }) {
+function PlayerBox({ className, name }: {className: string, name: string }) {
 	return (
-		<div className="w-32 h-16 flex items-center justify-center bg-blue-500 text-white font-bold rounded-lg shadow-md">
+		<div className={`player-box ${className}`}>
 			{name}
 		</div>
 	);
