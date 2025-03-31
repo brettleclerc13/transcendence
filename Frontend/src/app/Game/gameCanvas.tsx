@@ -71,7 +71,7 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 }
 
 export default function GameCanvas(match: { ID: string }) {
-	const [status, setStatus] = useState<"waiting" | "ready" | "playing">(
+	const [status, setStatus] = useState<"waiting" | "ready" | "playing" | "reconnection">(
 		"waiting"
 	);
 	const [playerRole, setPlayerRole] = useState<"player_1" | "player_2" | null>(
@@ -102,7 +102,7 @@ export default function GameCanvas(match: { ID: string }) {
 		}
 		const roomName = match.ID;
 		const ws = new WebSocket(
-			`wss://c3r2p3:8080/game/${roomName}/?token=${accessToken}`
+			`wss://127.0.0.1:8080/game/${roomName}/?token=${accessToken}`
 		);
 
 		ws.onopen = () => {
@@ -169,6 +169,10 @@ export default function GameCanvas(match: { ID: string }) {
 				lastUpdateTime.current = Date.now();
 
 				setGameState(data.game_state);
+			}
+
+			if (data.type === "pending_reconnection") {
+				setStatus("reconnection");
 			}
 		};
 
@@ -378,6 +382,7 @@ export default function GameCanvas(match: { ID: string }) {
 		<div className="game-container">
 			{status === "waiting" && <p>Waiting for opponent...</p>}
 			{status === "ready" && <p>Ready! Game starting soon...</p>}
+			{status === "reconnection" && <p>Waiting for reconnection of the opponent...</p>}
 			{status === "playing" && (
 				<canvas
 					ref={canvasRef}
