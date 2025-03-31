@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { getCookie } from "cookies-next/client";
+import "./game.css"
 
 type GameState = {
 	player1_position: [number, number];
@@ -374,7 +375,7 @@ export default function GameCanvas(match: { ID: string }) {
 	}, [socket, playerRole]);
 
 	return (
-		<div className="flex justify-center items-center h-full w-full">
+		<div className="game-container">
 			{status === "waiting" && <p>Waiting for opponent...</p>}
 			{status === "ready" && <p>Ready! Game starting soon...</p>}
 			{status === "playing" && (
@@ -382,7 +383,7 @@ export default function GameCanvas(match: { ID: string }) {
 					ref={canvasRef}
 					width={800}
 					height={592}
-					style={{ backgroundColor: "black", display: "block" }}
+					className="canvas"
 				/>
 			)}
 		</div>
