@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { getCookie } from "cookies-next/client";
 import "./game.css"
 
@@ -71,12 +72,13 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 }
 
 export default function GameCanvas(match: { ID: string }) {
-	const [status, setStatus] = useState<"waiting" | "ready" | "playing" | "reconnection">(
+	const [status, setStatus] = useState<"waiting" | "ready" | "playing" | "reconnection" | "ending">(
 		"waiting"
 	);
 	const [playerRole, setPlayerRole] = useState<"player_1" | "player_2" | null>(
 		null
 	);
+	const [winner, setWinner] = useState<string | null>(null);
 	const [socket, setSocket] = useState<WebSocket | null>(null);
 	const [gameState, setGameState] = useState<GameState | null>(null);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -92,6 +94,7 @@ export default function GameCanvas(match: { ID: string }) {
 	const prevPaddle2Position = useRef<[number, number] | null>(null);
 	const targetPaddle1Position = useRef<[number, number] | null>(null);
 	const targetPaddle2Position = useRef<[number, number] | null>(null);
+	const router = useRouter();
 
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
@@ -114,6 +117,11 @@ export default function GameCanvas(match: { ID: string }) {
 
 			if (data.type === "game_ending" || data.type === "game_pause")
 				console.log("Game Stopped! reason:", data.reason);
+			
+			if (data.type === "terminate_game") {
+				setWinner(data.winner);
+				setStatus("ending");
+			}
 
 			if (data.type === "initializer_pack") {
 				console.log("player name:", data.player_role);
@@ -174,6 +182,7 @@ export default function GameCanvas(match: { ID: string }) {
 			if (data.type === "pending_reconnection") {
 				setStatus("reconnection");
 			}
+
 		};
 
 		ws.onclose = (event) => {
@@ -378,6 +387,15 @@ export default function GameCanvas(match: { ID: string }) {
 		};
 	}, [socket, playerRole]);
 
+	useEffect(() => {
+		if (status === "ending") {
+			const timer = setTimeout(() => {
+				router.push("/lobby");
+			}, 5000);
+			return () => clearTimeout(timer);
+		}
+	}, [status]);
+
 	return (
 		<div className="game-container">
 			{status === "waiting" && <p>Waiting for opponent...</p>}
@@ -390,6 +408,13 @@ export default function GameCanvas(match: { ID: string }) {
 					height={592}
 					className="canvas"
 				/>
+			)}
+			{status === "ending" && (
+				<div className="game-over-screen">
+					<p>Game is finished!</p>
+					<p>{winner} is the Winner!</p>
+					<p>Returning to lobby in 5 seconds...</p>
+				</div>
 			)}
 		</div>
 	);
