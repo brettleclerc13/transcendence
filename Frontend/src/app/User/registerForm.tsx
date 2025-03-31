@@ -6,6 +6,7 @@ import { register } from "@/app/utilities/userActions";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import "./user.css";
+import "./registerForm.css"
 
 export const registerSchema = z.object({
 	email: z
@@ -125,24 +126,21 @@ export default function RegisterForm() {
 	}
 
 	return (
-		<div className="fixed inset-0 bg-teal-800 flex justify-center items-center">
-			<div className="bg-white mt-20 p-8 rounded-lg shadow-lg w-96">
-				<Link
-					href="/"
-					className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-3xl font-bold"
-				>
+		<div className="modal-container">
+			<div className="modal-content">
+				<Link href="/" className="close-button">
 					&times;
 				</Link>
-
+		
 				{alert && (
-					<div className={`alert alert-${alert.type} mb-4`} role="alert">
-						{alert.message}
-					</div>
+				<div className={`alert alert-${alert.type}`} role="alert">
+					{alert.message}
+				</div>
 				)}
-
+		
 				<form action={action}>
-					<label htmlFor="email" className="block text-sm font-medium mb-1">
-						Email<span className="text-red-500 ml-1">*</span>
+					<label htmlFor="email" className="label">
+						Email<span className="mandatory">*</span>
 					</label>
 					<input
 						type="email"
@@ -150,13 +148,12 @@ export default function RegisterForm() {
 						id="email"
 						name="email"
 						defaultValue={data?.previousValues?.email}
-						className="border rounded-md p-2 mb-4 w-full"
+						className="input-field"
 					/>
-					{data?.emailError && (
-						<p className="input-error">{data?.emailError}</p>
-					)}
-					<label htmlFor="username" className="block text-sm font-medium mb-1">
-						Username<span className="text-red-500 ml-1">*</span>
+					{data?.emailError && <p className="input-error">{data?.emailError}</p>}
+			
+					<label htmlFor="username" className="label">
+						Username<span className="mandatory">*</span>
 					</label>
 					<input
 						type="text"
@@ -164,13 +161,14 @@ export default function RegisterForm() {
 						id="username"
 						name="username"
 						defaultValue={data?.previousValues?.username}
-						className="border rounded-md p-2 mb-4 w-full"
+						className="input-field"
 					/>
 					{data?.usernameError && (
 						<p className="input-error">{data?.usernameError}</p>
 					)}
-					<label htmlFor="password" className="block text-sm font-medium mb-1">
-						Password<span className="text-red-500 ml-1">*</span>
+			
+					<label htmlFor="password" className="label">
+						Password<span className="mandatory">*</span>
 					</label>
 					<input
 						type="password"
@@ -178,12 +176,13 @@ export default function RegisterForm() {
 						id="password"
 						name="password"
 						defaultValue={data?.previousValues?.password}
-						className="border rounded-md p-2 mb-4 w-full"
+						className="input-field"
 					/>
 					{data?.passwordError && (
 						<p className="input-error">{data?.passwordError}</p>
 					)}
-					<label htmlFor="age" className="block text-sm font-medium mb-1">
+			
+					<label htmlFor="age" className="label">
 						Age
 					</label>
 					<input
@@ -192,13 +191,11 @@ export default function RegisterForm() {
 						id="age"
 						name="age"
 						defaultValue={data?.previousValues?.age}
-						className="border rounded-md p-2 mb-4 w-full"
+						className="input-field"
 					/>
 					{data?.ageError && <p className="input-error">{data?.ageError}</p>}
-					<label
-						htmlFor="nationality"
-						className="block text-sm font-medium mb-1"
-					>
+			
+					<label htmlFor="nationality" className="label">
 						Nationality
 					</label>
 					<input
@@ -207,12 +204,13 @@ export default function RegisterForm() {
 						id="nationality"
 						name="nationality"
 						defaultValue={data?.previousValues?.nationality}
-						className="border rounded-md p-2 mb-4 w-full"
+						className="input-field"
 					/>
 					{data?.nationalityError && (
 						<p className="input-error">{data?.nationalityError}</p>
 					)}
-					<label htmlFor="bio" className="block text-sm font-medium mb-1">
+
+					<label htmlFor="bio" className="label">
 						Bio
 					</label>
 					<input
@@ -221,22 +219,25 @@ export default function RegisterForm() {
 						id="bio"
 						name="bio"
 						defaultValue={data?.previousValues?.bio}
-						className="border rounded-md p-2 mb-4 w-full"
+						className="input-field"
 					/>
 					{data?.bioError && <p className="input-error">{data?.bioError}</p>}
+			
 					<button
 						disabled={isPending}
 						type="submit"
-						className="text-white bg-teal-600 hover:bg-teal-700 rounded-md p-2 w-full"
+						className="submit-button"
 					>
 						Sign Up
 					</button>
 				</form>
-				<Link className="link-btn underline mt-4 ml-6" href="/login">
-					Already have an account ? Login here
+		
+				<Link className="register-link" href="/login">
+					Already have an account? Login here
 				</Link>
-				<p className="text-xs mt-4">
-					<span className="text-red-500 mr-1">*</span>: Mandatory information
+		
+				<p className="mandatory-info">
+					<span>*</span>: Mandatory information
 				</p>
 			</div>
 		</div>
