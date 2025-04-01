@@ -6,6 +6,7 @@ import { login } from "@/app/utilities/userActions";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import "./user.css";
+import "./loginForm.css";
 
 export const loginSchema = z.object({
 	email: z
@@ -62,24 +63,21 @@ export default function LoginForm() {
 	}
 
 	return (
-		<div className="fixed inset-0 bg-teal-800 flex justify-center items-center">
-			<div className="bg-white p-8 top-20 rounded-lg shadow-lg w-96">
-				<Link
-					href="/"
-					className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-3xl font-bold"
-				>
+		<div className="modal-container">
+		  	<div className="modal-content">
+				<Link href="/" className="close-button">
 					&times;
 				</Link>
-
+		
 				{alert && (
-					<div className={`alert alert-${alert.type} mb-4`} role="alert">
-						{alert.message}
-					</div>
+				<div className={`alert alert-${alert.type}`} role="alert">
+					{alert.message}
+				</div>
 				)}
-
+		
 				<form action={action}>
-					<label htmlFor="email" className="block text-sm font-medium mb-1">
-						Email<span className="text-red-500 ml-1">*</span>
+					<label htmlFor="email" className="label">
+						Email<span className="mandatory">*</span>
 					</label>
 					<input
 						type="email"
@@ -87,37 +85,37 @@ export default function LoginForm() {
 						id="email"
 						name="email"
 						defaultValue={data?.previousValues?.email}
-						className="border rounded-md p-2 mb-4 w-full"
+						className="input-field"
 					/>
 					{data?.emailError && (
-						<p className="text-red-500 text-sm mb-2">{data?.emailError}</p>
+						<p className="error-message">{data?.emailError}</p>
 					)}
-					<label htmlFor="password" className="block text-sm font-medium mb-1">
-						Password<span className="text-red-500 ml-1">*</span>
+			
+					<label htmlFor="password" className="label">
+						Password<span className="mandatory">*</span>
 					</label>
 					<input
 						type="password"
 						placeholder="*************"
 						id="password"
 						name="password"
-						className="border rounded-md p-2 mb-4 w-full"
+						className="input-field"
 					/>
 					{data?.passwordError && (
-						<p className="text-red-500 text-sm mb-2">{data?.passwordError}</p>
+						<p className="error-message">{data?.passwordError}</p>
 					)}
-					<button
-						type="submit"
-						disabled={isPending}
-						className="text-white bg-teal-600 hover:bg-teal-700 rounded-md p-2 w-full"
-					>
+			
+					<button type="submit" disabled={isPending} className="submit-button">
 						Log In
 					</button>
 				</form>
-				<Link className="link-btn underline mt-4 ml-6" href="/register">
-					Don&apos;t have an account ? Register here
+		
+				<Link className="register-link" href="/register">
+					Don&apos;t have an account? Register here
 				</Link>
-				<p className="text-xs mt-4">
-					<span className="text-red-500 mr-1">*</span>: Mandatory information
+		
+				<p className="mandatory-info">
+					<span>*</span>: Mandatory information
 				</p>
 			</div>
 		</div>

@@ -180,7 +180,7 @@ export default function Lobby() {
 						</div>
 					)}
 					<div className="lobby-sub-container">
-						<div className="basis-3/5">
+						<div style={{ flex:3 }}>
 							<MatchList
 								setAlert={setAlert}
 								setGameID={setGameID}
@@ -189,7 +189,7 @@ export default function Lobby() {
 								setAlias={setAlias}
 							/>
 						</div>
-						<div className="basis-2/5">
+						<div style={{ flex:2 }}>
 							<form action={tournamentAction}>
 								<h3>Tournament alias name</h3>
 								<input
@@ -197,7 +197,7 @@ export default function Lobby() {
 									name="tournamentName"
 									value={alias ?? ""}
     								onChange={(e) => setAlias(e.target.value)}
-									className="border rounded-md p-2 mb-4 w-full"
+									className="input-field"
 								/>
 								{tournamentData?.tournamentNameError && (
 									<p className="input-error">
@@ -227,7 +227,7 @@ export default function Lobby() {
 				</div>
 			)}
 			{gameType == "notLoggedIn" && (
-				<div className="flex flex-col gap-4 justify-center items-center h-full w-full">
+				<div className="not-logged-in-container">
 					<p className="text-lg">
 						Please log in before starting a game. It won't even take a minute!
 					</p>

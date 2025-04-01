@@ -1,0 +1,13 @@
+.title-text {
+	font-size: 3rem;
+	color: white;
+	font-family: 'Monaco', monospace;
+}
+
+.cursor {
+	display: inline-block;
+	width: 0.25rem;
+	height: 2.25rem;
+	background-color: white;
+	transition: background-color 0.2s ease;
+}

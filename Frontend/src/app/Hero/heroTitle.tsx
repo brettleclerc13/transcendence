@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import "./heroTitle.css"
 
 export default function Title() {
 	const [displayedText, setDisplayedText] = useState("");
@@ -83,10 +84,10 @@ export default function Title() {
 	}, [isFinalTypingComplete]);
 
 	return (
-		<h1 className="text-5xl text-white font-mono">
+		<h1 className="title-text">
 			{displayedText}
 			<span
-				className="inline-block w-1 h-9"
+				className="cursor"
 				style={{ backgroundColor: showCursor ? "white" : "transparent" }}
 			/>
 		</h1>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { getCookie } from "cookies-next/client";
+import "./game.css"
 
 type GameState = {
 	player1_position: [number, number];
@@ -70,12 +72,13 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 }
 
 export default function GameCanvas(match: { ID: string }) {
-	const [status, setStatus] = useState<"waiting" | "ready" | "playing">(
+	const [status, setStatus] = useState<"waiting" | "ready" | "playing" | "reconnection" | "ending">(
 		"waiting"
 	);
 	const [playerRole, setPlayerRole] = useState<"player_1" | "player_2" | null>(
 		null
 	);
+	const [winner, setWinner] = useState<string | null>(null);
 	const [socket, setSocket] = useState<WebSocket | null>(null);
 	const [gameState, setGameState] = useState<GameState | null>(null);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -91,6 +94,7 @@ export default function GameCanvas(match: { ID: string }) {
 	const prevPaddle2Position = useRef<[number, number] | null>(null);
 	const targetPaddle1Position = useRef<[number, number] | null>(null);
 	const targetPaddle2Position = useRef<[number, number] | null>(null);
+	const router = useRouter();
 
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
@@ -101,7 +105,7 @@ export default function GameCanvas(match: { ID: string }) {
 		}
 		const roomName = match.ID;
 		const ws = new WebSocket(
-			`wss://c3r2p3:8080/game/${roomName}/?token=${accessToken}`
+			`wss://127.0.0.1:8080/game/${roomName}/?token=${accessToken}`
 		);
 
 		ws.onopen = () => {
@@ -113,6 +117,11 @@ export default function GameCanvas(match: { ID: string }) {
 
 			if (data.type === "game_ending" || data.type === "game_pause")
 				console.log("Game Stopped! reason:", data.reason);
+			
+			if (data.type === "terminate_game") {
+				setWinner(data.winner);
+				setStatus("ending");
+			}
 
 			if (data.type === "initializer_pack") {
 				console.log("player name:", data.player_role);
@@ -169,6 +178,11 @@ export default function GameCanvas(match: { ID: string }) {
 
 				setGameState(data.game_state);
 			}
+
+			if (data.type === "pending_reconnection") {
+				setStatus("reconnection");
+			}
+
 		};
 
 		ws.onclose = (event) => {
@@ -373,17 +387,34 @@ export default function GameCanvas(match: { ID: string }) {
 		};
 	}, [socket, playerRole]);
 
+	useEffect(() => {
+		if (status === "ending") {
+			const timer = setTimeout(() => {
+				router.push("/lobby");
+			}, 5000);
+			return () => clearTimeout(timer);
+		}
+	}, [status]);
+
 	return (
-		<div className="flex justify-center items-center h-full w-full">
+		<div className="game-container">
 			{status === "waiting" && <p>Waiting for opponent...</p>}
 			{status === "ready" && <p>Ready! Game starting soon...</p>}
+			{status === "reconnection" && <p>Waiting for reconnection of the opponent...</p>}
 			{status === "playing" && (
 				<canvas
 					ref={canvasRef}
 					width={800}
 					height={592}
-					style={{ backgroundColor: "black", display: "block" }}
+					className="canvas"
 				/>
+			)}
+			{status === "ending" && (
+				<div className="game-over-screen">
+					<p>Game is finished!</p>
+					<p>{winner} is the Winner!</p>
+					<p>Returning to lobby in 5 seconds...</p>
+				</div>
 			)}
 		</div>
 	);

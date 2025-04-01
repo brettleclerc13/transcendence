@@ -59,7 +59,7 @@ export default function ProfileImage({
 	return (
 		<>
 			<div className="image-wrapper">
-				<div className="relative w-32 h-32">
+				<div className="relative">
 					<img
 						src={
 							userProfile?.profile_picture
@@ -72,9 +72,9 @@ export default function ProfileImage({
 
 					<label
 						htmlFor="file-input"
-						className="absolute bottom-1 right-1 bg-black/70 p-2 rounded-full cursor-pointer"
+						className="label-file-input"
 					>
-						<Pencil className="text-white w-4 h-4" />
+						<Pencil className="label-file-input svg" />
 					</label>
 
 					<input
@@ -86,7 +86,7 @@ export default function ProfileImage({
 					/>
 
 					{loading && (
-						<div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-sm">
+						<div className="uploading-overlay">
 							Uploading...
 						</div>
 					)}
