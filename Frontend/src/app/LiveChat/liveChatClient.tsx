@@ -135,7 +135,7 @@ const LiveChatClient = () => {
 				}
 
 				wsRef.current = new WebSocket(
-					`wss://c3r2p3:8080/ws/chat/${conversationData.id}/?token=${accessToken}`
+					`wss://c2r5p8:8080/ws/chat/${conversationData.id}/?token=${accessToken}`
 				);
 
 				wsRef.current.onopen = () => {

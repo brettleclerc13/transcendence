@@ -101,7 +101,7 @@ export default function GameCanvas(match: { ID: string }) {
 		}
 		const roomName = match.ID;
 		const ws = new WebSocket(
-			`wss://c3r2p3:8080/game/${roomName}/?token=${accessToken}`
+			`wss://c2r5p8:8080/game/${roomName}/?token=${accessToken}`
 		);
 
 		ws.onopen = () => {
