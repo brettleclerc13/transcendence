@@ -97,7 +97,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 			return;
 		}
 
-			wsRef.current = new WebSocket(`wss://127.0.0.1:8080/ws/contacts/?token=${accessToken}`);
+			wsRef.current = new WebSocket(`wss://c3r2p3:8080/ws/contacts/?token=${accessToken}`);
 		
 			wsRef.current.onmessage = (event) => {
 			const data = JSON.parse(event.data);

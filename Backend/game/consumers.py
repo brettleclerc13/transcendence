@@ -56,15 +56,14 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.time_per_tick = 0.1 
         self.sub_tick_amount = 5
         self.reflection_bias = 0.95    
-        self.max_speed = 10000 # best not set too high
+        self.max_speed = 45 # best not set too high
         self.directional_limit = 0.1
         self.dir_correction_rate = 0.12
-        self.reconnection_timer = 30
+        self.reconnection_timer = 60
 
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = f"pong_{self.room_name}"
-        print(self.scope["path"], flush=True)
 
         # Detect User-Agent to differentiate between CLI and browser users
         headers = dict(self.scope["headers"])
@@ -88,7 +87,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             else:
                 if self.debug_connections:
                     print(f"🌐 Web user connected: {self.channel_name}", flush=True)
-                
                 self.user = await self.authenticate_user()
                 if not self.user:
                     await self.close(code=4001)  
@@ -161,7 +159,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 print(f"the game state at disconnect: {await RedisManager.get_state(state_key)}", flush=True)
             if (await RedisManager.get_state(state_key)) in ["game ongoing", "waiting for players"]: 
                 await RedisManager.set_state(prev_state_key, f"{await RedisManager.get_state(state_key)}") 
-                await RedisManager.set_state(state_key, "Waiting for reconnection")
+                await RedisManager.set_state(state_key, "waiting for reconnection")
                 await self.channel_layer.group_send(
                         self.room_group_name,
                         {
@@ -172,7 +170,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 if hasattr(self, "game_task"):
                     self.game_task.cancel()
                 await self.redis.delete(game_started_key)
-                print(f"Calling TASK by {self.player_number} AKA {username}", flush=True)
                 asyncio.create_task(self.wait_for_reconnection(username))
         except Exception as e:
             print(f"Error during disconnect: {e}", flush=True)
@@ -180,7 +177,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 #starting game needs upgrading
     async def receive(self, text_data):
         data = json.loads(text_data)
-        
+
         players_key = f"room:{self.room_name}:players"
         game_started_key = f"room:{self.room_name}:game_running"
         input_queue_key = f"room:{self.room_name}:inputs"
@@ -199,7 +196,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             self.has_initialize = True
             if data["type"] == "initialize" and previous_state == "waiting for players":
                 await self.redis.execute("SET", game_state_key, json.dumps(self.game_state))
-            elif data["type"] == "restart" and previous_state == "game onging":
+            if data["type"] == "restart" and previous_state == "game ongoing":
                 self.game_state = await RedisManager.get_json(game_state_key)
             
             
@@ -288,7 +285,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         
     async def save_match(self, score1, score2, winner, loser):
         try:
-            print(f"saving a match that ended {score1} to {score2}", flush=True)
             self.match.score_player1 = score1
             self.match.score_player2 = score2
             self.match.winner = winner
@@ -333,8 +329,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
 
     
     async def game_update(self, event):
-        #print(f"Sending message: {json.dumps({'type': 'game_update', 'game_state': self.game_state})}", flush=True)
-
         await self.send(text_data=json.dumps({
             "type": "game_update",
             "game_state": event["game_state"],
@@ -344,12 +338,10 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         try:
             await asyncio.sleep(self.reconnection_timer)  
             current_players = await RedisManager.get_list_of_list(f"room:{self.room_name}:players")
-
             if username in current_players:
                 print(f"User {username} reconnected!", flush=True)
                 return  
 
-            print(f"User {username} did NOT reconnect. Ending game.", flush=True)
             await RedisManager.set_state(f"room:{self.room_name}:state", "game over")
 
             winner = "player_2" if self.player_number == "player_1" else "player_1"
@@ -369,28 +361,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         await super().dispatch(message)
     '''
     #needs refactoring.
-    async def wait_for_reconnection(self, username):
-        try:
-            await asyncio.sleep(self.reconnection_timer)  
-            current_players = await RedisManager.get_list_of_list(f"room:{self.room_name}:players")
-
-            if username in current_players:
-                print(f"User {username} reconnected!", flush=True)
-                return  
-
-            print(f"User {username} did NOT reconnect. Ending game.", flush=True)
-            await RedisManager.set_state(f"room:{self.room_name}:state", "game over")
-
-            winner = "player_2" if self.player_number == "player_1" else "player_1"
-            if await RedisManager.get_state(f"room:{self.room_name}:prev_state") == "waiting for players":
-                print("The Game did not Happen", flush=True)
-                winner = None
-            await self.handle_game_end(winner, "a player won, game_over")
-            return
-
-        except Exception as e:
-            print(f"Error in wait_for_reconnection: {e}", flush=True)
-
 
     async def handle_game_end(self, winner: str, msg: str):
         game_state_key = f"room:{self.room_name}:game_state"
@@ -399,7 +369,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             
             already_ended = await RedisManager.get_state(game_ended)
             if already_ended == "true":
-                print("Already cleaned", flush=True)
                 await self.channel_layer.group_discard(
                 self.room_group_name,
                 self.channel_name

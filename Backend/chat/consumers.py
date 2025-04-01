@@ -165,7 +165,7 @@ class ContactConsumer(AsyncWebsocketConsumer):
     async def popup_tournament(self, event):
         await self.send(text_data=json.dumps(
             {
-                "type": popup_tournament,
+                "type": "popup_tournament",
                 "message": event["message"],
             }
         ))

@@ -101,7 +101,7 @@ export default function GameCanvas(match: { ID: string }) {
 		}
 		const roomName = match.ID;
 		const ws = new WebSocket(
-			`wss://127.0.0.1:8080/game/${roomName}/?token=${accessToken}`
+			`wss://c3r2p3:8080/game/${roomName}/?token=${accessToken}`
 		);
 
 		ws.onopen = () => {
@@ -129,7 +129,7 @@ export default function GameCanvas(match: { ID: string }) {
 			}
 
 			if (data.type === "reconnected"){
-				socket?.send(
+				ws.send(
 					JSON.stringify({
 						type: "restart",
 						game_parametres: {
