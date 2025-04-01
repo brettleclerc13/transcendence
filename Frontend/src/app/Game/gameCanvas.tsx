@@ -6,6 +6,7 @@ import { getCookie } from "cookies-next/client";
 import "./game.css"
 
 type GameState = {
+	winner: string
 	player1_position: [number, number];
 	player2_position: [number, number];
 	ball_speed: number;
@@ -17,6 +18,7 @@ type GameState = {
 	collision_point: [number, number][];
 	last_update_time: number;
 };
+
 
 function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 	//console.log("Drawing game state:", state);
@@ -67,7 +69,15 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
 	ctx.font = "30px Arial";
 	ctx.fillText(`Player 1: ${state.score[0]}`, 20, 30); // Player 1 score at the top
+	if (state.score[0] === 10) {
+		state.winner = "player_1"
+		return (state.winner);
+	}
 	ctx.fillText(`Player 2: ${state.score[1]}`, canvas.width - 180, 30); // Player 2 score at the top
+	if (state.score[1] === 10) {
+		state.winner = "player_2"
+		return (state.winner);
+	}
 	ctx.restore();
 }
 
@@ -114,14 +124,15 @@ export default function GameCanvas(match: { ID: string }) {
 
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
-
-			if (data.type === "game_ending" || data.type === "game_pause")
-				console.log("Game Stopped! reason:", data.reason);
 			
-			if (data.type === "terminate_game") {
-				setWinner(data.winner);
+			if (data.type === "game_ending") {
+				console.log("Game FINISHED" );
+				// setWinner(data.winner);
 				setStatus("ending");
 			}
+			
+			if (data.type === "game_ending" || data.type === "game_pause")
+				console.log("Game Stopped! reason:", data.reason);
 
 			if (data.type === "initializer_pack") {
 				console.log("player name:", data.player_role);
@@ -291,7 +302,7 @@ export default function GameCanvas(match: { ID: string }) {
 			}
 
 			// Draw the updated frame
-			drawGame(
+			setWinner(drawGame(
 				{
 					...gameState,
 					ball_position: interpolatedBallPosition,
@@ -299,7 +310,7 @@ export default function GameCanvas(match: { ID: string }) {
 					player2_position: interpolatedPaddle2Position,
 				},
 				canvasRef.current
-			);
+			) ?? null);
 
 			// Request the next frame
 			animationFrameId = requestAnimationFrame(renderLoop);
@@ -390,7 +401,7 @@ export default function GameCanvas(match: { ID: string }) {
 	useEffect(() => {
 		if (status === "ending") {
 			const timer = setTimeout(() => {
-				router.push("/lobby");
+				router.push("/home");
 			}, 5000);
 			return () => clearTimeout(timer);
 		}
@@ -413,7 +424,7 @@ export default function GameCanvas(match: { ID: string }) {
 				<div className="game-over-screen">
 					<p>Game is finished!</p>
 					<p>{winner} is the Winner!</p>
-					<p>Returning to lobby in 5 seconds...</p>
+					<p>Returning to homepage in 5 seconds...</p>
 				</div>
 			)}
 		</div>

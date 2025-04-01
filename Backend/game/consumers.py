@@ -391,7 +391,9 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             elif winner == "player_2":
                 await self.save_match(game_state["score"][0], game_state["score"][1], player2, player1)
 
+            # print(f"AFFICHE LE TERMINATE_GAME")
             await self.channel_layer.group_send(
+                # print(f"AFFICHE LE TERMINATE_GAME DANS LE AWAIT"),
                 self.room_group_name,
                 {
                     "type": "terminate_game", 
