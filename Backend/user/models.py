@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django_otp.plugins.otp_totp.models import TOTPDevice
+
 
 def user_directory_path(instance, filename):
 	return f"profile_pictures/{instance.user.id}/{filename}"
@@ -16,6 +18,7 @@ class UserProfile(models.Model):
 	is_online = models.BooleanField(default=True, blank=True, null=True)
 	friends = models.ManyToManyField("self", blank=True, symmetrical=True)
 	blocked_users = models.ManyToManyField("self", symmetrical=False, related_name="blocked_by", blank=True)
+	has_2fa = models.BooleanField(default=False)
 
 	def validate_profile_picture(self, value):
 		max_size = 2 * 1024 * 1024  # 2MB
@@ -27,6 +30,17 @@ class UserProfile(models.Model):
 
 	def __str__(self):
 		return f"{self.user.username}'s profile"
+	
+	def enable_2fa(self):
+		if not self.has_2fa:
+			TOTPDevice.objects.create(user=self.user, name="default")
+			self.has_2fa = True
+			self.save()
+	
+	def disable_2fa(self):
+		self.user.totpdevice_set.all().delete()
+		self.has_2fa = False
+		self.save()
 
 	def block_user(self, user_to_block):
 		self.blocked_users.add(user_to_block)

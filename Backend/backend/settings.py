@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'tournament',
 	'chat',
 	'bleach',
+	'django_otp'
 ]
 
 BLEACH_ALLOWED_TAGS = ['p', 'span', 'br', 'strong', 'em', 'u']
@@ -79,6 +80,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+	'django_otp.middleware.OTPMiddleware',
 ]
 
 ROOT_URLCONF = 'backend.urls'

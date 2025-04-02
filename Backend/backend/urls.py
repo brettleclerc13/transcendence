@@ -18,10 +18,9 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import path
 from django.conf.urls.static import static
-from chat.consumers import ContactConsumer
 from match.views import MatchAPIView, MatchRetrieveUpdateAPIView, MatchHistoryView, MatchCLIView, MatchCheckView
 from tmatch.views import TournamentAPIView, TournamentRetrieveUpdateAPIView, TournamentHistoryView, TournamentCheckView
-from user.views import RegisterAPIView, LogoutAPIView, ProfileAPIView, PublicProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView
+from user.views import RegisterAPIView, LogoutAPIView, ProfileAPIView, PublicProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView, GenerateQRCodeView, Enable2FAView, Disable2FAView, Verify2FAView
 
 urlpatterns = [
 	path('admin/', admin.site.urls),
@@ -30,6 +29,11 @@ urlpatterns = [
 	path('logout/', LogoutAPIView.as_view(), name='logout'),
 	path('profile/', ProfileAPIView.as_view(), name='profile'),
 	path('public_profile/', PublicProfileAPIView.as_view(), name='public-profile'),
+    
+	path("2fa/generate_qr/", GenerateQRCodeView.as_view(), name="generate_qr"),
+    path("2fa/enable/", Enable2FAView.as_view(), name="enable_2fa"),
+    path("2fa/disable/", Disable2FAView.as_view(), name="disable_2fa"),
+    path("2fa/verify/", Verify2FAView.as_view(), name="verify_2fa"),
 
 	path('matches/', MatchAPIView.as_view(), name="Match-get-post"),
 	path('matches/<uuid:id>/', MatchRetrieveUpdateAPIView.as_view(), name="match-patch"),
@@ -59,7 +63,6 @@ urlpatterns = [
 	path('block-user/<int:user_id>/', BlockUserAPIView.as_view(), name='block_user'),
 	path('unblock-user/<int:user_id>/', UnblockUserAPIView.as_view(), name='unblock_user'),
 	path('blocked-users/', BlockedUsersAPIView.as_view(), name='blocked_users'),
-    
 ]
 
 if settings.DEBUG:
