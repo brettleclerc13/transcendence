@@ -80,7 +80,7 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 	ctx.restore();
 }
 
-export default function GameCanvas(match: { ID: string }) {
+export default function GameCanvas(match: { ID: string | undefined }) {
 	const [status, setStatus] = useState<
 		"waiting" | "ready" | "playing" | "reconnection" | "ending"
 	>("waiting");
@@ -108,8 +108,8 @@ export default function GameCanvas(match: { ID: string }) {
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
 
-		if (!accessToken) {
-			console.log("Access Token not retrieved in Game Canvas");
+		if (!accessToken || !match.ID) {
+			console.log("Access Token or Match ID not found in Game Canvas");
 			return;
 		}
 		const roomName = match.ID;
@@ -401,7 +401,7 @@ export default function GameCanvas(match: { ID: string }) {
 	useEffect(() => {
 		if (status === "ending") {
 			const timer = setTimeout(() => {
-				router.push("/home");
+				router.push("/lobby");
 			}, 5000);
 			return () => clearTimeout(timer);
 		}
