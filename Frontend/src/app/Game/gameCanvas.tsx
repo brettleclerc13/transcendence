@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getCookie } from "cookies-next/client";
-import "./game.css"
+import "./game.css";
 
 type GameState = {
 	player1_position: [number, number];
@@ -72,9 +72,9 @@ function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 }
 
 export default function GameCanvas(match: { ID: string }) {
-	const [status, setStatus] = useState<"waiting" | "ready" | "playing" | "reconnection" | "ending">(
-		"waiting"
-	);
+	const [status, setStatus] = useState<
+		"waiting" | "ready" | "playing" | "reconnection" | "ending"
+	>("waiting");
 	const [playerRole, setPlayerRole] = useState<"player_1" | "player_2" | null>(
 		null
 	);
@@ -117,7 +117,7 @@ export default function GameCanvas(match: { ID: string }) {
 
 			if (data.type === "game_ending" || data.type === "game_pause")
 				console.log("Game Stopped! reason:", data.reason);
-			
+
 			if (data.type === "terminate_game") {
 				setWinner(data.winner);
 				setStatus("ending");
@@ -137,7 +137,7 @@ export default function GameCanvas(match: { ID: string }) {
 				setStatus("playing");
 			}
 
-			if (data.type === "reconnected"){
+			if (data.type === "reconnected") {
 				ws.send(
 					JSON.stringify({
 						type: "restart",
@@ -182,7 +182,6 @@ export default function GameCanvas(match: { ID: string }) {
 			if (data.type === "pending_reconnection") {
 				setStatus("reconnection");
 			}
-
 		};
 
 		ws.onclose = (event) => {
@@ -400,14 +399,11 @@ export default function GameCanvas(match: { ID: string }) {
 		<div className="game-container">
 			{status === "waiting" && <p>Waiting for opponent...</p>}
 			{status === "ready" && <p>Ready! Game starting soon...</p>}
-			{status === "reconnection" && <p>Waiting for reconnection of the opponent...</p>}
+			{status === "reconnection" && (
+				<p>Waiting for reconnection of the opponent...</p>
+			)}
 			{status === "playing" && (
-				<canvas
-					ref={canvasRef}
-					width={800}
-					height={592}
-					className="canvas"
-				/>
+				<canvas ref={canvasRef} width={800} height={592} className="canvas" />
 			)}
 			{status === "ending" && (
 				<div className="game-over-screen">

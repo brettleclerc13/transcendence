@@ -318,7 +318,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         if hasattr(self, "game_task"):
             self.game_task.cancel()
         if event["reason"] == "user disconnected, waiting":
-            msg_type = "game_paused"
+            msg_type = "pending_reconnection"
         elif event["reason"] == "a player won, game_over":
             msg_type = "game_ending"
         await self.send(text_data=json.dumps({
@@ -333,7 +333,14 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             "type": "game_update",
             "game_state": event["game_state"],
         }))
-    
+
+    '''
+    async def pending_reconnection(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "pending_reconnection"
+        }))
+    '''
+
     async def wait_for_reconnection(self, username):
         try:
             await asyncio.sleep(self.reconnection_timer)  
