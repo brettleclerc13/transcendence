@@ -25,6 +25,8 @@ export default function TournamentCanvas({
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
 		null
 	);
+	const host = process.env.NEXT_PUBLIC_WS_HOST;
+	const port = process.env.NEXT_PUBLIC_WS_PORT;
 
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
@@ -34,7 +36,7 @@ export default function TournamentCanvas({
 		}
 
 		const ws = new WebSocket(
-			`wss://c2r5p8:8080/ws/tournament/${tournamentID}/?token=${accessToken}`
+			`wss://${host}:${port}/ws/tournament/${tournamentID}/?token=${accessToken}`
 		);
 
 		ws.onopen = () => {

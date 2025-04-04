@@ -86,6 +86,8 @@ const LiveChatClient = () => {
 		const fetchConversationId = async () => {
 			try {
 				const accessToken = getCookie("accessToken");
+				const host = process.env.NEXT_PUBLIC_WS_HOST;
+				const port = process.env.NEXT_PUBLIC_WS_PORT;
 				if (!accessToken) {
 					console.warn("Access token missing!");
 					return;
@@ -135,7 +137,7 @@ const LiveChatClient = () => {
 				}
 
 				wsRef.current = new WebSocket(
-					`wss://c2r5p8:8080/ws/chat/${conversationData.id}/?token=${accessToken}`
+					`wss://${host}:${port}/ws/chat/${conversationData.id}/?token=${accessToken}`
 				);
 
 				wsRef.current.onopen = () => {

@@ -91,13 +91,15 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
+		const host = process.env.NEXT_PUBLIC_WS_HOST;
+		const port = process.env.NEXT_PUBLIC_WS_PORT;
 
 		if (!accessToken) {
 			console.log("Access Token not retrieved in Game Canvas");
 			return;
 		}
 
-			wsRef.current = new WebSocket(`wss://c2r5p8:8080/ws/contacts/?token=${accessToken}`);
+			wsRef.current = new WebSocket(`wss://${host}:${port}/ws/contacts/?token=${accessToken}`);
 		
 			wsRef.current.onmessage = (event) => {
 			const data = JSON.parse(event.data);

@@ -91,6 +91,8 @@ export default function GameCanvas(match: { ID: string }) {
 	const prevPaddle2Position = useRef<[number, number] | null>(null);
 	const targetPaddle1Position = useRef<[number, number] | null>(null);
 	const targetPaddle2Position = useRef<[number, number] | null>(null);
+	const host = process.env.NEXT_PUBLIC_WS_HOST;
+	const port = process.env.NEXT_PUBLIC_WS_PORT;
 
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
@@ -101,7 +103,7 @@ export default function GameCanvas(match: { ID: string }) {
 		}
 		const roomName = match.ID;
 		const ws = new WebSocket(
-			`wss://c2r5p8:8080/game/${roomName}/?token=${accessToken}`
+			`wss://${host}:${port}/game/${roomName}/?token=${accessToken}`
 		);
 
 		ws.onopen = () => {
