@@ -1,3 +1,7 @@
+import qrcode
+import io
+import base64
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -13,8 +17,10 @@ from rest_framework_simplejwt.views import TokenVerifyView
 from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
 from user.websocket_utils import notify_user_update, notify_block_status
+from django_otp.plugins.otp_totp.models import TOTPDevice
 
-# Create your views here.
+
+# ===========================     USER     =========================== #
 
 class RegisterAPIView(APIView):  # User registration and management
     def post(self, request):
@@ -53,6 +59,58 @@ class CustomTokenRefreshView(TokenRefreshView):
 
 class CustomTokenVerifyView(TokenVerifyView):
 	serializer_class = CustomTokenVerifySerializer
+
+
+# ===========================     2FA     =========================== #
+
+class GenerateQRCodeView(APIView):
+	permission_classes = [IsAuthenticated]
+ 
+	def get(self, request):
+		user = request.user
+        
+		device, created = TOTPDevice.objects.get_or_create(user=user, name="default")
+
+		otp_uri = device.config_url
+
+		qr = qrcode.make(otp_uri)
+		buffered = io.BytesIO()
+		qr.save(buffered, format="PNG")
+		qr_base64 = base64.b64decode(buffered.getvalue()).decode()
+
+		return Response({"qr_code": f"data:image/png;base64,{qr_base64}"})
+
+class Enable2FAView(APIView):
+	permission_classes = [IsAuthenticated]
+	
+	def post(self, request):
+		user = request.user
+		user.profile.enable_2fa()
+		return Response({"message": "2FA enabled successfully"})
+
+class Disable2FAView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def post(self, request):
+		user = request.user
+		user.profile.disable_2fa()
+		return Response({"message": "2FA disabled successfully"})
+
+class Verify2FAView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def post(self, request):
+		user = request.user
+		otp_code = request.data.get("otp")
+
+		device = get_object_or_404(TOTPDevice, user=user, name="default")
+
+		if device.verify_token(otp_code):
+			return Response({"message": "2FAverification successful"})
+		return Response({"error": "Invalid OTP"}, status=400)
+
+
+# ===========================     PROFILE     =========================== #
 
 class ProfileAPIView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -177,6 +235,9 @@ class PublicProfileAPIView(APIView):
 		}
 		return Response(profile_data, status=status.HTTP_200_OK)
 
+
+# ===========================     CHAT     =========================== #
+
 class FriendListAPIView(APIView):
     permission_classes = [IsAuthenticated]
      
@@ -233,7 +294,6 @@ class FriendListAPIView(APIView):
         
         profile.friends.remove(friend_profile)
         return Response({"message": "Friend removed successfully."}, status=status.HTTP_200_OK)
-        
 
 class MessageAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -278,18 +338,6 @@ class MessageAPIView(APIView):
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
 
-
-# # class SearchAPIView(APIView):
-
-# #     def get(self, request):
-# #         query = request.query_params.get("query", "").strip()
-# #         if not query:
-# #             return Response({"error": "Query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
-# #         users = User.objects.filter(username__icontains=query).values("username")[:3]
-# #         # serializer = UserSerializer([user.user for user in users], many=True)
-# #         return Response(list(users), status=status.HTTP_200_OK)
-
 class SearchAPIView(APIView):
 
     def get(self, request):
@@ -299,7 +347,6 @@ class SearchAPIView(APIView):
         
         users = User.objects.filter(username__icontains=query).values("username")[:3]
         return JsonResponse(list(users), safe=False)
-
 
 class SendFriendRequestAPIView(APIView):
     permission_classes = [IsAuthenticated]
