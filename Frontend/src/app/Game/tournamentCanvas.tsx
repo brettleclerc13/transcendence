@@ -35,11 +35,12 @@ export default function TournamentCanvas({
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
 		null
 	);
-	const host = process.env.NEXT_PUBLIC_WS_HOST;
-	const port = process.env.NEXT_PUBLIC_WS_PORT;
+	
 
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
+		const host = process.env.NEXT_PUBLIC_WS_HOST;
+		const port = process.env.NEXT_PUBLIC_WS_PORT;
 		if (!accessToken) {
 			console.log("Access Token not retrieved in Game Canvas");
 			return;
