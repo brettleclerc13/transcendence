@@ -10,6 +10,8 @@ services:
       - front-data:/app
       - /app/.next
       - /app/node_modules
+    env_file:
+      - .env
 
   backend:
     build:

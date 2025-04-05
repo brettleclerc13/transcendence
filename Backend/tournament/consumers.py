@@ -68,7 +68,8 @@ class TournamentConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        print(f"Data received: {data}", flush=True)
+        #DEL
+        print(f"Data received[tournament consumer]: {data}", flush=True)
         message_type = data.get("type")
         user_key = f"tournament:{self.room_id}:users"
         state_key = f"tournament:{self.room_id}:state"
@@ -88,20 +89,57 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 await RedisManager.store_user_data_map(user_key, self.tournament_id, user_data)
                 connected_users = await RedisManager.get_all_users_json(user_key)
                 await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    "type": "new_user_joined",
-                    "users": connected_users,
-                    "id": self.tournament_id
-                }
-            )
+                    self.room_group_name,
+                    {
+                        "type": "new_user_joined",
+                        "users": connected_users,
+                        "id": self.tournament_id
+                    }
+                )
+                await self.update_display()
             else:
                 await RedisManager.update_user_data_map(user_key, self.tournament_id, "is_on_page", "true")
+                await self.refresh_display()
             await self.update_tournament_state()
         elif message_type == "user_disconnected":
             if self.tournament_id != None and await RedisManager.get_state(state_key) in ["waiting for players", "unknown"]:
                 await RedisManager.delete_user_data_map(user_key, self.tournament_id)
+                players = await RedisManager.get_all_users_list_map(user_key)
+                #if len(players) == 0:
+                    #save_tournament_outcome(self.room_id,True, False, None)
                 self.tournament_id = None
+    
+    async def update_display(self):
+        user_key = f"tournament:{self.room_id}:users"
+
+        connected_users = await RedisManager.get_all_users_json(user_key)
+        layers = ["first_layer_1", "first_layer_2", "first_layer_3", "first_layer_4", "second_layer_1", "second_layer_2", "thrid_layer"]
+
+        display_json = {layer: "none" for layer in layers}
+        user_ids = list(connected_users.keys())[:4]
+        for idx,user_id in enumerate(user_ids):
+            display_json[layers[idx]] = user_id
+        
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "tournament_display_update",
+                "state": display_json
+            }
+        )
+    
+    async def refresh_display(self):
+        display_state_key = f"tournament:{self.room_id}:display_state"
+
+        display = await RedisManager.get_json(display_state_key)
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "tournament_display_update",
+                "state": display
+            }
+        )
+
             
     
     async def authenticate_user(self):
@@ -315,9 +353,11 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     #DEL
                     print(f"BIG BOMBOCLAT: user_data type: {type(user_data.get('id', None))} winner id type {type(winners[0].id)}", flush=True)
                     if user_data.get("id", None) == winners[0].id:
+                        #DEL
                         print(f"BIG TEST: victors user_data: {user_data.get('id', None)}", flush=True)
                         victor1 = (tournament_id, user_data)
                     if user_data.get("id", None) == winners[1].id:
+                        #DEL
                         print(f"BIG TEST: victors user_data: {user_data.get('id', None)}", flush=True)
                         victor2 = (tournament_id, user_data)
                 if victor1 == None or victor2 == None:
@@ -459,6 +499,7 @@ async def handle_finals_start(room_id):
         state_key = f"tournament:{room_id}:state"
         display_state_key = f"tournament:{room_id}:display_state"
         save_tournament_key = f"tournament:{room_id}:saved"
+        channel_layer = get_channel_layer()
         
 
         tournament_users = await RedisManager.get_all_users_json(user_key)
@@ -692,7 +733,8 @@ async def notify_and_wait_for_reconnect(room_id, absent_players):
             print(f"❌ Error in notify_and_wait_for_reconnect: {e}", flush=True)
 
 async def notify_absent_players_and_wait(room_id):
-    try:    
+    try:  
+        #DEL  
         print(f"room name : {room_id}", flush=True)
 
         user_key = f"tournament:{room_id}:users"
@@ -701,7 +743,6 @@ async def notify_absent_players_and_wait(room_id):
 
         players = await RedisManager.get_all_users_json(user_key)
         
-        # Ensure we are correctly identifying absent players
         absent_players = [
             user for user in players.values()
             if isinstance(user, dict) and user.get("is_on_page", "").lower() != "true"
@@ -721,6 +762,7 @@ async def notify_absent_players_and_wait(room_id):
             }
         )
 
+        #DEL
         print(f"going to SCHLEEP ZZZ {room_id}", flush=True)
         await asyncio.sleep(30)
 
@@ -811,10 +853,12 @@ async def save_tournament_outcome(room_id: str, is_finished: bool, is_ongoing: b
             winner_obj = await sync_to_async(UserProfile.objects.select_related('user').get)(id=winner)
         print(f"Type of winner_obj: {type(winner_obj)}", flush=True)
         print(f"Winner object: {winner_obj}", flush=True)
+        #DEL
         print("im THE BEST developer", flush=True)
         tournament.is_finished = is_finished
         tournament.is_ongoing = is_ongoing
-        tournament.tournament_winner = winner_obj.user
+        tournament.tournament_winner = winner_obj.user if winner_obj else None
+        #DEL
         print("im sexyest developer", flush=True)
         await sync_to_async(tournament.save)()
         
