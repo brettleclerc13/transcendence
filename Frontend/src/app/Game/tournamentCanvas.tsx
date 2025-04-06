@@ -35,6 +35,7 @@ export default function TournamentCanvas({
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
 		null
 	);
+	const [tournamentState, setTournamentState] = useState<Record<string, string>>({});
 	
 
 	useEffect(() => {
@@ -91,53 +92,15 @@ export default function TournamentCanvas({
 
 				// Update players mapping
 				setPlayersMap((prev) => ({ ...prev, ...newPlayers }));
-
-				// Display them immediately (just the first 4 players)
-				const firstFour = Object.values(newPlayers)
-					.slice(0, 4)
-					.map((p) => p.tournament_name);
-				setDisplayedPlayers((prev) => {
-					let updated = [...prev];
-					for (let i = 0; i < firstFour.length; i++) {
-						updated[i] = firstFour[i];
-					}
-					return updated;
-				});
 			}
 
 			// Handle tournament state updates
 			if (data.type === "tournament_display_update") {
 				console.log("Tournament display update: ", data.state);
-
-				// Extracting tournament IDs from the state
-				const layers = [
-					"first_layer_1",
-					"first_layer_2",
-					"first_layer_3",
-					"first_layer_4",
-					"second_layer_1",
-					"second_layer_2",
-					"third_layer",
-				];
-
-				// Map player IDs to tournament names
-				const updatedNames = layers.map((layer) => {
-					const playerNumber = data.state[layer];
-					return playersMap[playerNumber]?.tournament_name || "NA"; // Default to NA if not found
-				});
-
-				// Update displayed player names
-				setDisplayedPlayers(updatedNames);
-			}
-
-			// Handle when a match is created
-			if (data.type === "tournament_match_created") {
-				console.log(data.match_id);
-				setMatchID(data.match_id);
-				return <GameCanvas ID={matchID} />;
+				setTournamentState(data.state);
 			}
 		};
-
+				
 		ws.onclose = (event) => {
 			console.log("WebSocket disconnected");
 			if (event.code === 4000) console.log("Room is Full");
@@ -146,6 +109,29 @@ export default function TournamentCanvas({
 		setSocket(ws);
 		return () => ws.close();
 	}, []);
+
+	useEffect(() => {
+		if (!tournamentState) return;
+	
+		const layers = [
+			"first_layer_1",
+			"first_layer_2",
+			"first_layer_3",
+			"first_layer_4",
+			"second_layer_1",
+			"second_layer_2",
+			"third_layer",
+		];
+	
+		const updatedNames = layers.map((layer) => {
+			const playerNumber = tournamentState[layer];
+			console.log(`Layer: ${layer}, Player ID: ${playerNumber}, Player Found:`, playersMap[playerNumber]);
+			return playersMap[playerNumber]?.tournament_name || "NA";
+		});
+	
+		setDisplayedPlayers(updatedNames);
+	}, [tournamentState, playersMap]);
+	
 
 	const handleTournamentExit = async () => {
 		if (!socket) {

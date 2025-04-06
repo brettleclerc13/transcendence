@@ -403,7 +403,7 @@ export default function GameCanvas(match: { ID: string | undefined }) {
 	useEffect(() => {
 		if (status === "ending") {
 			const timer = setTimeout(() => {
-				router.push("/lobby");
+				router.push("/home");
 			}, 5000);
 			return () => clearTimeout(timer);
 		}
