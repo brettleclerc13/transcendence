@@ -10,6 +10,7 @@ import MessageBar from "./messageBar";
 import SearchBar from "./searchBar";
 import { getCookie } from "cookies-next/client";
 import { createSimpleMatch } from "../utilities/matchActions";
+import { useRouter } from "next/navigation";
 
 interface User {
 	id: number;
@@ -39,6 +40,7 @@ const LiveChatClient = () => {
 	const [messages, setMessages] = useState<Message[]>([]);
 	const wsRef = useRef<WebSocket | null>(null);
 	const [socket, setSocket] = useState<WebSocket | null>(null);
+	const router = useRouter();
 
 	useEffect(() => {
 		const fetchCurrentUser = async () => {
@@ -226,6 +228,7 @@ const LiveChatClient = () => {
 				} else {
 					console.warn(" WebSocket fermé. Impossible d'envoyer l'invitation.");
 				}
+				router.push("/lobby");
 			} else {
 				console.warn("Invite game creation not possible");
 			}
