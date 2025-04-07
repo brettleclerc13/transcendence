@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import "./liveChat.css";
 import { isUserLoggedIn } from "../utilities/userClientActions";
 import FriendAndInvitationList from "./friendAndInvitationList";
@@ -35,7 +34,6 @@ interface Message {
 }
 
 const LiveChatClient = () => {
-	const router = useRouter();
 	const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
 	const [currentUser, setCurrentUser] = useState<User | null>(null);
 	const [messages, setMessages] = useState<Message[]>([]);
@@ -213,11 +211,10 @@ const LiveChatClient = () => {
 			console.warn("Aucun ami sélectionné ou WebSocket non initialisé.");
 			return;
 		}
-		
+
 		try {
 			const response = await createSimpleMatch(true);
 			if (response.matchID) {
-
 				const inviteMessage = `Join me to play a Pong Game ! (Match ID: ${response.matchID})`;
 				if (wsRef.current.readyState === WebSocket.OPEN) {
 					wsRef.current.send(
@@ -229,15 +226,13 @@ const LiveChatClient = () => {
 				} else {
 					console.warn(" WebSocket fermé. Impossible d'envoyer l'invitation.");
 				}
-				router.push("/lobby");
 			} else {
 				console.warn("Invite game creation not possible");
 			}
 		} catch (error) {
 			console.warn("Invite game creation not possible", error);
 		}
-	}
-
+	};
 
 	return (
 		<div className="livechat-container">
@@ -250,17 +245,17 @@ const LiveChatClient = () => {
 							</div>
 							<FriendAndInvitationList onSelectFriend={setSelectedFriend} />
 						</div>
-					
+
 						<div className="current-chat">
 							{currentUser && selectedFriend ? (
 								<CurrentChat
-								friend={selectedFriend}
-								messages={messages}
-								currentUser={currentUser}
+									friend={selectedFriend}
+									messages={messages}
+									currentUser={currentUser}
 								/>
-								) : (
-									<p className="text-muted">Select a friend to start chatting</p>
-									)}
+							) : (
+								<p className="text-muted">Select a friend to start chatting</p>
+							)}
 							<MessageBar
 								selectedFriend={selectedFriend}
 								onSendMessage={handleSendMessage}
@@ -272,8 +267,7 @@ const LiveChatClient = () => {
 			) : (
 				<div className="flex flex-col gap-4 justify-center items-center h-full w-full">
 					<p className="text-lg">
-						Please log in before chatting. It won't even take a
-						minute!
+						Please log in before chatting. It won't even take a minute!
 					</p>
 					<Link className="secondary-button" href="/login">
 						Connect
