@@ -65,7 +65,8 @@ INSTALLED_APPS = [
     'tournament',
 	'chat',
 	'bleach',
-	'django_otp'
+	'django_otp',
+	'django_otp.plugins.otp_totp'
 ]
 
 BLEACH_ALLOWED_TAGS = ['p', 'span', 'br', 'strong', 'em', 'u']

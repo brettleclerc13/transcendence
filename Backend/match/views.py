@@ -100,7 +100,7 @@ class MatchRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 			with transaction.atomic():
 				match = Match.objects.select_for_update().get(id=match_id)
 
-				# Prevent player1 from joining as player2
+				# If user is player1, return the match data for game rendering
 				if match.player1 == user:
 					return Response(MatchSerializer(match).data, status=status.HTTP_200_OK)
 				

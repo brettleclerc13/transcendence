@@ -21,7 +21,9 @@ export default function MatchHistory({
 	setAlert,
 	username,
 }: {
-	setAlert: (alert: { message: string; type: string } | null) => void;
+	setAlert: (
+		alert: { message: string; type: "danger" | "success" } | null
+	) => void;
 	username: string | undefined;
 }) {
 	//const modalRef = useRef<HTMLDivElement>(null);
@@ -45,14 +47,13 @@ export default function MatchHistory({
 				});
 				return;
 			} else {
-				if (!matchResults)
-					return;
+				if (!matchResults) return;
 				console.log("Match Results:", matchResults);
 				const matchData = matchResults || [];
 				setSimpleMatches(matchData);
 				// Calcul des statistiques Win/Lose
 				const wins = matchData.filter(
-					(match) => match.winner_username === username
+					(match: SimpleMatchHistory) => match.winner_username === username
 				).length;
 				const totalMatches = matchData.length;
 				const losses = totalMatches - wins;
@@ -101,14 +102,18 @@ export default function MatchHistory({
 						<tbody>
 							{simpleMatches?.length > 0 ? (
 								simpleMatches.map((match) => (
-									<tr key={new Intl.DateTimeFormat("en-GB", {
-										dateStyle: "long",
-										timeStyle: "short",
-									}).format(new Date(match.created_at))}>
-										<th scope="row">{new Intl.DateTimeFormat("en-GB", {
-										dateStyle: "long",
-										timeStyle: "short",
-									}).format(new Date(match.created_at))}</th>
+									<tr
+										key={new Intl.DateTimeFormat("en-GB", {
+											dateStyle: "long",
+											timeStyle: "short",
+										}).format(new Date(match.created_at))}
+									>
+										<th scope="row">
+											{new Intl.DateTimeFormat("en-GB", {
+												dateStyle: "long",
+												timeStyle: "short",
+											}).format(new Date(match.created_at))}
+										</th>
 										<td>{match.match_type}</td>
 										<td>{match.winner_username === username ? "W" : "L"}</td>
 										<td>{match.score}</td>
@@ -116,7 +121,9 @@ export default function MatchHistory({
 								))
 							) : (
 								<tr>
-									<td colSpan={4} style={{ textAlign: "center" }}>No match history available</td>
+									<td colSpan={4} style={{ textAlign: "center" }}>
+										No match history available
+									</td>
 								</tr>
 							)}
 						</tbody>

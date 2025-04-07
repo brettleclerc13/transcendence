@@ -1,9 +1,11 @@
+/* ===========================     GENERAL     =========================== */
+
 .profile-container {
 	display: flex;
 	flex-direction: column;
 	align-items: start;
 	justify-items: center;
-	width: 60vw;
+	width: 90vw;
 }
 
 .alert-box {
@@ -15,28 +17,6 @@
 	left: 50%;
 	transform: translate(-50%, -50%);
 	z-index: 7;
-}
-
-.image-wrapper {
-	position: absolute;
-	top: 2rem;
-	left: 8rem;
-	transform: translateX(-25%);
-	z-index: 6;
-	display: flex;
-	flex-direction: column;
-	justify-content: start;
-	align-items: start;
-}
-
-.profile-picture {
-	aspect-ratio: 1 / 1;
-	width: 12rem;
-	height: auto;
-	object-fit: cover;
-	border-radius: 50%;
-	border: 3px solid #319795;
-	background-color: #fff;
 }
 
 .contour-informations {
@@ -178,6 +158,63 @@ textarea {
 .button-cancel:hover {
 	background-color: #a81919;
 }
+
+/* ===========================     PROFILE IMAGE     =========================== */
+
+.image-wrapper {
+	position: absolute;
+	top: 2rem;
+	left: 8rem;
+	transform: translateX(-25%);
+	z-index: 6;
+	display: flex;
+}
+
+.profile-picture {
+	aspect-ratio: 1 / 1;
+	width: 12rem;
+	height: auto;
+	object-fit: cover;
+	border-radius: 50%;
+	border: 3px solid #319795;
+	background-color: #fff;
+}
+
+.label-file-input {
+	position: absolute;
+	bottom: 0.25rem;
+	right: 0.25rem;
+	background-color: rgba(0, 0, 0, 0.7);
+	padding: 0.5rem;
+	border-radius: 50%;
+	cursor: pointer;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+/* .label-file-input svg {
+	width: 1rem;
+	height: 1rem;
+	color: white;
+} */
+
+.hidden {
+	display: none;
+}
+
+.uploading-overlay {
+	position: absolute;
+	inset: 0;
+	background-color: rgba(0, 0, 0, 0.5);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	color: white;
+	font-size: 0.875rem;
+}
+
+/* ===========================     MATCH HISTORY     =========================== */
 
 .table-container {
 	max-height: 300px;

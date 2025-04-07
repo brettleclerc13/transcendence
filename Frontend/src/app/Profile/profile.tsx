@@ -8,6 +8,7 @@ import ProfileImage from "./profileImage";
 
 import type { UserProfileData } from "../utilities/profileActions";
 import MatchHistory from "./matchHistory";
+import TwoFactorAuth from "./twoFactorAuth";
 
 type ProfileProps = {
 	userProfile: UserProfileData | null;
@@ -64,9 +65,10 @@ export default function Profile({
 	setUserProfile,
 	setIsProfileOpen,
 }: ProfileProps) {
-	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
-		null
-	);
+	const [alert, setAlert] = useState<{
+		message: string;
+		type: "danger" | "success";
+	} | null>(null);
 
 	const [profileData, profileAction, profilePending] = useActionState(
 		handleUserProfileUpdate,
@@ -299,6 +301,7 @@ export default function Profile({
 					</div>
 				</div>
 			</form>
+			<TwoFactorAuth setAlert={setAlert} />
 		</div>
 	);
 }

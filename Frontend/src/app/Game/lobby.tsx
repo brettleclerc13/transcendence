@@ -36,6 +36,7 @@ export default function Lobby() {
 		handleTournamentMatchCreation,
 		undefined
 	);
+	const [simpleGamePending, setSimpleGamePending] = useState<boolean>(false);
 
 	const fetchProfile = async () => {
 		try {
@@ -48,7 +49,7 @@ export default function Lobby() {
 				message: `Error fetching your profile info: ${error}`,
 				type: "danger",
 			});
-			setGameType("lobby")
+			setGameType("lobby");
 			return;
 		}
 	};
@@ -73,7 +74,7 @@ export default function Lobby() {
 				message: `Error checking for ongoing matches: ${error}`,
 				type: "danger",
 			});
-			setGameType("lobby")
+			setGameType("lobby");
 			return;
 		}
 	};
@@ -89,6 +90,7 @@ export default function Lobby() {
 
 	const handleSimpleMatchCreation = async () => {
 		try {
+			setSimpleGamePending(true);
 			const response = await createSimpleMatch();
 			setAlert({
 				message: "Game on!",
@@ -98,12 +100,14 @@ export default function Lobby() {
 			setTimeout(() => {
 				setGameType("simple");
 			}, 1000);
+			setSimpleGamePending(false);
 			return;
 		} catch (error) {
 			setAlert({
 				message: `Error creating a 1v1 game: ${error}`,
 				type: "danger",
 			});
+			setSimpleGamePending(false);
 			return;
 		}
 	};
@@ -163,7 +167,9 @@ export default function Lobby() {
 	return (
 		<>
 			{gameType == "simple" && <GameCanvas ID={gameID} />}
-			{gameType == "tournament" && <TournamentCanvas tournamentID={gameID} setGameType={setGameType} />}
+			{gameType == "tournament" && (
+				<TournamentCanvas tournamentID={gameID} setGameType={setGameType} />
+			)}
 			{gameType == "lobby" && (
 				<div className="lobby-container">
 					{alert && (
@@ -180,7 +186,7 @@ export default function Lobby() {
 						</div>
 					)}
 					<div className="lobby-sub-container">
-						<div style={{ flex:3 }}>
+						<div style={{ flex: 3 }}>
 							<MatchList
 								setAlert={setAlert}
 								setGameID={setGameID}
@@ -189,14 +195,14 @@ export default function Lobby() {
 								setAlias={setAlias}
 							/>
 						</div>
-						<div style={{ flex:2 }}>
+						<div style={{ flex: 2 }}>
 							<form action={tournamentAction}>
 								<h3>Tournament alias name</h3>
 								<input
 									type="text"
 									name="tournamentName"
 									value={alias ?? ""}
-    								onChange={(e) => setAlias(e.target.value)}
+									onChange={(e) => setAlias(e.target.value)}
 									className="input-field"
 								/>
 								{tournamentData?.tournamentNameError && (
@@ -216,6 +222,7 @@ export default function Lobby() {
 							</form>
 							<div className="lobby-button-container">
 								<button
+									disabled={simpleGamePending}
 									className="button-simple"
 									onClick={handleSimpleMatchCreation}
 								>

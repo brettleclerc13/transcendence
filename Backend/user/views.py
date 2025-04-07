@@ -76,9 +76,9 @@ class GenerateQRCodeView(APIView):
 		qr = qrcode.make(otp_uri)
 		buffered = io.BytesIO()
 		qr.save(buffered, format="PNG")
-		qr_base64 = base64.b64decode(buffered.getvalue()).decode()
+		qr_base64 = base64.b64encode(buffered.getvalue()).decode()
 
-		return Response({"qr_code": f"data:image/png;base64,{qr_base64}"})
+		return Response({"qr_code": f"data:image/png;base64,{qr_base64}"}, status=status.HTTP_200_OK)
 
 class Enable2FAView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -86,7 +86,7 @@ class Enable2FAView(APIView):
 	def post(self, request):
 		user = request.user
 		user.profile.enable_2fa()
-		return Response({"message": "2FA enabled successfully"})
+		return Response({"message": "2FA enabled successfully"}, status=status.HTTP_200_OK)
 
 class Disable2FAView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -94,7 +94,7 @@ class Disable2FAView(APIView):
 	def post(self, request):
 		user = request.user
 		user.profile.disable_2fa()
-		return Response({"message": "2FA disabled successfully"})
+		return Response({"message": "2FA disabled successfully"}, status=status.HTTP_200_OK)
 
 class Verify2FAView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -106,8 +106,8 @@ class Verify2FAView(APIView):
 		device = get_object_or_404(TOTPDevice, user=user, name="default")
 
 		if device.verify_token(otp_code):
-			return Response({"message": "2FAverification successful"})
-		return Response({"error": "Invalid OTP"}, status=400)
+			return Response({"message": "2FA verification successful"}, status=status.HTTP_200_OK)
+		return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ===========================     PROFILE     =========================== #

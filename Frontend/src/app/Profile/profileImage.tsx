@@ -10,7 +10,9 @@ export default function ProfileImage({
 }: {
 	userProfile: UserProfileData | null;
 	setUserProfile: (profileData: UserProfileData) => void;
-	setAlert: (alertMessage: { message: string; type: string } | null) => void;
+	setAlert: (
+		alertMessage: { message: string; type: "danger" | "success" } | null
+	) => void;
 }) {
 	const [loading, setLoading] = useState(false);
 
@@ -59,38 +61,29 @@ export default function ProfileImage({
 	return (
 		<>
 			<div className="image-wrapper">
-				<div className="relative">
-					<img
-						src={
-							userProfile?.profile_picture
-								? `/api/${userProfile.profile_picture}`
-								: "/img/default.png"
-						} // Fallback to default image
-						alt="Profile Picture"
-						className="profile-picture"
-					/>
+				<img
+					src={
+						userProfile?.profile_picture
+							? `/api/${userProfile.profile_picture}`
+							: "/img/default.png"
+					} // Fallback to default image
+					alt="Profile Picture"
+					className="profile-picture"
+				/>
 
-					<label
-						htmlFor="file-input"
-						className="label-file-input"
-					>
-						<Pencil className="label-file-input svg" />
-					</label>
+				<label htmlFor="file-input" className="label-file-input">
+					<Pencil className="label-file-input svg" />
+				</label>
 
-					<input
-						id="file-input"
-						type="file"
-						accept="image/png, image/jpeg, image/webp"
-						className="hidden"
-						onChange={handleFileChange}
-					/>
+				<input
+					id="file-input"
+					type="file"
+					accept="image/png, image/jpeg, image/webp"
+					className="hidden"
+					onChange={handleFileChange}
+				/>
 
-					{loading && (
-						<div className="uploading-overlay">
-							Uploading...
-						</div>
-					)}
-				</div>
+				{loading && <div className="uploading-overlay">Uploading...</div>}
 			</div>
 		</>
 	);
