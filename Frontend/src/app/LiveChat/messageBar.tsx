@@ -75,7 +75,7 @@ const MessageBar: React.FC<MessageBarProps> = ({
 			</button>
 			<div style={{ display: "flex", alignItems: "center" }}>
 				<ProfileButton onClick={() => {setIsProfileOpen(true)}} />
-				<InviteToGameButton onClick={onInviteClick} />
+				<InviteToGameButton onClick={onInviteClick}  />
 			</div>
 		</div>
 		<Popup isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)}>
