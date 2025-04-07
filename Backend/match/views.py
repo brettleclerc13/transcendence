@@ -100,13 +100,13 @@ class MatchRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 			with transaction.atomic():
 				match = Match.objects.select_for_update().get(id=match_id)
 
+				# Prevent player1 from joining as player2
+				if match.player1 == user:
+					return Response(MatchSerializer(match).data, status=status.HTTP_200_OK)
+				
 				# Ensure player2 is not already set
 				if match.player2 is not None:
 					return Response({'error': 'Player2 has already joined this match.'}, status=status.HTTP_400_BAD_REQUEST)
-
-				# Prevent player1 from joining as player2
-				if match.player1 == user:
-					return Response({'error': 'You cannot join your own match as player2.'}, status=status.HTTP_400_BAD_REQUEST)
 
 				# Assign player2 and set match as ongoing
 				match.player2 = user
