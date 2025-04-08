@@ -106,6 +106,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             if self.tournament_id != None and await RedisManager.get_state(state_key) in ["waiting for players", "unknown"]:
                 await RedisManager.delete_user_data_map(user_key, self.tournament_id)
                 players = await RedisManager.get_all_users_list_map(user_key)
+                await self.update_display()
                 #if len(players) == 0:
                     #save_tournament_outcome(self.room_id,True, False, None)
                 self.tournament_id = None
