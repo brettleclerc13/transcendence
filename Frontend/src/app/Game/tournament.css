@@ -79,7 +79,7 @@
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 	font-weight: bold;
 	position: relative;
-	margin: 30px 0;/* Espacement vertical entre les PlayerBox */
+	margin: 30px 0; /* Espacement vertical entre les PlayerBox */
 }
 
 /* Lignes reliant les joueurs */
@@ -91,53 +91,57 @@
 /* Lignes verticales */
 .match-line.vertical {
 	width: 4px;
-	height: 60px;/* Ajuster la hauteur pour chaque duo */
-	left: 50%;/* Centré horizontalement */
+	height: 60px; /* Ajuster la hauteur pour chaque duo */
+	left: 50%; /* Centré horizontalement */
 	transform: translateX(-50%);
 }
 
 /* Lignes horizontales */
 .match-line.horizontal {
 	height: 4px;
-	width: 230px;/* Longueur des lignes horizontales */
+	width: 230px; /* Longueur des lignes horizontales */
 	position: absolute;
 	top: 50%;
 	transform: translateY(-50%);
 }
 
 /* Placement des lignes verticales et horizontales entre les différents joueurs */
-.match-line.vertical1 {/* Ligne verticale entre player 0 et 1 */
+.match-line.vertical1 {
+	/* Ligne verticale entre player 0 et 1 */
 	top: 16%;
 }
 
-.match-line.horizontal1 {/* Ligne horizontale entre player 1 et player 4 */
+.match-line.horizontal1 {
+	/* Ligne horizontale entre player 1 et player 4 */
 	left: -31%;
 	top: 22.5%;
 	transform: translateY(-50%) translateX(50%);
 }
 
-.match-line.vertical2 {/* Ligne verticale entre player 2 et player 3 */
+.match-line.vertical2 {
+	/* Ligne verticale entre player 2 et player 3 */
 	top: 72%;
 }
 
-.match-line.horizontal2 {/* Ligne horizontale entre player 3 et player 5 */
+.match-line.horizontal2 {
+	/* Ligne horizontale entre player 3 et player 5 */
 	left: -31%;
 	top: 78%;
 	transform: translateY(-50%) translateX(50%);
 }
 
-.match-line.vertical3 {/* Ligne verticale entre player 4 et player 5 */
+.match-line.vertical3 {
+	/* Ligne verticale entre player 4 et player 5 */
 	top: 20.5%;
 	height: 230px;
 }
 
-.match-line.horizontal3 {/* Ligne horizontale entre player 5 et player 6 */
+.match-line.horizontal3 {
+	/* Ligne horizontale entre player 5 et player 6 */
 	left: -31%;
 	top: 50%;
 	transform: translateY(-50%) translateX(50%);
 }
-
-
 
 /* Left column (first 4 players) */
 .player-box.player1 {
@@ -178,4 +182,20 @@
 	width: 180px;
 	height: 90px;
 	background-color: goldenrod;
+}
+
+.countdown-screen {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(0, 0, 0, 0.75);
+	color: white;
+	font-size: 1.875rem;
+	text-align: center;
 }

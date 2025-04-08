@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { fetchGenericAPIResponses } from "./generalActions";
 
 type TournamentFilterProps = {
 	id?: string;
@@ -164,29 +165,18 @@ export const leaveTournament = async (tournamentID: string) => {
 			}
 		);
 
-		let data;
-		const text = await response.text();
-		try {
-			data = JSON.parse(text);
-		} catch {
-			throw new Error(
-				`Unexpected response when trying to leave a tournament: ${response.status}`
-			);
-		}
-		if (!response.ok) {
-			const errorMessage =
-				data.error ||
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to leave tournament.";
-			throw new Error(errorMessage);
-		} else {
-			return data;
-		}
+		return fetchGenericAPIResponses({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to leave tournament.",
+				successMessage: "Successfully left the tournament",
+			},
+		});
 	} catch (error) {
-		console.error(error);
-		throw new Error(String(error) || "Failed to leave tournament.");
+		return {
+			ok: false,
+			error: (error as Error).message || "Failed to leave tournament.",
+		};
 	}
 };
 
@@ -268,9 +258,8 @@ export const checkTournaments = async () => {
 			console.log("CHECK TOURNAMENT data received: ", data);
 			if (data && data[0].id) {
 				console.log("data id exists: ", data[0].id);
-				return { ok: true, tournamentID: data[0].id};	
-			}
-			else return data;
+				return { ok: true, tournamentID: data[0].id };
+			} else return data;
 		}
 	} catch (error) {
 		return {

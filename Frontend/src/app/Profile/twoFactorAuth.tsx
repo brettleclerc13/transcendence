@@ -22,13 +22,14 @@ export default function TwoFactorAuth({
 	) => void;
 }) {
 	const [qrCode, setQrCode] = useState<string | undefined>(undefined);
+	const [isActive, setIsActive] = useState<boolean>(false);
 	const [otpData, otpAction, otpPending] = useActionState(
-		handleOtpValidation,
+		handleTwoFactorAuthActivation,
 		undefined
 	);
 
 	useEffect(() => {
-		const fetchQr = async () => {
+		const prepareAuthSetUp = async () => {
 			const result = await fetchQrCode();
 			if (result.ok === false) {
 				setAlert({
@@ -41,10 +42,10 @@ export default function TwoFactorAuth({
 				return;
 			}
 		};
-		fetchQr();
+		prepareAuthSetUp();
 	}, []);
 
-	async function handleOtpValidation(
+	async function handleTwoFactorAuthActivation(
 		_previousState: unknown,
 		formData: FormData
 	) {
@@ -61,7 +62,7 @@ export default function TwoFactorAuth({
 		} else {
 			if (validationResult.data) {
 				const result = await verifyOTP(validationResult.data);
-				if (result.ok === false) {
+				if (!result.ok) {
 					setAlert({
 						message: result.message || "Failed to activate 2FA",
 						type: "danger",

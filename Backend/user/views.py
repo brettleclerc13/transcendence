@@ -85,6 +85,19 @@ class Enable2FAView(APIView):
 	
 	def post(self, request):
 		user = request.user
+		otp_code = request.data.get("otp")
+
+		if not otp_code:
+			return Response({"error": "OTP is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+		try:
+			device = TOTPDevice.objects.get(user=user, name="default")
+		except TOTPDevice.DoesNotExist:
+			return Response({"error": "QR code not generated or expired"}, status=status.HTTP_400_BAD_REQUEST)
+
+		if not device.verify_token(otp_code):
+			return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
 		user.profile.enable_2fa()
 		return Response({"message": "2FA enabled successfully"}, status=status.HTTP_200_OK)
 
@@ -93,6 +106,16 @@ class Disable2FAView(APIView):
 
 	def post(self, request):
 		user = request.user
+		otp_code = request.data.get("otp")
+
+		try:
+			device = TOTPDevice.objects.get(user=user, name="default")
+		except TOTPDevice.DoesNotExist:
+			return Response({"error": "2FA is not enabled"}, status=status.HTTP_400_BAD_REQUEST)
+
+		if not device.verify_token(otp_code):
+			return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
 		user.profile.disable_2fa()
 		return Response({"message": "2FA disabled successfully"}, status=status.HTTP_200_OK)
 
@@ -107,6 +130,7 @@ class Verify2FAView(APIView):
 
 		if device.verify_token(otp_code):
 			return Response({"message": "2FA verification successful"}, status=status.HTTP_200_OK)
+		
 		return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
 
 

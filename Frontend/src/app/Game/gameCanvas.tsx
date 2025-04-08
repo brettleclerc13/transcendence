@@ -4,81 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getCookie } from "cookies-next/client";
 import "./game.css";
-
-type GameState = {
-	winner: string;
-	player1_position: [number, number];
-	player2_position: [number, number];
-	ball_speed: number;
-	ball_position: [number, number];
-	ball_direction: [number, number];
-	score: [number, number];
-	paddle_speed: number;
-	resolution: number;
-	collision_point: [number, number][];
-	last_update_time: number;
-};
-
-function drawGame(state: GameState, canvas: HTMLCanvasElement) {
-	//console.log("Drawing game state:", state);
-
-	const ctx = canvas.getContext("2d");
-	if (!ctx) return;
-
-	ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the entire canvas
-	ctx.save();
-	ctx.translate(0, canvas.height);
-	ctx.scale(1, -1);
-
-	// Convert paddle dimensions from "units" to pixels temporarry hard coded.
-	const paddleWidth = 1.5 * state.resolution;
-	const paddleHeight = 12 * state.resolution;
-
-	// Player 1's paddle
-	const player1XCenter = state.player1_position[0] * state.resolution; // Convert X-center to pixels
-	const player1YCenter = state.player1_position[1] * state.resolution; // Convert Y-center to pixels
-
-	const player1XTopLeft = player1XCenter - paddleWidth / 2; // Move from center X to top-left X
-	const player1YTopLeft = player1YCenter + paddleHeight / 2; // Move from center Y to top-left Y (positive Y is up)
-
-	ctx.fillStyle = "white";
-	ctx.fillRect(player1XTopLeft, player1YTopLeft, paddleWidth, -paddleHeight); // -paddleHeight to draw upward
-
-	// Player 2's paddle
-	const player2XCenter = state.player2_position[0] * state.resolution;
-	const player2YCenter = state.player2_position[1] * state.resolution;
-
-	const player2XTopLeft = player2XCenter - paddleWidth / 2;
-	const player2YTopLeft = player2YCenter + paddleHeight / 2;
-
-	ctx.fillRect(player2XTopLeft, player2YTopLeft, paddleWidth, -paddleHeight);
-
-	// Draw the ball
-	ctx.beginPath();
-	ctx.arc(
-		state.ball_position[0] * state.resolution, // X-center
-		state.ball_position[1] * state.resolution, // Y-center
-		1.5 * state.resolution, // Radius (10 pixels)
-		0,
-		Math.PI * 2
-	);
-	ctx.fill();
-
-	// Draw the score
-	ctx.setTransform(1, 0, 0, 1, 0, 0);
-	ctx.font = "30px Arial";
-	ctx.fillText(`Player 1: ${state.score[0]}`, 20, 30); // Player 1 score at the top
-	if (state.score[0] === 10) {
-		state.winner = "player_1";
-		return state.winner;
-	}
-	ctx.fillText(`Player 2: ${state.score[1]}`, canvas.width - 180, 30); // Player 2 score at the top
-	if (state.score[1] === 10) {
-		state.winner = "player_2";
-		return state.winner;
-	}
-	ctx.restore();
-}
+import type { GameState } from "./gameCanvasFunctions";
+import { drawGame } from "./gameCanvasFunctions";
 
 export default function GameCanvas(match: { ID: string | undefined }) {
 	const [status, setStatus] = useState<
@@ -87,9 +14,9 @@ export default function GameCanvas(match: { ID: string | undefined }) {
 	const [playerRole, setPlayerRole] = useState<"player_1" | "player_2" | null>(
 		null
 	);
-	const [winner, setWinner] = useState<string | null>(null);
+	const [winner, setWinner] = useState<string | undefined>(undefined);
 	const [socket, setSocket] = useState<WebSocket | null>(null);
-	const [gameState, setGameState] = useState<GameState | null>(null);
+	const [gameState, setGameState] = useState<GameState | undefined>(undefined);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const inputInterval = useRef<NodeJS.Timeout | null>(null);
 	const currentDirectionRef = useRef(0); // ✅ Use a ref to track direction persistently
@@ -110,10 +37,8 @@ export default function GameCanvas(match: { ID: string | undefined }) {
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
 
-		if (!accessToken || !match.ID) {
-			console.log("Access Token or Match ID not found in Game Canvas");
-			return;
-		}
+		if (!accessToken || !match.ID) return;
+
 		const roomName = match.ID;
 		const ws = new WebSocket(
 			`wss://${host}:${port}/game/${roomName}/?token=${accessToken}`
@@ -128,11 +53,15 @@ export default function GameCanvas(match: { ID: string | undefined }) {
 
 			if (data.type === "game_ending") {
 				console.log("Game FINISHED");
-				// setWinner(data.winner);
+				setWinner(
+					data.winner === "player_1"
+						? gameState?.player1_username
+						: gameState?.player2_username
+				);
 				setStatus("ending");
 			}
 
-			if (data.type === "game_ending" || data.type === "game_pause")
+			if (data.type === "game_pause")
 				console.log("Game Stopped! reason:", data.reason);
 
 			if (data.type === "initializer_pack") {
@@ -301,17 +230,14 @@ export default function GameCanvas(match: { ID: string | undefined }) {
 				];
 			}
 
-			// Draw the updated frame
-			setWinner(
-				drawGame(
-					{
-						...gameState,
-						ball_position: interpolatedBallPosition,
-						player1_position: interpolatedPaddle1Position,
-						player2_position: interpolatedPaddle2Position,
-					},
-					canvasRef.current
-				) ?? null
+			drawGame(
+				{
+					...gameState,
+					ball_position: interpolatedBallPosition,
+					player1_position: interpolatedPaddle1Position,
+					player2_position: interpolatedPaddle2Position,
+				},
+				canvasRef.current
 			);
 
 			// Request the next frame
@@ -348,11 +274,10 @@ export default function GameCanvas(match: { ID: string | undefined }) {
 
 	useEffect(() => {
 		const sendInput = () => {
-			if (socket && playerRole) {
+			if (socket) {
 				socket.send(
 					JSON.stringify({
 						type: "input",
-						player: playerRole,
 						direction: currentDirectionRef.current, // ✅ Always send the latest ref value
 						timestamp: Date.now(),
 					})
@@ -398,13 +323,13 @@ export default function GameCanvas(match: { ID: string | undefined }) {
 				inputInterval.current = null;
 			}
 		};
-	}, [socket, playerRole]);
+	}, [socket]);
 
 	useEffect(() => {
 		if (status === "ending") {
 			const timer = setTimeout(() => {
 				router.push("/");
-			}, 5000);
+			}, 3000);
 			return () => clearTimeout(timer);
 		}
 	}, [status]);
@@ -423,7 +348,7 @@ export default function GameCanvas(match: { ID: string | undefined }) {
 				<div className="game-over-screen">
 					<p>Game is finished!</p>
 					<p>{winner} is the Winner!</p>
-					<p>Returning to homepage in 5 seconds...</p>
+					<p>Returning to the home page in 3 seconds...</p>
 				</div>
 			)}
 		</div>

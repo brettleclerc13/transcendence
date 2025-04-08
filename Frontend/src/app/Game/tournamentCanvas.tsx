@@ -35,15 +35,20 @@ export default function TournamentCanvas({
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
 		null
 	);
-	const [tournamentState, setTournamentState] = useState<Record<string, string>>({});
-	
+	const [tournamentState, setTournamentState] = useState<
+		Record<string, string>
+	>({});
+	const [gameOn, setGameOn] = useState<boolean>(false);
+	const [countdownMessage, setCountdownMessage] = useState<string | undefined>(
+		undefined
+	);
 
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
 		const host = process.env.NEXT_PUBLIC_WS_HOST;
 		const port = process.env.NEXT_PUBLIC_WS_PORT;
 		if (!accessToken) {
-			console.log("Access Token not retrieved in Game Canvas");
+			console.warn("Access Token not retrieved in Tournament Canvas");
 			return;
 		}
 
@@ -99,11 +104,26 @@ export default function TournamentCanvas({
 				console.log("Tournament display update: ", data.state);
 				setTournamentState(data.state);
 			}
+
+			if (data.type === "tournament_countdown") {
+				setCountdownMessage(data.message);
+			}
+
+			// Handle when a match is created
+			if (data.type === "tournament_match_created") {
+				setMatchID(data.match_id);
+				setGameOn(true);
+			}
 		};
-				
+
 		ws.onclose = (event) => {
 			console.log("WebSocket disconnected");
-			if (event.code === 4000) console.log("Room is Full");
+			if (event.code === 4000) {
+				setAlert({
+					message: "Room is full",
+					type: "danger",
+				});
+			}
 		};
 
 		setSocket(ws);
@@ -112,7 +132,7 @@ export default function TournamentCanvas({
 
 	useEffect(() => {
 		if (!tournamentState) return;
-	
+
 		const layers = [
 			"first_layer_1",
 			"first_layer_2",
@@ -122,37 +142,45 @@ export default function TournamentCanvas({
 			"second_layer_2",
 			"third_layer",
 		];
-	
+
 		const updatedNames = layers.map((layer) => {
 			const playerNumber = tournamentState[layer];
-			console.log(`Layer: ${layer}, Player ID: ${playerNumber}, Player Found:`, playersMap[playerNumber]);
+			console.log(
+				`Layer: ${layer}, Player ID: ${playerNumber}, Player Found:`,
+				playersMap[playerNumber]
+			);
 			return playersMap[playerNumber]?.tournament_name || "NA";
 		});
-	
+
 		setDisplayedPlayers(updatedNames);
 	}, [tournamentState, playersMap]);
-	
 
 	const handleTournamentExit = async () => {
 		if (!socket) {
-			console.error("WebSocket is not connected");
+			setAlert({
+				message: "WebSocket is not connected",
+				type: "danger",
+			});
 			return;
 		}
 
 		socket.send(JSON.stringify({ type: "user_disconnected" }));
 
-		try {
-			const response = await leaveTournament(tournamentID);
-			console.log("Tournament exit response: ", response);
-		} catch (error) {
-			console.error("Error leaving the tournament:", error);
+		const response = await leaveTournament(tournamentID);
+		if (!response.ok) {
+			setAlert({
+				message: response.error || "Failed to leave tournament",
+				type: "danger",
+			});
 		}
 
 		socket.close();
-		setTimeout(() => setGameType("lobby"), 1000);
+		setTimeout(() => setGameType("lobby"), 1500);
 	};
 
-	return (
+	return gameOn ? (
+		<GameCanvas ID={matchID} />
+	) : (
 		<section className="tournament-container">
 			<h2 className="tournament-title">Tournament organisation :</h2>
 
@@ -160,6 +188,10 @@ export default function TournamentCanvas({
 				<div className="alert-box" role="alert">
 					{alert.message}
 				</div>
+			)}
+
+			{countdownMessage && (
+				<div className="countdown-screen">{countdownMessage}</div>
 			)}
 
 			<div className="tournament-grid">
