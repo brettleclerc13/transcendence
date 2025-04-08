@@ -25,7 +25,10 @@ export default function LoginForm() {
 	);
 	const router = useRouter();
 
-	const [data, action, isPending] = useActionState(handleSubmit, undefined);
+	const [loginData, loginAction, loginPending] = useActionState(
+		handleSubmit,
+		undefined
+	);
 
 	async function handleSubmit(_previousState: unknown, formData: FormData) {
 		const email = formData.get("email") as string;
@@ -64,18 +67,18 @@ export default function LoginForm() {
 
 	return (
 		<div className="modal-container">
-		  	<div className="modal-content">
+			<div className="modal-content">
 				<Link href="/" className="close-button">
 					&times;
 				</Link>
-		
+
 				{alert && (
-				<div className={`alert alert-${alert.type}`} role="alert">
-					{alert.message}
-				</div>
+					<div className={`alert alert-${alert.type}`} role="alert">
+						{alert.message}
+					</div>
 				)}
-		
-				<form action={action}>
+
+				<form>
 					<label htmlFor="email" className="label">
 						Email<span className="mandatory">*</span>
 					</label>
@@ -84,13 +87,13 @@ export default function LoginForm() {
 						placeholder="youremail@gmail.com"
 						id="email"
 						name="email"
-						defaultValue={data?.previousValues?.email}
+						defaultValue={loginData?.previousValues?.email}
 						className="input-field"
 					/>
-					{data?.emailError && (
-						<p className="error-message">{data?.emailError}</p>
+					{loginData?.emailError && (
+						<p className="error-message">{loginData?.emailError}</p>
 					)}
-			
+
 					<label htmlFor="password" className="label">
 						Password<span className="mandatory">*</span>
 					</label>
@@ -101,19 +104,24 @@ export default function LoginForm() {
 						name="password"
 						className="input-field"
 					/>
-					{data?.passwordError && (
-						<p className="error-message">{data?.passwordError}</p>
+					{loginData?.passwordError && (
+						<p className="error-message">{loginData?.passwordError}</p>
 					)}
-			
-					<button type="submit" disabled={isPending} className="submit-button">
+
+					<button
+						type="submit"
+						formAction={loginAction}
+						disabled={loginPending}
+						className="submit-button"
+					>
 						Log In
 					</button>
 				</form>
-		
+
 				<Link className="register-link" href="/register">
 					Don&apos;t have an account? Register here
 				</Link>
-		
+
 				<p className="mandatory-info">
 					<span>*</span>: Mandatory information
 				</p>

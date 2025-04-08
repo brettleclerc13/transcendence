@@ -12,13 +12,13 @@
 }
 
 .popup-box {
-	background: #2d3748;;
+	background: #2d3748;
 	padding: 20px;
 	border-radius: 10px;
 	min-width: 60vw;
 	max-width: 90vw;
 	min-height: 60vh;
-	max-height: 90vh;
+	max-height: 95vh;
 	overflow-y: auto;
 	position: relative;
 	z-index: 5;
@@ -28,7 +28,7 @@
 	position: absolute;
 	top: 10px;
 	right: 20px;
-	color: darkslategray;
+	color: lightslategray;
 	background: none;
 	border: none;
 	font-size: 1.5rem;

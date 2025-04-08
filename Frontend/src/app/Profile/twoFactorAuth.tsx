@@ -81,14 +81,14 @@ export default function TwoFactorAuth({
 	}
 
 	return (
-		<div className="twofa">
+		<div className="twofa-container">
 			<h3>Enable Two-Factor Authentication</h3>
 			{qrCode ? (
 				<Image width={200} height={200} src={qrCode} alt="Scan QR Code" />
 			) : (
 				<p>Loading QR code...</p>
 			)}
-			<form className="otp-form" action={otpAction}>
+			<form className="otp-form">
 				<input
 					type="text"
 					name="otp"
@@ -98,7 +98,7 @@ export default function TwoFactorAuth({
 				{otpData?.otpError && (
 					<p className="input-error">{otpData?.otpError}</p>
 				)}
-				<button type="submit" disabled={otpPending}>
+				<button type="submit" formAction={otpAction} disabled={otpPending}>
 					{otpPending ? "Loading..." : "Activate 2FA"}
 				</button>
 			</form>

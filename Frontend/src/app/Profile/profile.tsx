@@ -177,9 +177,9 @@ export default function Profile({
 				setUserProfile={setUserProfile}
 				setAlert={setAlert}
 			/>
-			<form action={profileAction}>
-				<div className="contour-informations">
-					<div className="left-informations">
+			<div className="main-contour">
+				<form className="contour-left-information">
+					<div className="left-information">
 						<div>
 							<label htmlFor="username">Username:</label>
 							<input
@@ -234,7 +234,7 @@ export default function Profile({
 
 					<div className="separator"></div>
 
-					<div className="center-informations">
+					<div className="right-information">
 						<div>
 							<label htmlFor="nickname">Alias (Tournament name):</label>
 							<input
@@ -275,33 +275,42 @@ export default function Profile({
 							<p className="input-error">{profileData?.newPasswordError}</p>
 						)}
 					</div>
-
-					<div className="separator"></div>
-
-					<div className="right-informations">
-						<MatchHistory
-							setAlert={setAlert}
-							username={userProfile.username || undefined}
-						/>
-					</div>
 					<div className="button-container">
 						<button
 							className="button-save"
 							type="submit"
+							formAction={profileAction}
 							disabled={profilePending}
 						>
 							Save
 						</button>
 						<button
 							className="button-cancel"
+							type="button"
 							onClick={() => setIsProfileOpen(false)}
 						>
 							Cancel
 						</button>
 					</div>
+				</form>
+
+				<div className="separator"></div>
+
+				<div className="contour-right-information">
+					<div className="left-information">
+						<MatchHistory
+							setAlert={setAlert}
+							username={userProfile.username || undefined}
+						/>
+					</div>
+
+					<div className="separator"></div>
+
+					<div className="right-information">
+						<TwoFactorAuth setAlert={setAlert} />
+					</div>
 				</div>
-			</form>
-			<TwoFactorAuth setAlert={setAlert} />
+			</div>
 		</div>
 	);
 }

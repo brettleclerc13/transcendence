@@ -5,7 +5,44 @@
 	flex-direction: column;
 	align-items: start;
 	justify-items: center;
-	width: 90vw;
+	width: 85vw;
+}
+
+.main-contour {
+	display: flex;
+	justify-content: space-between;
+	align-items: start;
+	background-color: #1f2937;
+	border-radius: 12px;
+	padding: 0 5%;
+	padding-top: 13%;
+	padding-bottom: 2%;
+	margin: 3rem 0 auto;
+	position: relative;
+	box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+	width: 100%;
+}
+
+.contour-left-information,
+.contour-right-information {
+	width: 50%;
+	display: flex;
+	flex-grow: 1;
+}
+
+.left-information,
+.right-information {
+	color: #319795 !important;
+	width: 50%;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.separator {
+	border-left: 2px solid #319795;
+	height: 27rem;
+	margin: 0 1rem;
 }
 
 .alert-box {
@@ -17,53 +54,6 @@
 	left: 50%;
 	transform: translate(-50%, -50%);
 	z-index: 7;
-}
-
-.contour-informations {
-	display: flex;
-	flex-direction: row;
-	justify-content: space-between;
-	gap: 1rem;
-	align-items: center;
-	background-color: #1f2937;
-	border-radius: 12px;
-	padding: 10% 5%;
-	margin: 5.5rem 0 auto;
-	position: relative;
-	box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-	width: 100%;
-	align-content: flex-start;
-}
-
-.left-informations,
-.right-informations,
-.center-informations {
-	color: #319795 !important;
-	flex-basis: 33%;
-	display: flex;
-	flex-direction: column;
-	gap: 1rem;
-}
-
-.separator {
-	border-left: 2px solid #319795;
-	margin: 0;
-	height: 15rem;
-}
-
-.left-informations {
-	margin-left: 0;
-	margin-right: 2rem;
-}
-
-.center-informations {
-	margin-left: 2rem;
-	margin-right: 2rem;
-}
-
-.right-informations {
-	margin-right: 0;
-	margin-left: 2rem;
 }
 
 .input-error {
@@ -103,7 +93,7 @@ textarea {
 .button-container {
 	position: absolute; /* Permet de fixer la position dans le conteneur parent */
 	bottom: 20px; /* Place les boutons à 10px du bas */
-	right: 20px; /* Place les boutons à 10px du côté droit */
+	left: 20px; /* Place les boutons à 10px du côté droit */
 	display: flex; /* Aligne les boutons côte à côte */
 	gap: 15px; /* Ajoute un espace entre les boutons */
 }
@@ -163,11 +153,20 @@ textarea {
 
 .image-wrapper {
 	position: absolute;
-	top: 2rem;
+	top: 1rem;
 	left: 8rem;
-	transform: translateX(-25%);
+	transform: translateX(-35%);
 	z-index: 6;
 	display: flex;
+	flex-direction: column;
+	justify-content: start;
+	align-items: start;
+}
+
+.image-subwrapper {
+	width: 11rem;
+	height: 11rem;
+	position: relative;
 }
 
 .profile-picture {
@@ -184,20 +183,28 @@ textarea {
 	position: absolute;
 	bottom: 0.25rem;
 	right: 0.25rem;
+	width: 2.6rem;
+	height: 2.6rem;
 	background-color: rgba(0, 0, 0, 0.7);
-	padding: 0.5rem;
-	border-radius: 50%;
+	padding: 0.6rem;
+	border-radius: 9999px;
 	cursor: pointer;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 }
 
-/* .label-file-input svg {
-	width: 1rem;
-	height: 1rem;
+.pencil {
+	width: 1.5rem;
+	height: 1.5rem;
 	color: white;
-} */
+	position: relative;
+}
+
+.pencil svg {
+	width: 100%;
+	height: 100%;
+}
 
 .hidden {
 	display: none;
@@ -216,11 +223,6 @@ textarea {
 
 /* ===========================     MATCH HISTORY     =========================== */
 
-.table-container {
-	max-height: 300px;
-	overflow-y: auto;
-}
-
 .match-history {
 	display: flex;
 	flex-direction: column;
@@ -228,6 +230,11 @@ textarea {
 
 .match-history h3 {
 	margin-bottom: 10px;
+}
+
+.table-container {
+	max-height: 300px;
+	overflow-y: auto;
 }
 
 .table-container {
@@ -259,4 +266,12 @@ textarea {
 	text-align: center;
 	display: flex;
 	flex-direction: column;
+}
+
+/* ===========================     2FA     =========================== */
+
+.twofa-container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
 }

@@ -6,7 +6,7 @@ import { register } from "@/app/utilities/userActions";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import "./user.css";
-import "./registerForm.css"
+import "./registerForm.css";
 
 export const registerSchema = z.object({
 	email: z
@@ -43,7 +43,10 @@ export default function RegisterForm() {
 	);
 	const router = useRouter();
 
-	const [data, action, isPending] = useActionState(handleSubmit, undefined);
+	const [registerData, registerAction, registerPending] = useActionState(
+		handleSubmit,
+		undefined
+	);
 
 	async function handleSubmit(_previousState: unknown, formData: FormData) {
 		const email = formData.get("email") as string;
@@ -131,14 +134,14 @@ export default function RegisterForm() {
 				<Link href="/" className="close-button">
 					&times;
 				</Link>
-		
+
 				{alert && (
-				<div className={`alert alert-${alert.type}`} role="alert">
-					{alert.message}
-				</div>
+					<div className={`alert alert-${alert.type}`} role="alert">
+						{alert.message}
+					</div>
 				)}
-		
-				<form action={action}>
+
+				<form>
 					<label htmlFor="email" className="label">
 						Email<span className="mandatory">*</span>
 					</label>
@@ -147,11 +150,13 @@ export default function RegisterForm() {
 						placeholder="youremail@gmail.com"
 						id="email"
 						name="email"
-						defaultValue={data?.previousValues?.email}
+						defaultValue={registerData?.previousValues?.email}
 						className="input-field"
 					/>
-					{data?.emailError && <p className="input-error">{data?.emailError}</p>}
-			
+					{registerData?.emailError && (
+						<p className="input-error">{registerData?.emailError}</p>
+					)}
+
 					<label htmlFor="username" className="label">
 						Username<span className="mandatory">*</span>
 					</label>
@@ -160,13 +165,13 @@ export default function RegisterForm() {
 						placeholder="JohnDoe"
 						id="username"
 						name="username"
-						defaultValue={data?.previousValues?.username}
+						defaultValue={registerData?.previousValues?.username}
 						className="input-field"
 					/>
-					{data?.usernameError && (
-						<p className="input-error">{data?.usernameError}</p>
+					{registerData?.usernameError && (
+						<p className="input-error">{registerData?.usernameError}</p>
 					)}
-			
+
 					<label htmlFor="password" className="label">
 						Password<span className="mandatory">*</span>
 					</label>
@@ -175,13 +180,13 @@ export default function RegisterForm() {
 						placeholder="*************"
 						id="password"
 						name="password"
-						defaultValue={data?.previousValues?.password}
+						defaultValue={registerData?.previousValues?.password}
 						className="input-field"
 					/>
-					{data?.passwordError && (
-						<p className="input-error">{data?.passwordError}</p>
+					{registerData?.passwordError && (
+						<p className="input-error">{registerData?.passwordError}</p>
 					)}
-			
+
 					<label htmlFor="age" className="label">
 						Age
 					</label>
@@ -190,11 +195,13 @@ export default function RegisterForm() {
 						placeholder="77"
 						id="age"
 						name="age"
-						defaultValue={data?.previousValues?.age}
+						defaultValue={registerData?.previousValues?.age}
 						className="input-field"
 					/>
-					{data?.ageError && <p className="input-error">{data?.ageError}</p>}
-			
+					{registerData?.ageError && (
+						<p className="input-error">{registerData?.ageError}</p>
+					)}
+
 					<label htmlFor="nationality" className="label">
 						Nationality
 					</label>
@@ -203,11 +210,11 @@ export default function RegisterForm() {
 						placeholder="French"
 						id="nationality"
 						name="nationality"
-						defaultValue={data?.previousValues?.nationality}
+						defaultValue={registerData?.previousValues?.nationality}
 						className="input-field"
 					/>
-					{data?.nationalityError && (
-						<p className="input-error">{data?.nationalityError}</p>
+					{registerData?.nationalityError && (
+						<p className="input-error">{registerData?.nationalityError}</p>
 					)}
 
 					<label htmlFor="bio" className="label">
@@ -218,24 +225,27 @@ export default function RegisterForm() {
 						placeholder="Hi there ! I'm John Doe the greatest"
 						id="bio"
 						name="bio"
-						defaultValue={data?.previousValues?.bio}
+						defaultValue={registerData?.previousValues?.bio}
 						className="input-field"
 					/>
-					{data?.bioError && <p className="input-error">{data?.bioError}</p>}
-			
+					{registerData?.bioError && (
+						<p className="input-error">{registerData?.bioError}</p>
+					)}
+
 					<button
-						disabled={isPending}
+						disabled={registerPending}
+						formAction={registerAction}
 						type="submit"
 						className="submit-button"
 					>
 						Sign Up
 					</button>
 				</form>
-		
+
 				<Link className="register-link" href="/login">
 					Already have an account? Login here
 				</Link>
-		
+
 				<p className="mandatory-info">
 					<span>*</span>: Mandatory information
 				</p>
