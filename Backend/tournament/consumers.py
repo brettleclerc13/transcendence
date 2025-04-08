@@ -1,6 +1,7 @@
 import json
 import asyncio
 import random
+import time
 from django.contrib.auth.models import User
 from utils.redis import RedisManager
 from match.models import Match
@@ -105,6 +106,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             if self.tournament_id != None and await RedisManager.get_state(state_key) in ["waiting for players", "unknown"]:
                 await RedisManager.delete_user_data_map(user_key, self.tournament_id)
                 players = await RedisManager.get_all_users_list_map(user_key)
+                await self.update_display()
                 #if len(players) == 0:
                     #save_tournament_outcome(self.room_id,True, False, None)
                 self.tournament_id = None
@@ -337,11 +339,12 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     if victor[1].get("is_on_page", "false") != "true":
                         absent_players.append(victor[1])
                     if not absent_players:
+                        await timer(self.room_id, 5, "Final Starting in")
                         await handle_finals_start(self.room_id)
                     else:
                         asyncio.create_task(notify_and_wait_for_reconnect(self.room_id, absent_players))
                     await RedisManager.delete_keys(save_tournament_key)
-                    return "nope"
+                    return "nope"tournament_starting
                 if len(waiting_players) > 1:
                     print (f"something went wrong! first waiting player: {waiting_players[0][0]} second: {waiting_players[1][0]} and the victor: {victor[0]}")    
             elif len(winners) == 2:
@@ -386,7 +389,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     self.room_group_name,
                     {
                         "type": "tournament_display_update",
-                        "state": display_state
+                        "state": display_statetournament_starting
                     }
                 )
                 absent_players = []
@@ -397,6 +400,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 if not absent_players:
                     #DEL
                     print("BOMBOCLAAAAT STARTING THE FINALS", flush=True)
+                    await timer(self.room_id, 5, "Final Starting in")
                     await handle_finals_start(self.room_id)
                 else:
                     asyncio.create_task(notify_and_wait_for_reconnect(self.room_id, absent_players))
@@ -468,7 +472,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             "sender": event["sender"],
         }))
 
-    async def tournament_notification(self, event):
+    async def tournament_countdown(self, event):
         await self.send(text_data=json.dumps({
             "type": "tournament_message",
             "message": event["message"],
@@ -584,6 +588,7 @@ async def four_players_start(room_id, present_players):
     )
 
     # Start the two matches
+    await timer(room_id, 5, "First Match Starting in")
     await create_tournament_match(room_id, match_1[0], match_1[1], is_finale=False)
     await create_tournament_match(room_id, match_2[0], match_2[1], is_finale=False)
 
@@ -626,6 +631,7 @@ async def three_players_start(room_id, present_players):
             }
         )
 
+        await timer(room_id, 5, "First Match Starting in")
         await create_tournament_match(room_id, match_players[0], match_players[1], is_finale=False)
         print(f"✅ Tournament progressing: Match between {match_players[0]} vs {match_players[1]}, {waiting_player} advances to finals!", flush=True)
 
@@ -665,7 +671,7 @@ async def two_players_start(room_id, present_players):
             }
         )
 
-
+        await timer(room_id, 5, "Finals Starting in")
         await create_tournament_match(room_id, players[0], players[1], is_finale=True)
 
 async def create_tournament_match(room_id: str, tournament_id_1: str, tournament_id_2: str, is_finale: bool):
@@ -722,11 +728,12 @@ async def create_tournament_match(room_id: str, tournament_id_1: str, tournament
 async def notify_and_wait_for_reconnect(room_id, absent_players):
         try:
             user_key = f"tournament:{room_id}:users"
+            channel_layer = get_channel_layer()
 
             for player in absent_players:
                 await send_chat_notification(room_id, player["id"], "⚠️ You need to reconnect to play the tournament finals!")
 
-            await asyncio.sleep(30)
+            timer(room_id, 30, "Finals Starting in")
 
             await handle_finals_start(room_id)
         except Exception as e:
@@ -753,18 +760,10 @@ async def notify_absent_players_and_wait(room_id):
 
         channel_layer = get_channel_layer()
 
-        # Send the message to the group
-        await channel_layer.group_send(
-            f"tournament_{room_id}",  
-            {
-                "type": "tournament_notification",
-                "message": "Tournament is starting! Get Ready!"
-            }
-        )
-
         #DEL
         print(f"going to SCHLEEP ZZZ {room_id}", flush=True)
-        await asyncio.sleep(30)
+
+        await timer(room_id, 30, "Tournament starting in")
 
         players_after_wait = await RedisManager.get_all_users_json(user_key)
 
@@ -870,6 +869,23 @@ async def save_tournament_outcome(room_id: str, is_finished: bool, is_ongoing: b
         print(f"❌ Error: Winner user with ID {winner} not found!", flush=True)
     except Exception as e:
         print(f"❌ EXCEPTION IN save tournament outcome: {e}", flush=True)
+
+async def timer(room_id, seconds, message):
+    channel_layer = get_channel_layer()
+    for i in range(seconds):
+            loop_start = time.perf_counter()
+            message = f"{message} {seconds - i} seconds!"
+            await channel_layer.group_send(
+                f"tournament_{room_id}",  
+                {
+                    "type": "tournament_countdown",
+                    "message": message
+                }
+            )
+            loop_end = time.perf_counter()
+            remaining_time = max(0, 1 - (loop_end - loop_start))
+            await asyncio.sleep(remaining_time)
+
     
     
 async def send_chat_notification(room_id, user_id, message):

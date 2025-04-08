@@ -834,7 +834,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         ry = dy - 2 * dot_product * ny
 
         reflection = [rx, ry]
-
+self.time_per_tick
         return reflection  
     
     def clamp(self, value, min_value, max_value):
