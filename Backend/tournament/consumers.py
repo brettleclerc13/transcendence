@@ -99,6 +99,15 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 )
                 await self.update_display()
             else:
+                connected_users = await RedisManager.get_all_users_json(user_key)
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        "type": "new_user_joined",
+                        "users": connected_users,
+                        "id": self.tournament_id
+                    }
+                )
                 await RedisManager.update_user_data_map(user_key, self.tournament_id, "is_on_page", "true")
                 await self.refresh_display()
             await self.update_tournament_state()
@@ -344,7 +353,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     else:
                         asyncio.create_task(notify_and_wait_for_reconnect(self.room_id, absent_players))
                     await RedisManager.delete_keys(save_tournament_key)
-                    return "nope"tournament_starting
+                    return "nope"
                 if len(waiting_players) > 1:
                     print (f"something went wrong! first waiting player: {waiting_players[0][0]} second: {waiting_players[1][0]} and the victor: {victor[0]}")    
             elif len(winners) == 2:
@@ -389,7 +398,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     self.room_group_name,
                     {
                         "type": "tournament_display_update",
-                        "state": display_statetournament_starting
+                        "state": display_state
                     }
                 )
                 absent_players = []
@@ -474,7 +483,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
 
     async def tournament_countdown(self, event):
         await self.send(text_data=json.dumps({
-            "type": "tournament_message",
+            "type": "tournament_countdown",
             "message": event["message"],
         }))
 
@@ -733,7 +742,7 @@ async def notify_and_wait_for_reconnect(room_id, absent_players):
             for player in absent_players:
                 await send_chat_notification(room_id, player["id"], "⚠️ You need to reconnect to play the tournament finals!")
 
-            timer(room_id, 30, "Finals Starting in")
+            await timer(room_id, 30, "Finals Starting in")
 
             await handle_finals_start(room_id)
         except Exception as e:
@@ -870,11 +879,11 @@ async def save_tournament_outcome(room_id: str, is_finished: bool, is_ongoing: b
     except Exception as e:
         print(f"❌ EXCEPTION IN save tournament outcome: {e}", flush=True)
 
-async def timer(room_id, seconds, message):
+async def timer(room_id, seconds, message_prefix):
     channel_layer = get_channel_layer()
     for i in range(seconds):
             loop_start = time.perf_counter()
-            message = f"{message} {seconds - i} seconds!"
+            message = f"{message_prefix} {seconds - i} seconds!"
             await channel_layer.group_send(
                 f"tournament_{room_id}",  
                 {
