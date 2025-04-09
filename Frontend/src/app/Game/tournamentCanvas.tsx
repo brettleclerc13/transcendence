@@ -167,7 +167,7 @@ export default function TournamentCanvas({
 		socket.send(JSON.stringify({ type: "user_disconnected" }));
 
 		const response = await leaveTournament(tournamentID);
-		if (!response.ok) {
+		if (response && !response.ok) {
 			setAlert({
 				message: response.error || "Failed to leave tournament",
 				type: "danger",
@@ -179,7 +179,7 @@ export default function TournamentCanvas({
 	};
 
 	return gameOn ? (
-		<GameCanvas ID={matchID} />
+		<GameCanvas matchID={matchID} setGameType={setGameType} />
 	) : (
 		<section className="tournament-container">
 			<h2 className="tournament-title">Tournament organisation :</h2>

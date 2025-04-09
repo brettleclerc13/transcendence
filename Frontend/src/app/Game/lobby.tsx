@@ -81,12 +81,15 @@ export default function Lobby() {
 
 	useEffect(() => {
 		if (isUserLoggedIn()) {
-			checkGames();
+			// Only check games when component mounts or when gameType is set to "lobby"
+			if (gameType === "" || gameType === "lobby") {
+				checkGames();
+			}
 			fetchProfile();
 		} else {
 			setGameType("notLoggedIn");
 		}
-	}, []);
+	}, [gameType]);
 
 	const handleSimpleMatchCreation = async () => {
 		try {
@@ -166,7 +169,9 @@ export default function Lobby() {
 
 	return (
 		<>
-			{gameType == "simple" && <GameCanvas ID={gameID} />}
+			{gameType == "simple" && (
+				<GameCanvas matchID={gameID} setGameType={setGameType} />
+			)}
 			{gameType == "tournament" && (
 				<TournamentCanvas tournamentID={gameID} setGameType={setGameType} />
 			)}

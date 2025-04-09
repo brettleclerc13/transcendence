@@ -344,7 +344,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     else:
                         asyncio.create_task(notify_and_wait_for_reconnect(self.room_id, absent_players))
                     await RedisManager.delete_keys(save_tournament_key)
-                    return "nope"tournament_starting
+                    return "nope"
                 if len(waiting_players) > 1:
                     print (f"something went wrong! first waiting player: {waiting_players[0][0]} second: {waiting_players[1][0]} and the victor: {victor[0]}")    
             elif len(winners) == 2:

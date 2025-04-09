@@ -56,7 +56,7 @@ const LiveChatClient = () => {
 						"Content-Type": "application/json",
 					},
 				});
-				if (!response.ok) {
+				if (response && !response.ok) {
 					console.warn(
 						"Erreur lors de la récupération de l'utilisateur :",
 						response.statusText
@@ -104,7 +104,7 @@ const LiveChatClient = () => {
 					body: JSON.stringify({ user_id: selectedFriend.id }),
 				});
 
-				if (!response.ok) {
+				if (response && !response.ok) {
 					console.warn("Erreur lors de la récupération de la conversation.");
 					return;
 				}

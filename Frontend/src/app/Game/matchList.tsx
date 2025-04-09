@@ -90,9 +90,11 @@ export default function MatchList({
 			const validationResult = profileSchema.safeParse({ tournament_name });
 			if (!validationResult.success) {
 				setAlert({
-					message: String(validationResult.error.errors.find(
-						(err) => err.path[0] === "tournament_name"
-					)?.message),
+					message: String(
+						validationResult.error.errors.find(
+							(err) => err.path[0] === "tournament_name"
+						)?.message
+					),
 					type: "danger",
 				});
 				return;
@@ -109,8 +111,8 @@ export default function MatchList({
 				return;
 			}
 
-			try {
-				await joinTournament(ID);
+			const result = await joinTournament(ID);
+			if (result && result.ok) {
 				setAlert({
 					message: "Best of luck!",
 					type: "success",
@@ -119,16 +121,15 @@ export default function MatchList({
 				setTimeout(() => {
 					setGameType("tournament");
 				}, 1000);
-			} catch (error) {
+			} else {
 				setAlert({
-					message: `Failed to join match/tournament: ${error}`,
+					message: result.error || "Failed to join tournament",
 					type: "danger",
 				});
-				return;
 			}
 		} else {
-			try {
-				await joinSimpleMatch(ID);
+			const result = await joinSimpleMatch(ID);
+			if (result && result.ok) {
 				setAlert({
 					message: "Game on!",
 					type: "success",
@@ -137,12 +138,11 @@ export default function MatchList({
 				setTimeout(() => {
 					setGameType("simple");
 				}, 1000);
-			} catch (error) {
+			} else {
 				setAlert({
-					message: `Failed to join match: ${error}`,
+					message: result.error || "Failed to join match",
 					type: "danger",
 				});
-				return;
 			}
 		}
 	};

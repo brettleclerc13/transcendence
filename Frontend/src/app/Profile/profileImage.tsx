@@ -38,7 +38,7 @@ export default function ProfileImage({
 			const data = await response.json();
 			console.log("Updated image response:", data.profile_picture);
 
-			if (response.ok) {
+			if (response && response.ok) {
 				setUserProfile({
 					...userProfile,
 					profile_picture: data.profile_picture,

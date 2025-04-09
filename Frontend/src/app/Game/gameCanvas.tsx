@@ -7,7 +7,13 @@ import "./game.css";
 import type { GameState } from "./gameCanvasFunctions";
 import { drawGame } from "./gameCanvasFunctions";
 
-export default function GameCanvas(match: { ID: string | undefined }) {
+export default function GameCanvas({
+	matchID,
+	setGameType,
+}: {
+	matchID: string | undefined;
+	setGameType: (isReadyToPlay: string) => void;
+}) {
 	const [status, setStatus] = useState<
 		"waiting" | "ready" | "playing" | "reconnection" | "ending"
 	>("waiting");
@@ -37,9 +43,9 @@ export default function GameCanvas(match: { ID: string | undefined }) {
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
 
-		if (!accessToken || !match.ID) return;
+		if (!accessToken || !matchID) return;
 
-		const roomName = match.ID;
+		const roomName = matchID;
 		const ws = new WebSocket(
 			`wss://${host}:${port}/game/${roomName}/?token=${accessToken}`
 		);
@@ -328,7 +334,7 @@ export default function GameCanvas(match: { ID: string | undefined }) {
 	useEffect(() => {
 		if (status === "ending") {
 			const timer = setTimeout(() => {
-				router.push("/");
+				setGameType("lobby");
 			}, 3000);
 			return () => clearTimeout(timer);
 		}

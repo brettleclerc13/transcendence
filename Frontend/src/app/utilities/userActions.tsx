@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { fetchGenericAPIResponses } from "./generalActions";
 
 type LoginProps = {
 	email: string;
@@ -22,7 +23,7 @@ export const login = async ({ email, pass }: LoginProps) => {
 
 	let data;
 
-	if (!response.ok) {
+	if (response && !response.ok) {
 		const text = await response.text();
 		try {
 			data = JSON.parse(text);
@@ -72,7 +73,7 @@ export async function backendLogout() {
 			},
 		});
 
-		if (response.ok) console.log("Logout successful");
+		if (response && response.ok) console.log("Logout successful");
 		else console.warn("Logout unsuccessful");
 
 		return response.ok;
@@ -105,7 +106,7 @@ export const register = async (requestData: RegisterProps) => {
 
 	let data;
 
-	if (!response.ok) {
+	if (response && !response.ok) {
 		const text = await response.text();
 		try {
 			data = JSON.parse(text);

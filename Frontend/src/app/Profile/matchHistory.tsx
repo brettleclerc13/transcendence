@@ -40,15 +40,7 @@ export default function MatchHistory({
 		const fetchMatchHistoryData = async () => {
 			const matchResults = await fetchSimpleMatchHistory();
 
-			if (matchResults.ok === false) {
-				setAlert({
-					message: `Error fetching your match history: ${matchResults.error}`,
-					type: "danger",
-				});
-				return;
-			} else {
-				if (!matchResults) return;
-				console.log("Match Results:", matchResults);
+			if (matchResults && matchResults.ok) {
 				const matchData = matchResults || [];
 				setSimpleMatches(matchData);
 				// Calcul des statistiques Win/Lose
@@ -78,6 +70,11 @@ export default function MatchHistory({
 							position: "bottom",
 						},
 					},
+				});
+			} else {
+				setAlert({
+					message: matchResults.error,
+					type: "danger",
 				});
 			}
 		};

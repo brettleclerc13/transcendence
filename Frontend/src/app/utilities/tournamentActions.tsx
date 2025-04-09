@@ -1,7 +1,10 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { fetchGenericAPIResponses } from "./generalActions";
+import {
+	fetchGenericAPIResponses,
+	fetchAPIResponseData,
+} from "./generalActions";
 
 type TournamentFilterProps = {
 	id?: string;
@@ -42,24 +45,17 @@ export const fetchTournaments = async (filters: TournamentFilterProps = {}) => {
 			}
 		);
 
-		let data;
-		const text = await response.text();
-		try {
-			data = JSON.parse(text);
-		} catch {
-			throw new Error(`Unexpected response: ${response.status}`);
-		}
+		const result = await fetchAPIResponseData({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to fetch tournaments.",
+				successMessage: "Successfully fetched tournaments",
+			},
+		});
 
-		if (!response.ok) {
-			const errorMessage =
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to fetch tournaments.";
-			throw new Error(errorMessage);
-		} else {
-			return data;
-		}
+		if (result.ok) return result.data;
+		else
+			throw new Error(String(result.error) || "Failed to fetch tournaments.");
 	} catch (error) {
 		throw new Error(String(error) || "Failed to fetch tournaments.");
 	}
@@ -81,28 +77,20 @@ export const createTournament = async () => {
 			body: JSON.stringify({}),
 		});
 
-		let data;
-		const text = await response.text();
-		console.log("creating tournament response text: ", text);
-		try {
-			data = JSON.parse(text);
-		} catch {
-			throw new Error(
-				`Unexpected response concerning tournament creation: ${response.status}`
-			);
-		}
-		if (!response.ok) {
-			const errorMessage =
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to create tournament.";
-			throw new Error(errorMessage);
-		} else {
-			console.log("create tournament data: ", data);
-			if (data.id) return { tournamentID: data.id as string };
-			else throw new Error("TournamentID not found");
-		}
+		const result = await fetchAPIResponseData({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to create tournament.",
+				successMessage: "Successfully created tournament",
+			},
+		});
+
+		if (result.ok) {
+			if (result.data && result.data.id) {
+				return { ok: true, tournamentID: result.data.id };
+			} else throw new Error("TournamentID not found");
+		} else
+			throw new Error(String(result.error) || "Failed to create tournament.");
 	} catch (error) {
 		throw new Error(String(error) || "Failed to create tournament.");
 	}
@@ -111,7 +99,11 @@ export const createTournament = async () => {
 export const joinTournament = async (tournamentID: string) => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
-	if (!token) throw new Error("Access token missing");
+	if (!token)
+		return {
+			ok: false,
+			error: "Access token missing",
+		};
 
 	try {
 		const response = await fetch(
@@ -125,33 +117,30 @@ export const joinTournament = async (tournamentID: string) => {
 			}
 		);
 
-		let data;
-		const text = await response.text();
-		try {
-			data = JSON.parse(text);
-		} catch {
-			throw new Error(
-				`Unexpected response when trying to join a tournament: ${response.status}`
-			);
-		}
-		if (!response.ok) {
-			const errorMessage =
-				data.error ||
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to join tournament.";
-			throw new Error(errorMessage);
-		}
+		return await fetchGenericAPIResponses({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to join tournament.",
+				successMessage: "Successfully joined the tournament",
+			},
+		});
 	} catch (error) {
-		throw new Error(String(error) || "Failed to join tournament.");
+		return {
+			ok: false,
+			error: (error as Error).message || "Failed to join tournament.",
+		};
 	}
 };
 
 export const leaveTournament = async (tournamentID: string) => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
-	if (!token) throw new Error("Access token missing");
+	if (!token) {
+		return {
+			ok: false,
+			error: "Access token missing",
+		};
+	}
 
 	try {
 		const response = await fetch(
@@ -165,7 +154,7 @@ export const leaveTournament = async (tournamentID: string) => {
 			}
 		);
 
-		return fetchGenericAPIResponses({
+		return await fetchGenericAPIResponses({
 			response,
 			defaultMessages: {
 				errorMessage: "Failed to leave tournament.",
@@ -194,26 +183,16 @@ export const fetchTournamentHistory = async () => {
 			},
 		});
 
-		let data;
-		const text = await response.text();
-		try {
-			data = JSON.parse(text);
-		} catch {
-			throw new Error(
-				`Unexpected response when trying to fetch user tournament history: ${response.status}`
-			);
-		}
-		if (!response.ok) {
-			const errorMessage =
-				data.error ||
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to fetch user tournament history.";
-			throw new Error(errorMessage);
-		} else {
-			return data;
-		}
+		const result = await fetchAPIResponseData({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to fetch user tournament history.",
+				successMessage: "Successfully fetched user tournament history",
+			},
+		});
+
+		if (result.ok) return result.data;
+		else return result;
 	} catch (error) {
 		return {
 			ok: false,
@@ -237,30 +216,19 @@ export const checkTournaments = async () => {
 			},
 		});
 
-		let data;
-		const text = await response.text();
-		try {
-			data = JSON.parse(text);
-		} catch {
-			throw new Error(
-				`Unexpected response when trying to check user's active tournaments: ${response.status}`
-			);
-		}
-		if (!response.ok) {
-			const errorMessage =
-				data.error ||
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to check user's active tournaments.";
-			throw new Error(errorMessage);
-		} else {
-			console.log("CHECK TOURNAMENT data received: ", data);
-			if (data && data[0].id) {
-				console.log("data id exists: ", data[0].id);
-				return { ok: true, tournamentID: data[0].id };
-			} else return data;
-		}
+		const result = await fetchAPIResponseData({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to check user's active tournaments.",
+				successMessage: "Successfully checked user's active tournaments",
+			},
+		});
+
+		if (result.ok) {
+			if (result.data && result.data[0].id) {
+				return { ok: true, tournamentID: result.data[0].id };
+			} else return result.data;
+		} else return result;
 	} catch (error) {
 		return {
 			ok: false,

@@ -31,15 +31,13 @@ export default function TwoFactorAuth({
 	useEffect(() => {
 		const prepareAuthSetUp = async () => {
 			const result = await fetchQrCode();
-			if (result.ok === false) {
+			if (result && !result.ok) {
 				setAlert({
 					message: "Failed to load QR Code for 2FA activation",
 					type: "danger",
 				});
-				return;
 			} else {
 				setQrCode(result.qr_code);
-				return;
 			}
 		};
 		prepareAuthSetUp();
@@ -62,14 +60,14 @@ export default function TwoFactorAuth({
 		} else {
 			if (validationResult.data) {
 				const result = await verifyOTP(validationResult.data);
-				if (!result.ok) {
+				if (result && !result.ok) {
 					setAlert({
-						message: result.message || "Failed to activate 2FA",
+						message: result.error || "Failed to activate 2FA",
 						type: "danger",
 					});
 				} else {
 					setAlert({
-						message: result.message || "2FA activation successful",
+						message: result.error || "2FA activation successful",
 						type: "success",
 					});
 				}

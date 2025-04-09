@@ -24,7 +24,7 @@ export const refreshAccessToken = async () => {
 
 		let data;
 
-		if (!response.ok) {
+		if (response && !response.ok) {
 			deleteCookie("accessToken");
 			deleteCookie("refreshToken");
 			deleteCookie("tokenExpiry");
