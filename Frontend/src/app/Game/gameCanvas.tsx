@@ -354,7 +354,7 @@ export default function GameCanvas({
 				<div className="game-over-screen">
 					<p>Game is finished!</p>
 					<p>{winner} is the Winner!</p>
-					<p>Returning to the home page in 3 seconds...</p>
+					<p>Returning in 3 seconds...</p>
 				</div>
 			)}
 		</div>

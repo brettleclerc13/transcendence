@@ -16,7 +16,7 @@ const MyCarousel = () => {
 					{
 						interval: 2000,
 						touch: false,
-					},
+					}
 				);
 
 				return () => {
@@ -67,7 +67,7 @@ const MyCarousel = () => {
 				</div>
 				<div className="carousel-inner">
 					<div className="carousel-item active">
-						<img src="/img/ehouot.png" className="mx-auto" alt="..." />
+						<img src="/img/ehouot.png" className="d-block w-100" alt="..." />
 						<div className="carousel-caption d-none d-md-block">
 							<h5>Emilien Houot | ehouot</h5>
 							<div className="social-icons">

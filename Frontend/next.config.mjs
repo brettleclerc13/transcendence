@@ -3,11 +3,17 @@ const nextConfig = {
 	experimental: {
 		serverActions: {},
 	},
+	allowedDevOrigins: [process.env.NEXT_PUBLIC_WS_HOST],
 	async headers() {
 		return [
 			{
 				source: "/(.*)",
-				headers: [{ key: "X-Forwarded-Host", value: "transcendence.fr:8080" }],
+				headers: [
+					{
+						key: "X-Forwarded-Host",
+						value: `${process.env.NEXT_PUBLIC_WS_HOST}:${process.env.NEXT_PUBLIC_WS_PORT}`,
+					},
+				],
 			},
 		];
 	},

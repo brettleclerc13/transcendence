@@ -1,4 +1,4 @@
-FROM nginx@sha256:0c57fe90551cfd8b7d4d05763c5018607b296cb01f7e0ff44b7d047353ed8cc0
+FROM nginx:1.27.4-alpine-slim@sha256:b05aceb5ec1844435cae920267ff9949887df5b88f70e11d8b2871651a596612
 
 RUN apk update && apk upgrade && apk add vim openssl
 

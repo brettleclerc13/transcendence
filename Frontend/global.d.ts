@@ -15,4 +15,4 @@ declare namespace JSX {
 	}
 }
 
-// declare module 'bootstrap/dist/css/bootstrap.min.css';
+declare module "bootstrap/dist/css/bootstrap.min.css";

@@ -1,8 +1,8 @@
-FROM python:3.10-slim
+FROM python:3.13-alpine-slim@sha256:18159b2be11db91f84b8f8f655cd860f805dbd9e49a583ddaac8ab39bf4fe1a7
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y libpq-dev gcc curl openssl netcat-traditional -y && apt-get install -y libpq-dev gcc redis-server && rm -rf /var/lib/apt/lists/*
+RUN apk update && apk add --no-cache libpq-dev gcc curl openssl netcat-openbsd redis && rm -rf /var/cache/apk/*
 
 COPY requirements.txt .
 COPY entrypoint.sh .
@@ -16,8 +16,10 @@ RUN pip install django-extensions Werkzeug daphne djangorestframework-simplejwt 
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN pip install --upgrade channels
+
 RUN chmod +x /app/entrypoint.sh
 
-EXPOSE 8001
+#EXPOSE 8001
 
 CMD ["/app/entrypoint.sh"]

@@ -167,7 +167,7 @@ export default function TournamentCanvas({
 		socket.send(JSON.stringify({ type: "user_disconnected" }));
 
 		const response = await leaveTournament(tournamentID);
-		if (response && !response.ok) {
+		if (!response.ok) {
 			setAlert({
 				message: response.error || "Failed to leave tournament",
 				type: "danger",

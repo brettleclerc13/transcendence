@@ -3,13 +3,6 @@ import RefreshAccessToken from "@/app/utilities/JWTActions";
 import "bootstrap/dist/css/bootstrap.min.css";
 import BootstrapClient from "@/components/bootstrapClient";
 import "./globals.css";
-import { Bungee_Shade } from "next/font/google";
-
-const bungee_shade = Bungee_Shade({
-	weight: "400",
-	style: ["normal"],
-	subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
 	title: "Transcendence",

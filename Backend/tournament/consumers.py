@@ -348,7 +348,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     if victor[1].get("is_on_page", "false") != "true":
                         absent_players.append(victor[1])
                     if not absent_players:
-                        await timer(self.room_id, 5, "Final Starting in")
+                        await timer(self.room_id, 5, "Finals starting in")
                         await handle_finals_start(self.room_id)
                     else:
                         asyncio.create_task(notify_and_wait_for_reconnect(self.room_id, absent_players))
@@ -409,7 +409,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 if not absent_players:
                     #DEL
                     print("BOMBOCLAAAAT STARTING THE FINALS", flush=True)
-                    await timer(self.room_id, 5, "Final Starting in")
+                    await timer(self.room_id, 5, "Finals starting in")
                     await handle_finals_start(self.room_id)
                 else:
                     asyncio.create_task(notify_and_wait_for_reconnect(self.room_id, absent_players))
@@ -597,7 +597,7 @@ async def four_players_start(room_id, present_players):
     )
 
     # Start the two matches
-    await timer(room_id, 5, "First Match Starting in")
+    await timer(room_id, 5, "First match starting in")
     await create_tournament_match(room_id, match_1[0], match_1[1], is_finale=False)
     await create_tournament_match(room_id, match_2[0], match_2[1], is_finale=False)
 
@@ -640,7 +640,7 @@ async def three_players_start(room_id, present_players):
             }
         )
 
-        await timer(room_id, 5, "First Match Starting in")
+        await timer(room_id, 5, "First match starting in")
         await create_tournament_match(room_id, match_players[0], match_players[1], is_finale=False)
         print(f"✅ Tournament progressing: Match between {match_players[0]} vs {match_players[1]}, {waiting_player} advances to finals!", flush=True)
 
@@ -680,7 +680,7 @@ async def two_players_start(room_id, present_players):
             }
         )
 
-        await timer(room_id, 5, "Finals Starting in")
+        await timer(room_id, 5, "Finals starting in")
         await create_tournament_match(room_id, players[0], players[1], is_finale=True)
 
 async def create_tournament_match(room_id: str, tournament_id_1: str, tournament_id_2: str, is_finale: bool):
@@ -742,7 +742,7 @@ async def notify_and_wait_for_reconnect(room_id, absent_players):
             for player in absent_players:
                 await send_chat_notification(room_id, player["id"], "⚠️ You need to reconnect to play the tournament finals!")
 
-            await timer(room_id, 30, "Finals Starting in")
+            await timer(room_id, 30, "Finals starting in")
 
             await handle_finals_start(room_id)
         except Exception as e:
@@ -881,9 +881,12 @@ async def save_tournament_outcome(room_id: str, is_finished: bool, is_ongoing: b
 
 async def timer(room_id, seconds, message_prefix):
     channel_layer = get_channel_layer()
-    for i in range(seconds):
+    for i in range(seconds + 1):
             loop_start = time.perf_counter()
-            message = f"{message_prefix} {seconds - i} seconds!"
+            if (i < seconds):
+                message = f"{message_prefix} {seconds - i} {'second' if seconds - i == 1 else 'seconds'}"
+            else:
+                message = None
             await channel_layer.group_send(
                 f"tournament_{room_id}",  
                 {
