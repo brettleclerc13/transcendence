@@ -12,7 +12,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = UserProfile
-		fields = ['user', 'profile_picture']
+		fields = ['user', 'profile_picture', 'age', 'nationality', 'bio', 'is_online', 'tournament_name']
 
 	def validate_profile_picture(self, value):
 		max_size = 2 * 1024 * 1024  # 2MB
