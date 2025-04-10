@@ -401,8 +401,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 self.channel_name
                 )
                 return
-            await self.redis.set(game_ended, "true")  # Store the key
-            await self.redis.expire(game_ended, 3600)  # Set expiration to 1 hour
+            await RedisManager.set_expiry_key(game_ended, 3600)
             
             if self.debug_game_stats:
                 print(f"Games Ending, winner: {winner} the reason: {msg}", flush=True)
