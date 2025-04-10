@@ -1,6 +1,14 @@
 COMPOSE_FILE=docker-compose.yml
 
-all: up
+PYTHON_PACKAGES = websockets requests asgiref
+
+all: install-deps up
+
+install-deps:
+	@echo "Checking and installing required Python packages..."
+	@for package in $(PYTHON_PACKAGES); do \
+		python3 -c "import $$package" 2>/dev/null || (echo "Installing missing package: $$package" && pip install --user $$package); \
+	done
 
 up:
 	@mkdir -p ./Volume

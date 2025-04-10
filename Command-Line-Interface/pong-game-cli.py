@@ -61,7 +61,6 @@ async def get_game_state():
         print("⚠️ No active games with that room-name")
         return
     try:
-        print(f"{BASE_URL_DATA}/{room_name}/")
         async with websockets.connect(f"{BASE_URL_DATA}/{room_name}/", ssl=ssl_context) as websocket:
             response = await websocket.recv()
             game_data = json.loads(response)
