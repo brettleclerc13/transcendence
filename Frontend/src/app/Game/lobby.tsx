@@ -17,6 +17,7 @@ import {
 import GameCanvas from "./gameCanvas";
 import "./match.css";
 import TournamentCanvas from "./tournamentCanvas";
+import { Alert } from "react-bootstrap";
 
 export const profileSchema = z.object({
 	tournament_name: z
@@ -30,6 +31,17 @@ export default function Lobby() {
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
 		null
 	);
+
+	const setAlertWithTimeout = (
+		alertData: { message: string; type: string } | null
+	) => {
+		setAlert(alertData);
+		if (alertData) {
+			setTimeout(() => {
+				setAlert(null);
+			}, 3000); // 3 seconds
+		}
+	};
 	const [gameType, setGameType] = useState<string>("");
 	const [gameID, setGameID] = useState<string>("");
 	const [tournamentData, tournamentAction, tournamentPending] = useActionState(
@@ -45,7 +57,7 @@ export default function Lobby() {
 				userProfile.tournament_name ? userProfile.tournament_name : undefined
 			);
 		} catch (error) {
-			setAlert({
+			setAlertWithTimeout({
 				message: `Error fetching your profile info: ${error}`,
 				type: "danger",
 			});
@@ -61,16 +73,19 @@ export default function Lobby() {
 				setGameID(matchResults.matchID);
 				setGameType("simple");
 				return;
+			} else {
+				const tournamentResults = await checkTournaments();
+				if (tournamentResults.ok) {
+					setGameID(tournamentResults.tournamentID);
+					setGameType("tournament");
+					return;
+				} else {
+					setGameType("lobby");
+					return;
+				}
 			}
-			const tournamentResults = await checkTournaments();
-			if (tournamentResults.ok) {
-				setGameID(tournamentResults.tournamentID);
-				setGameType("tournament");
-				return;
-			}
-			setGameType("lobby");
 		} catch (error) {
-			setAlert({
+			setAlertWithTimeout({
 				message: `Error checking for ongoing matches: ${error}`,
 				type: "danger",
 			});
@@ -81,18 +96,20 @@ export default function Lobby() {
 
 	useEffect(() => {
 		if (isUserLoggedIn()) {
-			checkGames();
+			if (gameType === "" || gameType === "lobby") {
+				checkGames();
+			}
 			fetchProfile();
 		} else {
 			setGameType("notLoggedIn");
 		}
-	}, []);
+	}, [gameType]);
 
 	const handleSimpleMatchCreation = async () => {
 		try {
 			setSimpleGamePending(true);
 			const response = await createSimpleMatch();
-			setAlert({
+			setAlertWithTimeout({
 				message: "Game on!",
 				type: "success",
 			});
@@ -103,7 +120,7 @@ export default function Lobby() {
 			setSimpleGamePending(false);
 			return;
 		} catch (error) {
-			setAlert({
+			setAlertWithTimeout({
 				message: `Error creating a 1v1 game: ${error}`,
 				type: "danger",
 			});
@@ -137,7 +154,7 @@ export default function Lobby() {
 			await updateUserProfile(validationResult.data);
 			setAlias(validationResult.data.tournament_name);
 		} catch (error) {
-			setAlert({
+			setAlertWithTimeout({
 				message: `Error updating your alias name: ${error}`,
 				type: "danger",
 			});
@@ -146,7 +163,7 @@ export default function Lobby() {
 
 		try {
 			const response = await createTournament();
-			setAlert({
+			setAlertWithTimeout({
 				message: "Game on!",
 				type: "success",
 			});
@@ -156,7 +173,7 @@ export default function Lobby() {
 			}, 1000);
 			return;
 		} catch (error) {
-			setAlert({
+			setAlertWithTimeout({
 				message: `Error creating a tournament: ${error}`,
 				type: "danger",
 			});
@@ -175,22 +192,21 @@ export default function Lobby() {
 			{gameType == "lobby" && (
 				<div className="lobby-container">
 					{alert && (
-						<div className={`alert alert-${alert.type} alert-box`} role="alert">
-							{alert.message}
-							<button
-								type="button"
-								className="close"
-								onClick={() => setAlert(null)}
-								aria-label="Close"
+						<div className="alert-box">
+							<Alert
+								variant={alert.type}
+								onClose={() => setAlertWithTimeout(null)}
+								dismissible
+								show={!!alert}
 							>
-								<span aria-hidden="true">&times;</span>
-							</button>
+								<span className="alert-message">{alert.message}</span>
+							</Alert>
 						</div>
 					)}
 					<div className="lobby-sub-container">
 						<div style={{ flex: 3 }}>
 							<MatchList
-								setAlert={setAlert}
+								setAlert={setAlertWithTimeout}
 								setGameID={setGameID}
 								setGameType={setGameType}
 								alias={alias}

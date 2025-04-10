@@ -3,6 +3,7 @@ import { getCookie } from "cookies-next/client";
 import { leaveTournament } from "../utilities/tournamentActions";
 import GameCanvas from "./gameCanvas";
 import "./tournament.css";
+import { Alert } from "react-bootstrap";
 
 type TournamentPlayer = {
 	id: string;
@@ -35,6 +36,17 @@ export default function TournamentCanvas({
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
 		null
 	);
+
+	const setAlertWithTimeout = (
+		alertData: { message: string; type: string } | null
+	) => {
+		setAlert(alertData);
+		if (alertData) {
+			setTimeout(() => {
+				setAlert(null);
+			}, 3000); // 3 seconds
+		}
+	};
 	const [tournamentState, setTournamentState] = useState<
 		Record<string, string>
 	>({});
@@ -119,7 +131,7 @@ export default function TournamentCanvas({
 		ws.onclose = (event) => {
 			console.log("WebSocket disconnected");
 			if (event.code === 4000) {
-				setAlert({
+				setAlertWithTimeout({
 					message: "Room is full",
 					type: "danger",
 				});
@@ -157,7 +169,7 @@ export default function TournamentCanvas({
 
 	const handleTournamentExit = async () => {
 		if (!socket) {
-			setAlert({
+			setAlertWithTimeout({
 				message: "WebSocket is not connected",
 				type: "danger",
 			});
@@ -168,7 +180,7 @@ export default function TournamentCanvas({
 
 		const response = await leaveTournament(tournamentID);
 		if (!response.ok) {
-			setAlert({
+			setAlertWithTimeout({
 				message: response.error || "Failed to leave tournament",
 				type: "danger",
 			});
@@ -185,8 +197,15 @@ export default function TournamentCanvas({
 			<h2 className="tournament-title">Tournament organisation :</h2>
 
 			{alert && (
-				<div className="alert-box" role="alert">
-					{alert.message}
+				<div className="alert-box">
+					<Alert
+						variant={alert.type}
+						onClose={() => setAlertWithTimeout(null)}
+						dismissible
+						show={!!alert}
+					>
+						<span className="alert-message">{alert.message}</span>
+					</Alert>
 				</div>
 			)}
 

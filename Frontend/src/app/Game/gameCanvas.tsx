@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { getCookie } from "cookies-next/client";
 import "./game.css";
 import type { GameState } from "./gameCanvasFunctions";
@@ -38,7 +37,6 @@ export default function GameCanvas({
 	const targetPaddle2Position = useRef<[number, number] | null>(null);
 	const host = process.env.NEXT_PUBLIC_WS_HOST;
 	const port = process.env.NEXT_PUBLIC_WS_PORT;
-	const router = useRouter();
 
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");

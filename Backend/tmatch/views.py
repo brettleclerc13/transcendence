@@ -5,13 +5,42 @@ from .serializer import TournamentSerializer
 from rest_framework.response import Response
 from django.db import transaction
 from rest_framework.views import APIView
+from django.core.exceptions import ValidationError
+from uuid import UUID
+from django.utils.translation import gettext_lazy as _
 
 class TournamentAPIView(generics.ListCreateAPIView):
 	serializer_class = TournamentSerializer
 	permission_classes = [IsAuthenticated]
 
 	def get_queryset(self):
-		return TournamentMatch.objects.all()
+		queryset = TournamentMatch.objects.all()
+		if not queryset.exists():
+			return TournamentMatch.objects.none()
+		
+		filter_params = {
+			'id': self.request.query_params.get('id'),
+			'tournament_winner': self.request.query_params.get('tournament_winner'),
+			'is_ongoing': self.request.query_params.get('is_ongoing'),
+			'is_finished': self.request.query_params.get('is_finished'),
+			'max_players': self.request.query_params.get('max_players'),
+		}
+
+		if filter_params['id']:
+			try:
+				filter_params['id'] = UUID(filter_params['id'])
+			except ValueError:
+				raise ValidationError({'id': _("Invalid tournament ID format.")})
+
+		for key, value in filter_params.items():
+			if value is not None and value != "null":
+				queryset = queryset.filter(**{key: value})
+		
+		player_id = self.request.query_params.get('player')
+		if player_id:
+			queryset = queryset.filter(players__id=player_id)
+
+		return queryset
 
 	def get_serializer_context(self):
 		context = super().get_serializer_context()
@@ -46,14 +75,12 @@ class TournamentRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
                 
 				if tournament.is_finished:
 					return Response({'error': 'Tournament already finished.'}, status=status.HTTP_400_BAD_REQUEST)
-                
-				if user in tournament.players.all():
-					return Response({'error': 'You are already in this tournament.'}, status=status.HTTP_400_BAD_REQUEST)
 
 				if tournament.players.count() >= tournament.max_players:
 					return Response({'error': 'Tournament is full.'}, status=status.HTTP_400_BAD_REQUEST)
 
-				tournament.players.add(user)
+				if not user in tournament.players.all():
+					tournament.players.add(user)
 
 				if tournament.players.count() > 1:
 					tournament.is_ongoing = True
