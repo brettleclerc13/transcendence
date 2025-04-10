@@ -46,6 +46,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         self.players = set()  # Track connected players in the room
         self.input_queue = Queue()
         self.has_initialize = False
+        self.is_cli = False
         #debugging
         self.debug_collision = False
         self.debug_connections = False
@@ -80,7 +81,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             if "Python/3.10 websockets/15.0" in user_agent:  # Browser connection
                 if self.debug_connections:            
                     print(f"🖥️ CLI user connected: {self.channel_name}", flush=True)
-
+                self.is_cli = True
                 await self.accept()
                 await self.handle_cli_request()
                 await self.close()
@@ -148,6 +149,10 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         prev_state_key = f"room:{self.room_name}:prev_state"
         game_started_key = f"room:{self.room_name}:game_running"
         players_key = f"room:{self.room_name}:players"
+        username = None
+        if self.is_cli:
+            return
+
         if hasattr(self, "user") and self.user:
             username = await sync_to_async(lambda: self.user.user.username)()
         
