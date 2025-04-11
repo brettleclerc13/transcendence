@@ -202,7 +202,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             
             self.update_game_parametres(data["game_parametres"])
             self.has_initialize = True
-            if data["type"] == "initialize" and previous_state in ["waiting for players", "game ongoing"]:
+            if data["type"] == "initialize" and previous_state in ["waiting for players", "game ongoing", "unknown"]:
                 if previous_state == "waiting for players":
                     await self.redis.execute("SET", game_state_key, json.dumps(self.game_state))
                 elif previous_state == "game ongoing":

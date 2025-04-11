@@ -12,6 +12,9 @@ RUN openssl req -x509 -nodes -out /etc/ssl/transcendence.pem -keyout /etc/ssl/tr
 
 RUN pip install django-extensions Werkzeug uvicorn djangorestframework-simplejwt Pillow django-bleach django-otp django-two-factor-auth qrcode
 
+RUN pip install 'uvicorn[standard]'
+
+
 #COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt
