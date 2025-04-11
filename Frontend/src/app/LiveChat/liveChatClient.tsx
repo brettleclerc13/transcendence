@@ -11,7 +11,7 @@ import SearchBar from "./searchBar";
 import { getCookie } from "cookies-next/client";
 import { createSimpleMatch } from "../utilities/matchActions";
 import { useRouter } from "next/navigation";
-
+`
 interface User {
 	id: number;
 	username: string;

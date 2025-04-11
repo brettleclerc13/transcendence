@@ -54,7 +54,7 @@ export const SearchFriend = async (
 ): Promise<ApiResponse<any[]>> => {
 	try {
 		const response = await fetch(
-			`http://backend:8001/search/?query=${searchValue}`,
+			`https://backend:8001/search/?query=${searchValue}`,
 			{
 				method: "GET",
 				headers: {
@@ -76,7 +76,7 @@ export const FetchFriends = async (): Promise<ApiResponse<any[]>> => {
 	if (!token) return { status: false, error: "Access token missing" };
 
 	try {
-		const response = await fetch("http://backend:8001/friends/", {
+		const response = await fetch("https://backend:8001/friends/", {
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${token}`,
@@ -95,7 +95,7 @@ export const FetchInvitations = async (): Promise<ApiResponse<any[]>> => {
 
 	try {
 		const response = await fetch(
-			"http://backend:8001/friends/request/pending/",
+			"https://backend:8001/friends/request/pending/",
 			{
 				method: "GET",
 				headers: {
@@ -120,7 +120,7 @@ export const SendFriendRequest = async (
 	if (!token) return { status: false, error: "Access token missing" };
 
 	try {
-		const response = await fetch("http://backend:8001/friends/request/send/", {
+		const response = await fetch("https://backend:8001/friends/request/send/", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -143,7 +143,7 @@ export const AcceptInvitation = async (id: number): Promise<ApiResponse> => {
 
 	try {
 		const response = await fetch(
-			`http://backend:8001/friends/request/accept/${id}/`,
+			`https://backend:8001/friends/request/accept/${id}/`,
 			{
 				method: "POST",
 				headers: {
@@ -167,7 +167,7 @@ export const DeclineInvitation = async (id: number): Promise<ApiResponse> => {
 
 	try {
 		const response = await fetch(
-			`http://backend:8001/friends/request/decline/${id}/`,
+			`https://backend:8001/friends/request/decline/${id}/`,
 			{
 				method: "POST",
 				headers: {
