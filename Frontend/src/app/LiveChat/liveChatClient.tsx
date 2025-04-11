@@ -39,7 +39,6 @@ const LiveChatClient = () => {
 	const [currentUser, setCurrentUser] = useState<User | null>(null);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const wsRef = useRef<WebSocket | null>(null);
-	const [socket, setSocket] = useState<WebSocket | null>(null);
 	const router = useRouter();
 
 	useEffect(() => {
@@ -143,7 +142,7 @@ const LiveChatClient = () => {
 				);
 
 				wsRef.current.onopen = () => {
-					setSocket(wsRef.current);
+					console.log("WebSocket connecté !");
 				};
 
 				wsRef.current.onmessage = (event: MessageEvent) => {
@@ -270,7 +269,7 @@ const LiveChatClient = () => {
 			) : (
 				<div className="flex flex-col gap-4 justify-center items-center h-full w-full">
 					<p className="text-lg">
-						Please log in before chatting. It won't even take a minute!
+						Please log in before chatting. It won&apos;t even take a minute!
 					</p>
 					<Link className="secondary-button" href="/login">
 						Connect

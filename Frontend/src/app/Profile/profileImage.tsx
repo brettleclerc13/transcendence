@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pencil } from "lucide-react";
+import Image from "next/image";
 import { updateUserProfileImage } from "../utilities/profileClientActions";
 import { UserProfileData } from "../utilities/profileActions";
 
@@ -50,7 +50,7 @@ export default function ProfileImage({
 			}
 		} catch (error) {
 			setAlert({
-				message: "Failed to update profile picture:",
+				message: `Failed to update profile picture:, ${error}`,
 				type: "danger",
 			});
 		} finally {
@@ -62,12 +62,13 @@ export default function ProfileImage({
 		<>
 			<div className="image-wrapper">
 				<div className="image-subwrapper">
-					<img
+					<Image
 						src={
 							userProfile?.profile_picture
 								? `/api/${userProfile.profile_picture}`
 								: "/img/default.png"
 						} // Fallback to default image
+						
 						alt="Profile Picture"
 						className="profile-picture"
 					/>

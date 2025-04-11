@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import "./liveChat.css";
 import { getCookie } from "cookies-next/client";
 import { fetchUserProfile } from "../utilities/profileActions"
 import {
 	FetchFriends,
 	FetchInvitations,
-	SendFriendRequest,
 	AcceptInvitation,
 	DeclineInvitation,
 } from "../utilities/chatActions";
@@ -15,7 +16,6 @@ import {
 	BlockUser,
 	UnblockUser,
 } from "../utilities/blockActions";
-import { data } from "framer-motion/client";
 
 interface User {
 	id: number;
@@ -28,7 +28,7 @@ interface User {
 interface Friend {
 	id: number;
 	username: string;
-	profile_picture: string | null;
+	profile_picture: string | null | undefined;
 	sender__username?: string;
 }
 
@@ -224,7 +224,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 							friends.map((friend) => (
 								<li key={friend.id} className="list-group-item d-flex align-items-center justify-content-between">
 									<div onClick={() => onSelectFriend(friend)} style={{ cursor: "pointer", display: "flex", alignItems: "center"}}>
-										<img src={friend.profile_picture || "./img/default.png"} alt={`${friend.username}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10, }} />
+										<Image src={friend.profile_picture || "./img/default.png"} alt={`${friend.username}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10, }} />
 										<span>{friend.username}</span>
 									</div>
 									<button className={`btn ${ blockedUsers.some((user) => user.id === friend.id) ? "btn-danger" : "btn-secondary" }`}
@@ -240,7 +240,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 						invitations.map((invite) => (
 							<li key={invite.id} className="list-group-item d-flex align-items-center justify-content-between" >
 								<div className="d-flex align-items-center">
-									<img src={invite.profile_picture || "./img/default.png"} alt={`${invite.sender__username}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10 }} />
+									<Image src={invite.profile_picture || "./img/default.png"} alt={`${invite.sender__username}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10 }} />
 									<span>{invite.sender__username || invite.username}</span>
 								</div>
 								<div>

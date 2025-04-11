@@ -1,5 +1,5 @@
 import { Doughnut } from "react-chartjs-2";
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchSimpleMatchHistory } from "../utilities/matchActions";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import type { ChartData } from "chart.js";

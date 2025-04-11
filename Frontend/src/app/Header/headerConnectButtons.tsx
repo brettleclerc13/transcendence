@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { isUserLoggedIn } from "@/app/utilities/userClientActions";
 import {
 	fetchUserProfile,
@@ -129,7 +130,7 @@ export default function HeaderConnectButtons() {
 					</div>
 					<label className="logged-name">{userProfile?.username}</label>
 					<button className="profile-button" onClick={toggleDropdown}>
-						<img
+						<Image
 							src={
 								userProfile?.profile_picture
 									? `/api/${userProfile.profile_picture}`

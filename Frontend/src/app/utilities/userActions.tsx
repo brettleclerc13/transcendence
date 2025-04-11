@@ -1,7 +1,6 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { fetchGenericAPIResponses } from "./generalActions";
 
 type LoginProps = {
 	email: string;

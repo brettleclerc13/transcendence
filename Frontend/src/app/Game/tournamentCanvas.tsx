@@ -12,6 +12,19 @@ type TournamentPlayer = {
 	is_on_page: boolean;
 };
 
+function isTournamentPlayer(obj: unknown): obj is TournamentPlayer {
+	if (typeof obj !== "object" || obj === null) return false;
+
+	const player = obj as Record<string, unknown>;
+
+	return (
+		"id" in player &&
+		(typeof player.id === "string" || typeof player.id === "number") &&
+		"tournament_name" in player &&
+		typeof player.tournament_name === "string"
+	);
+}
+
 export default function TournamentCanvas({
 	tournamentID,
 	setGameType,
@@ -91,20 +104,19 @@ export default function TournamentCanvas({
 
 				// Convert user object into a dictionary with "player_1", "player_2", etc.
 				const newPlayers: Record<string, TournamentPlayer> = {};
+				
+				Object.entries(data.users).forEach(([key, player]) => {
 
-				Object.entries(data.users).forEach(([key, player]: [string, any]) => {
-					// Prevent errors if player is undefined or missing user_id
-					if (!player || !player.id) {
+					if (isTournamentPlayer(player)) {
+						newPlayers[key] = {
+							id: player.id, // Ensure it is always a string
+							tournament_name: player.tournament_name.trim() || "Unknown",
+							profile_picture: player.profile_picture || null,
+							is_on_page: true,
+						};
+					} else {
 						console.warn(`Invalid player data for ${key}:`, player);
-						return; // Skip this entry
 					}
-
-					newPlayers[key] = {
-						id: String(player.id), // Ensure it is always a string
-						tournament_name: player.tournament_name || "Unknown",
-						profile_picture: player.profile_picture || null,
-						is_on_page: true,
-					};
 				});
 
 				// Update players mapping

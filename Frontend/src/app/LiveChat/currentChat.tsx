@@ -1,4 +1,6 @@
 import React, { useRef } from "react";
+import "./liveChat.css";
+import Image from "next/image";
 
 interface Friend {
 	id: number;
@@ -36,9 +38,6 @@ const CurrentChat: React.FC<CurrentChatProps> = ({
 		(a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
 	);
 
-	console.log("PP current User : " ,currentUser.profile_picture);
-	console.log("PP friend : ", friend.profile_picture);
-
 	return (
 		<div
 			className="current-chat-container"
@@ -56,15 +55,19 @@ const CurrentChat: React.FC<CurrentChatProps> = ({
 							className={`message ${isSent ? "sent" : "received"}`}
 						>
 							{!isSent && (
-								<img
+								<Image
 									src={friend.profile_picture ? `${friend.profile_picture}` : "./img/default.png"}
+									width={40}
+									height={40}
 									alt={`${friend.username}'s avatar`}
 								/>
 							)}
 							<div className="message-bubble">{message.text}</div>
 							{isSent && (
-								<img
+								<Image
 									src={currentUser.profile_picture ? `/api/${currentUser.profile_picture}` : "./img/default.png"}
+									width={40}
+									height={40}
 									alt={`Your avatar`}
 								/>
 							)}

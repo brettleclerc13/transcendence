@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import "./carouselBootStrap.css";
 
 const MyCarousel = () => {
@@ -67,7 +68,13 @@ const MyCarousel = () => {
 				</div>
 				<div className="carousel-inner">
 					<div className="carousel-item active">
-						<img src="/img/ehouot.png" className="d-block w-100" alt="..." />
+						<Image
+							src="/img/ehouot.png"
+							alt="Emilien Houot"
+							width={800} 
+							height={400}
+							className="d-block w-100"
+						/>
 						<div className="carousel-caption d-none d-md-block">
 							<h5>Emilien Houot | ehouot</h5>
 							<div className="social-icons">
@@ -76,9 +83,11 @@ const MyCarousel = () => {
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									<img
+									<Image
 										src="/img/linkedin32.png"
 										alt="LinkedIn"
+										width={32}
+										height={32}
 										className="social-icon"
 									/>
 								</a>
@@ -87,9 +96,11 @@ const MyCarousel = () => {
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									<img
+									<Image
 										src="/img/github32.png"
 										alt="GitHub"
+										width={32}
+										height={32}
 										className="social-icon"
 									/>
 								</a>
@@ -97,7 +108,13 @@ const MyCarousel = () => {
 						</div>
 					</div>
 					<div className="carousel-item">
-						<img src="/img/bleclerc.png" className="d-block w-100" alt="..." />
+						<Image
+							src="/img/bleclerc.png"
+							alt="Brett Leclerc"
+							width={800}
+							height={400}
+							className="d-block w-100"
+						/>
 						<div className="carousel-caption d-none d-md-block">
 							<h5>Brett Leclerc | bleclerc</h5>
 							<div className="social-icons">
@@ -106,9 +123,11 @@ const MyCarousel = () => {
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									<img
+									<Image
 										src="/img/linkedin32.png"
 										alt="LinkedIn"
+										width={32}
+										height={32}
 										className="social-icon"
 									/>
 								</a>
@@ -117,9 +136,11 @@ const MyCarousel = () => {
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									<img
+									<Image
 										src="/img/github32.png"
 										alt="GitHub"
+										width={32}
+										height={32}
 										className="social-icon"
 									/>
 								</a>
@@ -127,7 +148,13 @@ const MyCarousel = () => {
 						</div>
 					</div>
 					<div className="carousel-item">
-						<img src="/img/lkukhale.png" className="d-block w-100" alt="..." />
+						<Image
+							src="/img/lkukhale.png"
+							alt="Levan Kukhaleishvili"
+							width={800}
+							height={400}
+							className="d-block w-100"
+						/>
 						<div className="carousel-caption d-none d-md-block">
 							<h5>Levan Kukhaleishvili | lkukhale</h5>
 							<div className="social-icons">
@@ -136,9 +163,11 @@ const MyCarousel = () => {
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									<img
+									<Image
 										src="/img/linkedin32.png"
 										alt="LinkedIn"
+										width={32}
+										height={32}
 										className="social-icon"
 									/>
 								</a>
@@ -147,9 +176,11 @@ const MyCarousel = () => {
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									<img
+									<Image
 										src="/img/github32.png"
 										alt="GitHub"
+										width={32}
+										height={32}
 										className="social-icon"
 									/>
 								</a>
