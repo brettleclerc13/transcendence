@@ -47,13 +47,40 @@
 
 .alert-box {
 	position: absolute;
-	display: flex;
-	justify-content: space-between;
-	gap: 1rem;
-	top: 7%;
+	top: 16% !important;
 	left: 50%;
 	transform: translate(-50%, -50%);
 	z-index: 7;
+	min-width: 300px;
+	width: auto;
+}
+
+/* Fix for React Bootstrap Alert to prevent overlapping */
+.alert-box .alert {
+	display: flex !important;
+	justify-content: space-between !important;
+	align-items: center !important;
+	width: 100%;
+}
+
+.alert-box .alert-dismissible {
+	padding-right: 3rem !important; /* Increase padding on the right for the close button */
+}
+
+.alert-box .btn-close {
+	position: absolute !important;
+	right: 1rem !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+}
+
+.alert-message {
+	display: block;
+	padding-right: 1.5rem; /* Add padding to prevent text from overlapping with close button */
+	word-break: break-word; /* Allow long messages to wrap */
+	max-width: calc(
+		100% - 2rem
+	); /* Ensure text doesn't extend beyond the alert */
 }
 
 .input-error {
@@ -105,7 +132,9 @@ textarea {
 	background-color: #319795;
 	color: #fff;
 	cursor: pointer;
-	transition: background-color 0.3s ease, transform 0.2s ease;
+	transition:
+		background-color 0.3s ease,
+		transform 0.2s ease;
 }
 
 .button-container button:hover {

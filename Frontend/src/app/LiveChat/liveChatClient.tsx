@@ -11,6 +11,9 @@ import SearchBar from "./searchBar";
 import { getCookie } from "cookies-next/client";
 import { createSimpleMatch } from "../utilities/matchActions";
 import { useRouter } from "next/navigation";
+import { fetchUserProfile } from "../utilities/profileActions";
+import { GetOrCreateConversation } from "../utilities/chatActions";
+import { FetchMessages } from "../utilities/chatActions";
 
 interface User {
 	id: number;
@@ -44,30 +47,13 @@ const LiveChatClient = () => {
 	useEffect(() => {
 		const fetchCurrentUser = async () => {
 			try {
-				const accessToken = getCookie("accessToken");
-				if (!accessToken) {
-					console.warn("Access token missing!");
-					return;
-				}
-				const response = await fetch("/api/profile/", {
-					headers: {
-						Authorization: `Bearer ${accessToken}`,
-						"Content-Type": "application/json",
-					},
-				});
-				if (response && !response.ok) {
-					console.warn(
-						"Erreur lors de la récupération de l'utilisateur :",
-						response.statusText
-					);
-					return;
-				}
-				const data = await response.json();
-				setCurrentUser(data);
+				if (!isUserLoggedIn()) return;
+				const response = await fetchUserProfile();
+				setCurrentUser(response.data);
 			} catch (error) {
 				console.warn(
 					"Erreur réseau lors de la récupération de l'utilisateur :",
-					error
+					error,
 				);
 			}
 		};
@@ -86,59 +72,44 @@ const LiveChatClient = () => {
 
 		const fetchConversationId = async () => {
 			try {
-				const accessToken = getCookie("accessToken");
 				const host = process.env.NEXT_PUBLIC_WS_HOST;
 				const port = process.env.NEXT_PUBLIC_WS_PORT;
-				if (!accessToken) {
-					console.warn("Access token missing!");
-					return;
-				}
 
-				const response = await fetch("/api/get_or_create_conversation/", {
-					method: "POST",
-					headers: {
-						Authorization: `Bearer ${accessToken}`,
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({ user_id: selectedFriend.id }),
-				});
+				const response = await GetOrCreateConversation(selectedFriend.id);
+				let conversationData: { id: string } | null = null;
 
-				if (response && !response.ok) {
+				if (response && !response.status) {
 					console.warn("Erreur lors de la récupération de la conversation.");
 					return;
+				} else if (response.status && "data" in response) {
+					conversationData = response.data;
 				}
 
-				const conversationData = await response.json();
-				if (!conversationData.id) {
+				if (!conversationData || !conversationData.id) {
 					console.warn("Aucune conversation trouvée ou créée.");
 					return;
 				}
 
-				const messagesRetrieve = await fetch(
-					`/api/messages/?conversation_id=${conversationData.id}`,
-					{
-						headers: {
-							Authorization: `Bearer ${accessToken}`,
-							"Content-Type": "application/json",
-						},
-					}
-				);
+				const messagesRetrieve = await FetchMessages(conversationData.id);
 
-				if (messagesRetrieve.ok) {
-					const data = await messagesRetrieve.json();
-					setMessages(data);
+				if (messagesRetrieve.status && "data" in messagesRetrieve) {
+					setMessages(messagesRetrieve.data);
 				} else {
+					const errorMessage =
+						"message" in response
+							? response.message
+							: "Failed to fetch messages.";
 					console.warn(
-						`Erreur lors de la récupération des messages : ${response.statusText}`
+						`Erreur lors de la récupération des messages : ${errorMessage}`,
 					);
 				}
-				if (!messagesRetrieve.ok) {
+				if (!messagesRetrieve.status) {
 					console.warn("Erreur lors de la récupération des messages.");
 					return;
 				}
 
 				wsRef.current = new WebSocket(
-					`wss://${host}:${port}/ws/chat/${conversationData.id}/?token=${accessToken}`
+					`wss://${host}:${port}/ws/chat/${conversationData.id}/?token=${accessToken}`,
 				);
 
 				wsRef.current.onopen = () => {
@@ -157,7 +128,7 @@ const LiveChatClient = () => {
 						...prevMessages,
 						{
 							sender: data.sender,
-							conversation_id: conversationData.id,
+							conversation_id: Number(conversationData.id),
 							text: data.message,
 							timestamp: new Date().toISOString(),
 							senderPicture:
@@ -203,7 +174,7 @@ const LiveChatClient = () => {
 			JSON.stringify({
 				message,
 				sender: currentUser?.id,
-			})
+			}),
 		);
 	};
 
@@ -222,7 +193,7 @@ const LiveChatClient = () => {
 						JSON.stringify({
 							message: inviteMessage,
 							sender: currentUser?.id,
-						})
+						}),
 					);
 				} else {
 					console.warn(" WebSocket fermé. Impossible d'envoyer l'invitation.");

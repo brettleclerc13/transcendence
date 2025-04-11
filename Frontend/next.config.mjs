@@ -3,7 +3,11 @@ const nextConfig = {
 	experimental: {
 		serverActions: {},
 	},
-	allowedDevOrigins: [process.env.NEXT_PUBLIC_WS_HOST],
+	allowedDevOrigins: process.env.NEXT_PUBLIC_WS_HOST
+		? [
+				`http://${process.env.NEXT_PUBLIC_WS_HOST}:${process.env.NEXT_PUBLIC_WS_PORT}`,
+			]
+		: [],
 	async headers() {
 		return [
 			{

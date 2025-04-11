@@ -5,6 +5,7 @@ import {
 	fetchGenericAPIResponses,
 	fetchAPIResponseData,
 } from "./generalActions";
+import { fetchWithAgent } from "@/lib/fetchWithAgent";
 
 export type UserProfileData = {
 	email?: string;
@@ -31,13 +32,16 @@ export const fetchUserProfile = async () => {
 			};
 		}
 
-		const response = await fetch("http://backend:8001/profile/", {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/profile/`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
 			},
-		});
+		);
 
 		const result = await fetchAPIResponseData({
 			response,
@@ -65,14 +69,17 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 			};
 		}
 
-		const response = await fetch("http://backend:8001/profile/", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/profile/`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify(profileData),
 			},
-			body: JSON.stringify(profileData),
-		});
+		);
 
 		return await fetchGenericAPIResponses({
 			response,
@@ -101,15 +108,15 @@ export const fetchUserPublicProfile = async (username: string) => {
 			};
 		}
 
-		const response = await fetch(
-			`http://backend:8001/public_profile/?username=${username}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/?username=${username}`,
 			{
 				method: "GET",
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${token}`,
 				},
-			}
+			},
 		);
 
 		const result = await fetchAPIResponseData({
@@ -138,13 +145,16 @@ export const fetchQrCode = async () => {
 			};
 		}
 
-		const response = await fetch("http://backend:8001/2fa/generate_qr/", {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/2fa/generate_qr/`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
 			},
-		});
+		);
 
 		const result = await fetchAPIResponseData({
 			response,
@@ -185,14 +195,17 @@ export const verifyOTP = async (otpData: { otp: number }) => {
 			};
 		}
 
-		const response = await fetch("http://backend:8001/2fa/verify/", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/2fa/verify/`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify(otpData),
 			},
-			body: JSON.stringify(otpData),
-		});
+		);
 
 		return await fetchGenericAPIResponses({
 			response,
@@ -220,14 +233,17 @@ export const enable2FA = async (otpData: { otp: number }) => {
 			};
 		}
 
-		const response = await fetch("http://backend:8001/2fa/enable/", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/2fa/enable/`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify(otpData),
 			},
-			body: JSON.stringify(otpData),
-		});
+		);
 
 		return await fetchGenericAPIResponses({
 			response,
@@ -255,14 +271,17 @@ export const disable2FA = async (otpData: { otp: number }) => {
 			};
 		}
 
-		const response = await fetch("http://backend:8001/2fa/disable/", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/2fa/disable/`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify(otpData),
 			},
-			body: JSON.stringify(otpData),
-		});
+		);
 
 		return await fetchGenericAPIResponses({
 			response,
@@ -275,6 +294,43 @@ export const disable2FA = async (otpData: { otp: number }) => {
 		return {
 			ok: false,
 			error: (error as Error).message || "Failed to disable 2FA.",
+		};
+	}
+};
+
+export const updateUserProfileImage = async (formData: FormData) => {
+	try {
+		const cookieStore = await cookies();
+		const token = cookieStore.get("accessToken")?.value;
+		if (!token) {
+			return {
+				ok: false,
+				error: "Access token missing",
+			};
+		}
+
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/profile/`,
+			{
+				method: "PATCH",
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+				body: formData,
+			},
+		);
+
+		return await fetchAPIResponseData({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to update profile image.",
+				successMessage: "User profile image updated successfully",
+			},
+		});
+	} catch (error) {
+		return {
+			ok: false,
+			error: (error as Error).message || "Failed to update profile image.",
 		};
 	}
 };

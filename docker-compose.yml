@@ -10,6 +10,7 @@ services:
       - front-data:/app
       - /app/.next
       - /app/node_modules
+      - ssl-certs:/etc/nginx/ssl:ro
     env_file:
       - .env
 
@@ -48,12 +49,15 @@ services:
       - backend
     networks:
       - app-network
+    volumes:
+      - ssl-certs:/etc/nginx/ssl
 
 networks:
   app-network:
     driver: bridge
 
 volumes:
+  ssl-certs:
   db-data:
     driver: local
     driver_opts:

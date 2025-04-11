@@ -9,6 +9,7 @@ import ProfileImage from "./profileImage";
 import type { UserProfileData } from "../utilities/profileActions";
 import MatchHistory from "./matchHistory";
 import TwoFactorAuth from "./twoFactorAuth";
+import { Alert } from "react-bootstrap";
 
 type ProfileProps = {
 	userProfile: UserProfileData | null;
@@ -30,7 +31,7 @@ export const profileSchema = z.object({
 		.positive("Age must be a positive number")
 		.max(
 			123,
-			"The oldest human, Jeanne Calment, lived till the age of 122 years"
+			"The oldest human, Jeanne Calment, lived till the age of 122 years",
 		)
 		.optional(),
 	nationality: z.string().max(254, "Nationality is too long").optional(),
@@ -46,7 +47,7 @@ export const profileSchema = z.object({
 		.max(128)
 		.regex(
 			/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#?_])[a-zA-Z0-9!@#?_]+$/,
-			"Password must contain an uppercase letter, a number, and a special character (! @ # ? _)"
+			"Password must contain an uppercase letter, a number, and a special character (! @ # ? _)",
 		)
 		.optional(),
 	new_password: z
@@ -55,7 +56,7 @@ export const profileSchema = z.object({
 		.max(128)
 		.regex(
 			/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#?_])[a-zA-Z0-9!@#?_]+$/,
-			"Password must contain an uppercase letter, a number, and a special character (! @ # ? _)"
+			"Password must contain an uppercase letter, a number, and a special character (! @ # ? _)",
 		)
 		.optional(),
 });
@@ -72,12 +73,23 @@ export default function Profile({
 
 	const [profileData, profileAction, profilePending] = useActionState(
 		handleUserProfileUpdate,
-		undefined
+		undefined,
 	);
+
+	const setAlertWithTimeout = (
+		alertData: { message: string; type: "danger" | "success" } | null,
+	) => {
+		setAlert(alertData);
+		if (alertData) {
+			setTimeout(() => {
+				setAlert(null);
+			}, 3000); // 3 seconds
+		}
+	};
 
 	async function handleUserProfileUpdate(
 		_previousState: unknown,
-		formData: FormData
+		formData: FormData,
 	) {
 		const profileInput = {
 			username: formData.get("username"),
@@ -94,28 +106,28 @@ export default function Profile({
 
 		if (!validationResult.success) {
 			const emailError = validationResult.error.errors.find(
-				(err) => err.path[0] === "email"
+				(err) => err.path[0] === "email",
 			);
 			const usernameError = validationResult.error.errors.find(
-				(err) => err.path[0] === "username"
+				(err) => err.path[0] === "username",
 			);
 			const ageError = validationResult.error.errors.find(
-				(err) => err.path[0] === "age"
+				(err) => err.path[0] === "age",
 			);
 			const nationalityError = validationResult.error.errors.find(
-				(err) => err.path[0] === "nationality"
+				(err) => err.path[0] === "nationality",
 			);
 			const tournamentNameError = validationResult.error.errors.find(
-				(err) => err.path[0] === "tournament_name"
+				(err) => err.path[0] === "tournament_name",
 			);
 			const bioError = validationResult.error.errors.find(
-				(err) => err.path[0] === "bio"
+				(err) => err.path[0] === "bio",
 			);
 			const oldPasswordError = validationResult.error.errors.find(
-				(err) => err.path[0] === "old_password"
+				(err) => err.path[0] === "old_password",
 			);
 			const newPasswordError = validationResult.error.errors.find(
-				(err) => err.path[0] === "new_password"
+				(err) => err.path[0] === "new_password",
 			);
 			return {
 				emailError: emailError ? emailError.message : undefined,
@@ -138,15 +150,14 @@ export default function Profile({
 		}
 
 		const result = await updateUserProfile(validationResult.data);
-		if (result.ok === false) {
-			setAlert({
+		if (!result.ok) {
+			setAlertWithTimeout({
 				message: `Error updating your profile: ${result.error}`,
 				type: "danger",
 			});
-			return;
 		} else {
 			setUserProfile({ ...userProfile, ...validationResult.data });
-			setAlert({
+			setAlertWithTimeout({
 				message: "Your profile has been successfully updated!",
 				type: "success",
 			});
@@ -160,22 +171,21 @@ export default function Profile({
 	return (
 		<div className="profile-container">
 			{alert && (
-				<div className={`alert alert-${alert.type} alert-box`} role="alert">
-					{alert.message}
-					<button
-						type="button"
-						className="close"
-						onClick={() => setAlert(null)}
-						aria-label="Close"
+				<div className="alert-box">
+					<Alert
+						variant={alert.type}
+						onClose={() => setAlertWithTimeout(null)}
+						dismissible
+						show={!!alert}
 					>
-						<span aria-hidden="true">&times;</span>
-					</button>
+						<span className="alert-message">{alert.message}</span>
+					</Alert>
 				</div>
 			)}
 			<ProfileImage
 				userProfile={userProfile}
 				setUserProfile={setUserProfile}
-				setAlert={setAlert}
+				setAlert={setAlertWithTimeout}
 			/>
 			<div className="main-contour">
 				<form className="contour-left-information">
@@ -299,7 +309,7 @@ export default function Profile({
 				<div className="contour-right-information">
 					<div className="left-information">
 						<MatchHistory
-							setAlert={setAlert}
+							setAlert={setAlertWithTimeout}
 							username={userProfile.username || undefined}
 						/>
 					</div>
@@ -307,7 +317,7 @@ export default function Profile({
 					<div className="separator"></div>
 
 					<div className="right-information">
-						<TwoFactorAuth setAlert={setAlert} />
+						<TwoFactorAuth setAlert={setAlertWithTimeout} />
 					</div>
 				</div>
 			</div>

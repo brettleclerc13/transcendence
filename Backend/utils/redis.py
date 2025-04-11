@@ -182,6 +182,18 @@ class RedisManager:
         return True 
     
     @classmethod
+    async def set_expiry_key(cls, key: str, time: int):
+        redis = await cls.get_redis()
+        await redis.set(key, "true")
+        await redis.expire(key, time)
+    
+    @classmethod
+    async def set_expiry_json(cls, key: str, time: int, json_data):
+        redis = await cls.get_redis()
+        await cls.add_json(key, json_data)
+        await redis.expire(key, time)
+
+    @classmethod
     async def set_state(cls, key: str, state: str):
         redis = await cls.get_redis()
         await redis.set(key, state)

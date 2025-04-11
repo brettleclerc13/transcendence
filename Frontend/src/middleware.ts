@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fetchWithAgent } from "@/lib/fetchWithAgent";
 
 export const config = {
 	matcher: "/",
@@ -28,14 +29,15 @@ export async function middleware(request: NextRequest) {
 }
 
 async function verifyToken(token: string) {
+	const API_URL = process.env.NEXT_PUBLIC_API_URL;
 	try {
-		const response = await fetch(`http://backend:8001/token/verify/`, {
+		const response = await fetchWithAgent(`${API_URL}/token/verify/`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ token }),
 		});
 
-		return response.ok; // True if token is valid, false otherwise
+		return response.ok;
 	} catch (error) {
 		console.warn("Error verifying token:", error);
 		return false;

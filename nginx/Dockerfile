@@ -4,8 +4,13 @@ RUN apk update && apk upgrade && apk add vim openssl
 
 RUN mkdir -p /etc/nginx/ssl
 
-RUN openssl req -x509 -nodes -out /etc/nginx/ssl/transcendence.pem -keyout /etc/nginx/ssl/transcendence.key \
-    -subj "/C=FR/ST=Alpes-Maritimes/L=Nice/O=Ecole\ 42/OU=Ecole/CN=transcendence.fr/emailAddress=lkukahle@student.42nice.fr"
+COPY openssl.cnf /etc/nginx/ssl/openssl.cnf
+
+RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/nginx/ssl/transcendence.key \
+    -out /etc/nginx/ssl/transcendence.pem \
+    -config /etc/nginx/ssl/openssl.cnf \
+    -extensions v3_req
 
 COPY trance.conf /etc/nginx/conf.d/default.conf
 

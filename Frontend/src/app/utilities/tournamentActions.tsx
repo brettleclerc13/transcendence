@@ -5,6 +5,7 @@ import {
 	fetchGenericAPIResponses,
 	fetchAPIResponseData,
 } from "./generalActions";
+import { fetchWithAgent } from "@/lib/fetchWithAgent";
 
 type TournamentFilterProps = {
 	id?: string;
@@ -34,15 +35,15 @@ export const fetchTournaments = async (filters: TournamentFilterProps = {}) => {
 			})
 			.join("&");
 
-		const response = await fetch(
-			`http://backend:8001/tournaments/?${queryString}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/tournaments/?${queryString}`,
 			{
 				method: "GET",
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${token}`,
 				},
-			}
+			},
 		);
 
 		const result = await fetchAPIResponseData({
@@ -67,15 +68,17 @@ export const createTournament = async () => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		console.log("Creating tournament...");
-		const response = await fetch("http://backend:8001/tournaments/", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/tournaments/`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify({}),
 			},
-			body: JSON.stringify({}),
-		});
+		);
 
 		const result = await fetchAPIResponseData({
 			response,
@@ -106,15 +109,15 @@ export const joinTournament = async (tournamentID: string) => {
 		};
 
 	try {
-		const response = await fetch(
-			`http://backend:8001/tournaments/${tournamentID}/`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/tournaments/${tournamentID}/`,
 			{
 				method: "PATCH",
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${token}`,
 				},
-			}
+			},
 		);
 
 		return await fetchGenericAPIResponses({
@@ -143,15 +146,15 @@ export const leaveTournament = async (tournamentID: string) => {
 	}
 
 	try {
-		const response = await fetch(
-			`http://backend:8001/tournaments/${tournamentID}/`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/tournaments/${tournamentID}/`,
 			{
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${token}`,
 				},
-			}
+			},
 		);
 
 		return await fetchGenericAPIResponses({
@@ -175,13 +178,16 @@ export const fetchTournamentHistory = async () => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch(`http://backend:8001/tournament-history/`, {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/tournament-history/`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
 			},
-		});
+		);
 
 		const result = await fetchAPIResponseData({
 			response,
@@ -208,13 +214,16 @@ export const checkTournaments = async () => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch(`http://backend:8001/tournament-check/`, {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/tournament-check/`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
 			},
-		});
+		);
 
 		const result = await fetchAPIResponseData({
 			response,

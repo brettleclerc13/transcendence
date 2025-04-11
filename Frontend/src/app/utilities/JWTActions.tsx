@@ -1,33 +1,29 @@
-"use client";
+"use server";
 
-import { useEffect } from "react";
-import { setCookie, deleteCookie, getCookie } from "cookies-next/client";
-
-export default function RefreshAccessToken() {
-	useEffect(() => {
-		startTokenRefresh();
-	}, []);
-
-	return <></>;
-}
+import { fetchWithAgent } from "@/lib/fetchWithAgent";
+import { cookies } from "next/headers";
 
 export const refreshAccessToken = async () => {
-	const refreshToken = getCookie("refreshToken");
+	const cookieStore = await cookies();
+	const refreshToken = cookieStore.get("refreshToken")?.value;
 	if (!refreshToken) return;
 
 	try {
-		const response = await fetch("/api/token/refresh/", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ refresh: refreshToken }),
-		});
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/token/refresh/`,
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ refresh: refreshToken }),
+			},
+		);
 
 		let data;
 
 		if (response && !response.ok) {
-			deleteCookie("accessToken");
-			deleteCookie("refreshToken");
-			deleteCookie("tokenExpiry");
+			cookieStore.delete("accessToken");
+			cookieStore.delete("refreshToken");
+			cookieStore.delete("tokenExpiry");
 
 			const text = await response.text();
 			try {
@@ -43,7 +39,7 @@ export const refreshAccessToken = async () => {
 				"Failed to refresh JWT access token.";
 			if (errorMessage === "User does not exist") {
 				console.warn(
-					"Refresh token refers to a non-existent user. Removing tokens ..."
+					"Refresh token refers to a non-existent user. Removing tokens ...",
 				);
 				return { ok: false };
 			} else {
@@ -56,8 +52,8 @@ export const refreshAccessToken = async () => {
 			const tokenPayload = JSON.parse(atob(newAccessToken.split(".")[1]));
 			const newExpiresAt = tokenPayload.exp * 1000;
 
-			setCookie("accessToken", newAccessToken);
-			setCookie("tokenExpiry", newExpiresAt.toString());
+			cookieStore.set("accessToken", newAccessToken);
+			cookieStore.set("tokenExpiry", newExpiresAt.toString());
 			console.log("Access token refreshed");
 			return { ok: true };
 		}
@@ -65,26 +61,4 @@ export const refreshAccessToken = async () => {
 		console.log("Error refreshing access token", error);
 		return { ok: false };
 	}
-};
-
-export const startTokenRefresh = async () => {
-	const checkInterval = 30 * 1000; // Check every 30 secs
-
-	setInterval(async () => {
-		const accessToken = getCookie("accessToken");
-		const tokenExpiry = getCookie("tokenExpiry");
-
-		if (!accessToken || !tokenExpiry) {
-			console.log("❌ No access token found, skipping refresh check");
-			return;
-		} else {
-			const expiresIn = parseInt(tokenExpiry) - Date.now();
-			console.log(`⏳ Access token expires in: ${expiresIn / 1000} seconds`);
-
-			if (expiresIn < 2 * 60 * 1000) {
-				console.log("🔄 Refreshing access token...");
-				await refreshAccessToken();
-			}
-		}
-	}, checkInterval);
 };

@@ -7,6 +7,7 @@ COPY package.json ./
 RUN npm install
 
 COPY . .
+ENV NODE_EXTRA_CA_CERTS=/etc/nginx/ssl/transcendence.pem
 
 
 #RUN npm run build
