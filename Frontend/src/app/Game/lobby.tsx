@@ -28,12 +28,20 @@ export const profileSchema = z.object({
 
 export default function Lobby() {
 	const [alias, setAlias] = useState<string | undefined>(undefined);
-	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
-		null
+	const [alert, setAlert] = useState<{
+		message: string;
+		type: "danger" | "success";
+	} | null>(null);
+	const [gameType, setGameType] = useState<string>("");
+	const [gameID, setGameID] = useState<string>("");
+	const [tournamentData, tournamentAction, tournamentPending] = useActionState(
+		handleTournamentMatchCreation,
+		undefined,
 	);
+	const [simpleGamePending, setSimpleGamePending] = useState<boolean>(false);
 
 	const setAlertWithTimeout = (
-		alertData: { message: string; type: string } | null
+		alertData: { message: string; type: "danger" | "success" } | null,
 	) => {
 		setAlert(alertData);
 		if (alertData) {
@@ -42,19 +50,12 @@ export default function Lobby() {
 			}, 3000); // 3 seconds
 		}
 	};
-	const [gameType, setGameType] = useState<string>("");
-	const [gameID, setGameID] = useState<string>("");
-	const [tournamentData, tournamentAction, tournamentPending] = useActionState(
-		handleTournamentMatchCreation,
-		undefined
-	);
-	const [simpleGamePending, setSimpleGamePending] = useState<boolean>(false);
 
 	const fetchProfile = async () => {
 		try {
 			const userProfile = await fetchUserProfile();
 			setAlias(
-				userProfile.tournament_name ? userProfile.tournament_name : undefined
+				userProfile.tournament_name ? userProfile.tournament_name : undefined,
 			);
 		} catch (error) {
 			setAlertWithTimeout({
@@ -131,7 +132,7 @@ export default function Lobby() {
 
 	async function handleTournamentMatchCreation(
 		_previousState: unknown,
-		formData: FormData
+		formData: FormData,
 	) {
 		const tournament_name = formData.get("tournamentName") as string;
 		if (!tournament_name) {
@@ -146,7 +147,7 @@ export default function Lobby() {
 			return {
 				previousValues: { tournament_name },
 				tournamentNameError: validationResult.error.errors.find(
-					(err) => err.path[0] === "tournament_name"
+					(err) => err.path[0] === "tournament_name",
 				)?.message,
 			};
 

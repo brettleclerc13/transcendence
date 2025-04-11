@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Pencil } from "lucide-react";
-import { updateUserProfileImage } from "../utilities/profileClientActions";
+import { updateUserProfileImage } from "../utilities/profileActions";
 import { UserProfileData } from "../utilities/profileActions";
 
 export default function ProfileImage({
@@ -11,13 +10,13 @@ export default function ProfileImage({
 	userProfile: UserProfileData | null;
 	setUserProfile: (profileData: UserProfileData) => void;
 	setAlert: (
-		alertMessage: { message: string; type: "danger" | "success" } | null
+		alertMessage: { message: string; type: "danger" | "success" } | null,
 	) => void;
 }) {
 	const [loading, setLoading] = useState(false);
 
 	const handleFileChange = async (
-		event: React.ChangeEvent<HTMLInputElement>
+		event: React.ChangeEvent<HTMLInputElement>,
 	) => {
 		const file = event.target.files?.[0];
 		if (!file) return;
@@ -31,31 +30,25 @@ export default function ProfileImage({
 		const formData = new FormData();
 		formData.append("profile_picture", file);
 
-		try {
-			setLoading(true);
-			const response = await updateUserProfileImage(formData);
+		setLoading(true);
+		const response = await updateUserProfileImage(formData);
 
-			const data = await response.json();
-			console.log("Updated image response:", data.profile_picture);
-
-			if (response && response.ok) {
-				setUserProfile({
-					...userProfile,
-					profile_picture: data.profile_picture,
-				});
-				setAlert({
-					message: "Profile picture updated successfully!",
-					type: "success",
-				});
-			}
-		} catch (error) {
+		if (response && response.ok && "data" in response) {
+			setUserProfile({
+				...userProfile,
+				profile_picture: response.data.profile_picture,
+			});
 			setAlert({
-				message: "Failed to update profile picture:",
+				message: "Profile picture updated successfully!",
+				type: "success",
+			});
+		} else {
+			setAlert({
+				message: response.error || "Failed to update profile picture.",
 				type: "danger",
 			});
-		} finally {
-			setLoading(false);
 		}
+		setLoading(false);
 	};
 
 	return (

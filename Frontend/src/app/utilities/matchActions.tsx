@@ -45,7 +45,7 @@ export const fetchMatches = async (filters: MatchFilterProps = {}) => {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${token}`,
 				},
-			}
+			},
 		);
 
 		const result = await fetchAPIResponseData({
@@ -133,7 +133,11 @@ export const joinSimpleMatch = async (matchID: string) => {
 export const fetchSimpleMatchHistory = async () => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
-	if (!token) throw new Error("Access token missing");
+	if (!token)
+		return {
+			ok: false,
+			error: "Access token missing",
+		};
 
 	try {
 		const response = await fetch(`http://backend:8001/match-history/`, {
@@ -166,10 +170,13 @@ export const fetchSimpleMatchHistory = async () => {
 export const checkMatches = async () => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
-	if (!token) throw new Error("Access token missing");
+	if (!token)
+		return {
+			ok: false,
+			error: "Access token missing",
+		};
 
 	try {
-		console.log("Checking 1v1 matches");
 		const response = await fetch(`http://backend:8001/match-check/`, {
 			method: "GET",
 			headers: {

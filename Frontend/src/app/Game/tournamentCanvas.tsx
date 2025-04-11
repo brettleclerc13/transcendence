@@ -33,12 +33,13 @@ export default function TournamentCanvas({
 		"NA",
 	]);
 	const [matchID, setMatchID] = useState<string | undefined>(undefined);
-	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
-		null
-	);
+	const [alert, setAlert] = useState<{
+		message: string;
+		type: "danger" | "success";
+	} | null>(null);
 
 	const setAlertWithTimeout = (
-		alertData: { message: string; type: string } | null
+		alertData: { message: string; type: "danger" | "success" } | null,
 	) => {
 		setAlert(alertData);
 		if (alertData) {
@@ -52,7 +53,7 @@ export default function TournamentCanvas({
 	>({});
 	const [gameOn, setGameOn] = useState<boolean>(false);
 	const [countdownMessage, setCountdownMessage] = useState<string | undefined>(
-		undefined
+		undefined,
 	);
 
 	useEffect(() => {
@@ -65,7 +66,7 @@ export default function TournamentCanvas({
 		}
 
 		const ws = new WebSocket(
-			`wss://${host}:${port}/ws/tournament/${tournamentID}/?token=${accessToken}`
+			`wss://${host}:${port}/ws/tournament/${tournamentID}/?token=${accessToken}`,
 		);
 
 		ws.onopen = () => {
@@ -81,7 +82,7 @@ export default function TournamentCanvas({
 				ws.send(
 					JSON.stringify({
 						type: "user_connected",
-					})
+					}),
 				);
 			}
 
@@ -159,7 +160,7 @@ export default function TournamentCanvas({
 			const playerNumber = tournamentState[layer];
 			console.log(
 				`Layer: ${layer}, Player ID: ${playerNumber}, Player Found:`,
-				playersMap[playerNumber]
+				playersMap[playerNumber],
 			);
 			return playersMap[playerNumber]?.tournament_name || "NA";
 		});

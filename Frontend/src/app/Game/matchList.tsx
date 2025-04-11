@@ -30,7 +30,9 @@ export default function MatchList({
 	alias,
 	setAlias,
 }: {
-	setAlert: (alertMessage: { message: string; type: string } | null) => void;
+	setAlert: (
+		alertMessage: { message: string; type: "danger" | "success" } | null,
+	) => void;
 	setGameID: (matchID: string) => void;
 	setGameType: (isReadyToPlay: string) => void;
 	setAlias: (alias: string | undefined) => void;
@@ -92,8 +94,8 @@ export default function MatchList({
 				setAlert({
 					message: String(
 						validationResult.error.errors.find(
-							(err) => err.path[0] === "tournament_name"
-						)?.message
+							(err) => err.path[0] === "tournament_name",
+						)?.message,
 					),
 					type: "danger",
 				});

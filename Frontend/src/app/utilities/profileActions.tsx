@@ -109,7 +109,7 @@ export const fetchUserPublicProfile = async (username: string) => {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${token}`,
 				},
-			}
+			},
 		);
 
 		const result = await fetchAPIResponseData({
@@ -275,6 +275,40 @@ export const disable2FA = async (otpData: { otp: number }) => {
 		return {
 			ok: false,
 			error: (error as Error).message || "Failed to disable 2FA.",
+		};
+	}
+};
+
+export const updateUserProfileImage = async (formData: FormData) => {
+	try {
+		const cookieStore = await cookies();
+		const token = cookieStore.get("accessToken")?.value;
+		if (!token) {
+			return {
+				ok: false,
+				error: "Access token missing",
+			};
+		}
+
+		const response = await fetch("http://backend:8001/profile/", {
+			method: "PATCH",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+			body: formData,
+		});
+
+		return await fetchAPIResponseData({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to update profile image.",
+				successMessage: "User profile image updated successfully",
+			},
+		});
+	} catch (error) {
+		return {
+			ok: false,
+			error: (error as Error).message || "Failed to update profile image.",
 		};
 	}
 };
