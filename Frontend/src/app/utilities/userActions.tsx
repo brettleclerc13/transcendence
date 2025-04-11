@@ -2,7 +2,6 @@
 
 import { cookies } from "next/headers";
 import { fetchGenericAPIResponses } from "./generalActions";
-import { httpsAgent } from '@/lib/httpsAgent';
 import { fetchWithAgent } from '@/lib/fetchWithAgent';
 
 type LoginProps = {
