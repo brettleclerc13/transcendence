@@ -2,6 +2,8 @@
 
 import { cookies } from "next/headers";
 import { fetchGenericAPIResponses } from "./generalActions";
+import { httpsAgent } from '@/lib/httpsAgent';
+import { fetchWithAgent } from '@/lib/fetchWithAgent';
 
 type LoginProps = {
 	email: string;
@@ -9,11 +11,12 @@ type LoginProps = {
 };
 
 export const login = async ({ email, pass }: LoginProps) => {
+	const API_URL = process.env.NEXT_PUBLIC_API_URL;
 	const requestData = {
 		username: email,
 		password: pass,
 	};
-	const response = await fetch("http://backend:8001/token/", {
+	const response = await fetchWithAgent(`${API_URL}/token/`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -66,7 +69,7 @@ export async function backendLogout() {
 		cookieStore.delete("refreshToken");
 		cookieStore.delete("tokenExpiry");
 
-		const response = await fetch("http://backend:8001/logout/", {
+		const response = await fetch("https://backend:8001/logout/", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -96,7 +99,7 @@ type RegisterProps = {
 };
 
 export const register = async (requestData: RegisterProps) => {
-	const response = await fetch("http://backend:8001/register/", {
+	const response = await fetch("https://backend:8001/register/", {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",

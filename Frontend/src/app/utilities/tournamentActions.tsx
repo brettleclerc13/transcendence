@@ -35,7 +35,7 @@ export const fetchTournaments = async (filters: TournamentFilterProps = {}) => {
 			.join("&");
 
 		const response = await fetch(
-			`http://backend:8001/tournaments/?${queryString}`,
+			`https://backend:8001/tournaments/?${queryString}`,
 			{
 				method: "GET",
 				headers: {
@@ -68,7 +68,7 @@ export const createTournament = async () => {
 
 	try {
 		console.log("Creating tournament...");
-		const response = await fetch("http://backend:8001/tournaments/", {
+		const response = await fetch("https://backend:8001/tournaments/", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -107,7 +107,7 @@ export const joinTournament = async (tournamentID: string) => {
 
 	try {
 		const response = await fetch(
-			`http://backend:8001/tournaments/${tournamentID}/`,
+			`https://backend:8001/tournaments/${tournamentID}/`,
 			{
 				method: "PATCH",
 				headers: {
@@ -144,7 +144,7 @@ export const leaveTournament = async (tournamentID: string) => {
 
 	try {
 		const response = await fetch(
-			`http://backend:8001/tournaments/${tournamentID}/`,
+			`https://backend:8001/tournaments/${tournamentID}/`,
 			{
 				method: "PUT",
 				headers: {
@@ -175,7 +175,7 @@ export const fetchTournamentHistory = async () => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch(`http://backend:8001/tournament-history/`, {
+		const response = await fetch(`https://backend:8001/tournament-history/`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
@@ -208,7 +208,7 @@ export const checkTournaments = async () => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch(`http://backend:8001/tournament-check/`, {
+		const response = await fetch(`https://backend:8001/tournament-check/`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",

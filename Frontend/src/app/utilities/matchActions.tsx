@@ -38,7 +38,7 @@ export const fetchMatches = async (filters: MatchFilterProps = {}) => {
 			.join("&");
 
 		const response = await fetch(
-			`http://backend:8001/matches/?${queryString}`,
+			`https://backend:8001/matches/?${queryString}`,
 			{
 				method: "GET",
 				headers: {
@@ -69,7 +69,7 @@ export const createSimpleMatch = async (invite_game?: boolean) => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch("http://backend:8001/matches/", {
+		const response = await fetch("https://backend:8001/matches/", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -107,7 +107,7 @@ export const joinSimpleMatch = async (matchID: string) => {
 		};
 
 	try {
-		const response = await fetch(`http://backend:8001/matches/${matchID}/`, {
+		const response = await fetch(`https://backend:8001/matches/${matchID}/`, {
 			method: "PATCH",
 			headers: {
 				"Content-Type": "application/json",
@@ -136,7 +136,7 @@ export const fetchSimpleMatchHistory = async () => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch(`http://backend:8001/match-history/`, {
+		const response = await fetch(`https://backend:8001/match-history/`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
@@ -170,7 +170,7 @@ export const checkMatches = async () => {
 
 	try {
 		console.log("Checking 1v1 matches");
-		const response = await fetch(`http://backend:8001/match-check/`, {
+		const response = await fetch(`https://backend:8001/match-check/`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",

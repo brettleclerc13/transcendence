@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
 
 async function verifyToken(token: string, request: NextRequest) {
 	try {
-		const response = await fetch(`http://backend:8001/token/verify/`, {
+		const response = await fetch(`https://backend:8001/token/verify/`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ token }),

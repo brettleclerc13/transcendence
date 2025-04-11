@@ -31,7 +31,7 @@ export const fetchUserProfile = async () => {
 			};
 		}
 
-		const response = await fetch("http://backend:8001/profile/", {
+		const response = await fetch("https://backend:8001/profile/", {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
@@ -65,7 +65,7 @@ export const updateUserProfile = async (profileData: UserProfileData) => {
 			};
 		}
 
-		const response = await fetch("http://backend:8001/profile/", {
+		const response = await fetch("https://backend:8001/profile/", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -102,7 +102,7 @@ export const fetchUserPublicProfile = async (username: string) => {
 		}
 
 		const response = await fetch(
-			`http://backend:8001/public_profile/?username=${username}`,
+			`https://backend:8001/public_profile/?username=${username}`,
 			{
 				method: "GET",
 				headers: {
@@ -138,7 +138,7 @@ export const fetchQrCode = async () => {
 			};
 		}
 
-		const response = await fetch("http://backend:8001/2fa/generate_qr/", {
+		const response = await fetch("https://backend:8001/2fa/generate_qr/", {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
@@ -185,7 +185,7 @@ export const verifyOTP = async (otpData: { otp: number }) => {
 			};
 		}
 
-		const response = await fetch("http://backend:8001/2fa/verify/", {
+		const response = await fetch("https://backend:8001/2fa/verify/", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -220,7 +220,7 @@ export const enable2FA = async (otpData: { otp: number }) => {
 			};
 		}
 
-		const response = await fetch("http://backend:8001/2fa/enable/", {
+		const response = await fetch("https://backend:8001/2fa/enable/", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -255,7 +255,7 @@ export const disable2FA = async (otpData: { otp: number }) => {
 			};
 		}
 
-		const response = await fetch("http://backend:8001/2fa/disable/", {
+		const response = await fetch("https://backend:8001/2fa/disable/", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",

@@ -7,10 +7,10 @@ RUN apk update && apk add --no-cache libpq-dev gcc curl openssl netcat-openbsd r
 COPY requirements.txt .
 COPY entrypoint.sh .
 
-RUN openssl req -x509 -nodes -out transcendence.pem -keyout transcendence.key \
+RUN openssl req -x509 -nodes -out /etc/ssl/transcendence.pem -keyout /etc/ssl/transcendence.key \
     -subj "/C=FR/ST=Seine-et-Marne/L=Vernou/O=Ecole\ 42/OU=Ecole/CN=transcendence.fr/emailAddress=bleclerc@student.42nice.fr"
 
-RUN pip install django-extensions Werkzeug daphne djangorestframework-simplejwt Pillow django-bleach django-otp django-two-factor-auth qrcode
+RUN pip install django-extensions Werkzeug uvicorn djangorestframework-simplejwt Pillow django-bleach django-otp django-two-factor-auth qrcode
 
 #COPY . .
 
