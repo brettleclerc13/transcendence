@@ -5,6 +5,7 @@ import {
 	fetchGenericAPIResponses,
 	fetchAPIResponseData,
 } from "./generalActions";
+import { fetchWithAgent } from "@/lib/fetchWithAgent";
 
 type MatchFilterProps = {
 	id?: string;
@@ -37,8 +38,8 @@ export const fetchMatches = async (filters: MatchFilterProps = {}) => {
 			})
 			.join("&");
 
-		const response = await fetch(
-			`https://backend:8001/matches/?${queryString}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/matches/?${queryString}`,
 			{
 				method: "GET",
 				headers: {
@@ -69,14 +70,19 @@ export const createSimpleMatch = async (invite_game?: boolean) => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch("https://backend:8001/matches/", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/matches/`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: invite_game
+					? JSON.stringify({ invite_game })
+					: JSON.stringify({}),
 			},
-			body: invite_game ? JSON.stringify({ invite_game }) : JSON.stringify({}),
-		});
+		);
 
 		const result = await fetchAPIResponseData({
 			response,
@@ -107,13 +113,16 @@ export const joinSimpleMatch = async (matchID: string) => {
 		};
 
 	try {
-		const response = await fetch(`https://backend:8001/matches/${matchID}/`, {
-			method: "PATCH",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchID}/`,
+			{
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
 			},
-		});
+		);
 
 		return await fetchGenericAPIResponses({
 			response,
@@ -140,13 +149,16 @@ export const fetchSimpleMatchHistory = async () => {
 		};
 
 	try {
-		const response = await fetch(`https://backend:8001/match-history/`, {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/match-history/`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
 			},
-		});
+		);
 
 		const result = await fetchAPIResponseData({
 			response,
@@ -178,13 +190,16 @@ export const checkMatches = async () => {
 
 	try {
 		console.log("Checking 1v1 matches");
-		const response = await fetch(`http://backend:8001/match-check/`, {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/match-check/`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
 			},
-		});
+		);
 
 		const result = await fetchAPIResponseData({
 			response,

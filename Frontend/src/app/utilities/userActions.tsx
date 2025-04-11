@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { fetchGenericAPIResponses } from "./generalActions";
-import { fetchWithAgent } from '@/lib/fetchWithAgent';
+import { fetchWithAgent } from "@/lib/fetchWithAgent";
 
 type LoginProps = {
 	email: string;
@@ -10,18 +10,20 @@ type LoginProps = {
 };
 
 export const login = async ({ email, pass }: LoginProps) => {
-	const API_URL = process.env.NEXT_PUBLIC_API_URL;
 	const requestData = {
 		username: email,
 		password: pass,
 	};
-	const response = await fetchWithAgent(`${API_URL}/token/`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
+	const response = await fetchWithAgent(
+		`${process.env.NEXT_PUBLIC_API_URL}/token/`,
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(requestData),
 		},
-		body: JSON.stringify(requestData),
-	});
+	);
 
 	let data;
 
@@ -68,12 +70,15 @@ export async function backendLogout() {
 		cookieStore.delete("refreshToken");
 		cookieStore.delete("tokenExpiry");
 
-		const response = await fetch("https://backend:8001/logout/", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/logout/`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
 			},
-		});
+		);
 
 		if (response && response.ok) console.log("Logout successful");
 		else console.warn("Logout unsuccessful");
@@ -98,13 +103,16 @@ type RegisterProps = {
 };
 
 export const register = async (requestData: RegisterProps) => {
-	const response = await fetch("https://backend:8001/register/", {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
+	const response = await fetchWithAgent(
+		`${process.env.NEXT_PUBLIC_API_URL}/register/`,
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(requestData),
 		},
-		body: JSON.stringify(requestData),
-	});
+	);
 
 	let data;
 

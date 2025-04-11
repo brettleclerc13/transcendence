@@ -108,7 +108,7 @@ class TournamentRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 				tournament.players.remove(user)
 
 				# Check if the tournament should still be ongoing
-				if tournament.players.count() < tournament.max_players:
+				if tournament.players.count() < 1:
 					tournament.is_ongoing = False
 					tournament.save()
 

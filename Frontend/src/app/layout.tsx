@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import RefreshAccessToken from "@/app/utilities/JWTActions";
+import RefreshAccessToken from "@/app/utilities/JWTClientActions";
 import "bootstrap/dist/css/bootstrap.min.css";
 import BootstrapClient from "@/components/bootstrapClient";
 import "./globals.css";
