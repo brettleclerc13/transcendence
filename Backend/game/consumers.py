@@ -219,6 +219,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 was_set = await self.redis.execute("SET", game_started_key, self.channel_name, "NX")
 
                 if was_set:
+                    await asyncio.sleep(0.1)
                     await self.channel_layer.group_send(
                         self.room_group_name,
                         {
