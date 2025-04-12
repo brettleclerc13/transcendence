@@ -88,34 +88,32 @@ export default function TournamentCanvas({
 
 			// Handle when a new user joins
 			if (data.type === "new_user") {
-				console.log("New user data: ", data);
-
-				// Convert user object into a dictionary with "player_1", "player_2", etc.
 				const newPlayers: Record<string, TournamentPlayer> = {};
-
 				Object.entries(data.users).forEach(([key, player]: [string, any]) => {
-					// Prevent errors if player is undefined or missing user_id
-					if (!player || !player.id) {
-						console.warn(`Invalid player data for ${key}:`, player);
-						return; // Skip this entry
-					}
-
-					newPlayers[key] = {
-						id: String(player.id), // Ensure it is always a string
-						tournament_name: player.tournament_name || "Unknown",
-						profile_picture: player.profile_picture || null,
-						is_on_page: true,
-					};
+				  if (!player || !player.id) return;
+				  newPlayers[key] = {
+					id: String(player.id),
+					tournament_name: player.tournament_name || "Unknown",
+					profile_picture: player.profile_picture || null,
+					is_on_page: true,
+				  };
 				});
-
-				// Update players mapping
-				setPlayersMap((prev) => ({ ...prev, ...newPlayers }));
+			  
+				setPlayersMap((prev) => {
+				  const updatedMap = { ...prev, ...newPlayers };
+				  updateDisplayedPlayers(tournamentState, updatedMap); // Use latest state
+				  return updatedMap;
+				});
 			}
 
 			// Handle tournament state updates
 			if (data.type === "tournament_display_update") {
 				console.log("Tournament display update: ", data.state);
-				setTournamentState(data.state);
+				setTournamentState((prevState: Record<string, string>) => {
+				  const newState = data.state;
+				  updateDisplayedPlayers(newState, playersMap); // Use latest map
+				  return newState;
+				});
 			}
 
 			if (data.type === "tournament_countdown") {
@@ -143,30 +141,26 @@ export default function TournamentCanvas({
 		return () => ws.close();
 	}, []);
 
-	useEffect(() => {
-		if (!tournamentState) return;
-
-		const layers = [
-			"first_layer_1",
-			"first_layer_2",
-			"first_layer_3",
-			"first_layer_4",
-			"second_layer_1",
-			"second_layer_2",
-			"third_layer",
-		];
-
+	const layers = [
+		"first_layer_1",
+		"first_layer_2",
+		"first_layer_3",
+		"first_layer_4",
+		"second_layer_1",
+		"second_layer_2",
+		"third_layer",
+	];
+	  
+	const updateDisplayedPlayers = (
+		currentState: Record<string, string>,
+		playerMap: Record<string, TournamentPlayer>
+	) => {
 		const updatedNames = layers.map((layer) => {
-			const playerNumber = tournamentState[layer];
-			console.log(
-				`Layer: ${layer}, Player ID: ${playerNumber}, Player Found:`,
-				playersMap[playerNumber],
-			);
-			return playersMap[playerNumber]?.tournament_name || "NA";
+		  const playerID = currentState[layer];
+		  return playerMap[playerID]?.tournament_name || "NA";
 		});
-
 		setDisplayedPlayers(updatedNames);
-	}, [tournamentState, playersMap]);
+	};
 
 	const handleTournamentExit = async () => {
 		if (!socket) {
