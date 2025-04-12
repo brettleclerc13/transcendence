@@ -14,28 +14,30 @@ import { useRouter } from "next/navigation";
 import { fetchUserProfile } from "../utilities/profileActions";
 import { GetOrCreateConversation } from "../utilities/chatActions";
 import { FetchMessages } from "../utilities/chatActions";
+import type { User, Friend, Message, ConversationResponse, MessagesResponse } from "../utilities/charTypes";
 
-interface User {
-	id: number;
-	username: string;
-	email: string;
-	profile_picture: string | null;
-	is_online: boolean;
-}
 
-interface Friend {
-	id: number;
-	username: string;
-	profile_picture: string | null;
-}
+// interface User {
+// 	id: number;
+// 	username: string;
+// 	email: string;
+// 	profile_picture: string | null;
+// 	is_online: boolean;
+// }
 
-interface Message {
-	sender: number;
-	conversation_id: number;
-	text: string;
-	timestamp: string;
-	senderPicture: string | null;
-}
+// interface Friend {
+// 	id: number;
+// 	username: string;
+// 	profile_picture: string | null;
+// }
+
+// interface Message {
+// 	sender: number;
+// 	conversation_id: number;
+// 	text: string;
+// 	timestamp: string;
+// 	senderPicture: string | null;
+// }
 
 const LiveChatClient = () => {
 	const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
@@ -75,24 +77,24 @@ const LiveChatClient = () => {
 				const host = process.env.NEXT_PUBLIC_WS_HOST;
 				const port = process.env.NEXT_PUBLIC_WS_PORT;
 
-				const response = await GetOrCreateConversation(selectedFriend.id);
+				const response = await GetOrCreateConversation(selectedFriend.id) as ConversationResponse;
 				let conversationData: { id: string } | null = null;
 
-				if (response && !response.status) {
+				if (response && response.status && response.data) {
+					conversationData = response.data;
+				} else {
 					console.warn("Erreur lors de la récupération de la conversation.");
 					return;
-				} else if (response.status && "data" in response) {
-					conversationData = response.data;
 				}
-
+			
 				if (!conversationData || !conversationData.id) {
 					console.warn("Aucune conversation trouvée ou créée.");
 					return;
 				}
 
-				const messagesRetrieve = await FetchMessages(conversationData.id);
+				const messagesRetrieve = await FetchMessages(conversationData.id) as MessagesResponse;
 
-				if (messagesRetrieve.status && "data" in messagesRetrieve) {
+				if (messagesRetrieve.status && messagesRetrieve.data) {
 					setMessages(messagesRetrieve.data);
 				} else {
 					const errorMessage =

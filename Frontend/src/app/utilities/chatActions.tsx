@@ -2,22 +2,23 @@
 
 import { cookies } from "next/headers";
 import { fetchWithAgent } from "@/lib/fetchWithAgent";
+import type { Friend, Invitation } from "../utilities/charTypes";
 
 type ApiResponse<T = unknown> =
 	| { status: true; data?: T }
 	| { status: "warning"; message: string }
 	| { status: false; error: string };
 
-interface Friend {
-  username: string;
-  id: number;
-  profile_picture?: string;
-}
+// interface Friend {
+//   username: string;
+//   id: number;
+//   profile_picture?: string;
+// }
 
-interface Invitation {
-  id: number;
-  sender: string;
-}
+// interface Invitation {
+//   id: number;
+//   sender: string;
+// }
 
 export const getToken = async () => {
 	const cookieStore = await cookies();
@@ -73,7 +74,7 @@ export const SearchFriend = async (
 				},
 			},
 		);
-		return await handleResponse(response);
+		return await handleResponse<Friend[]>(response);
 	} catch (error: unknown) {
 		return {
 			status: false,
@@ -97,7 +98,7 @@ export const FetchFriends = async (): Promise<ApiResponse<Friend[]>> => {
 				},
 			},
 		);
-		return await handleResponse(response);
+		return await handleResponse<Friend[]>(response);
 	} catch (error: unknown) {
 		return { status: false, error: (error instanceof Error ? error.message : "Network error (friends)") };
 	}
@@ -118,7 +119,7 @@ export const FetchInvitations = async (): Promise<ApiResponse<Invitation[]>> => 
 				},
 			},
 		);
-		return await handleResponse(response);
+		return await handleResponse<Invitation[]>(response);
 	} catch (error: unknown) {
 		return {
 			status: false,

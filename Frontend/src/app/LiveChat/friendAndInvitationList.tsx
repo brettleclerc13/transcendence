@@ -16,6 +16,8 @@ import {
 	BlockUser,
 	UnblockUser,
 } from "../utilities/blockActions";
+import type { Friend } from "../utilities/charTypes";
+
 
 interface User {
 	id: number;
@@ -25,12 +27,12 @@ interface User {
 	is_online: boolean;
 }
 
-interface Friend {
-	id: number;
-	username: string;
-	profile_picture: string | null;
-	sender__username?: string;
-}
+// interface Friend {
+// 	id: number;
+// 	username: string;
+// 	profile_picture: string | null;
+// 	sender__username?: string;
+// }
 
 const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => void }> = ({ onSelectFriend }) => {
 	const [friends, setFriends] = useState<Friend[]>([]);
