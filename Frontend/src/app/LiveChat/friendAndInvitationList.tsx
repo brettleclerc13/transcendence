@@ -28,7 +28,7 @@ interface User {
 interface Friend {
 	id: number;
 	username: string;
-	profile_picture: string | null | undefined;
+	profile_picture: string | null;
 	sender__username?: string;
 }
 
@@ -61,6 +61,9 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 				} else if (friendListResponse.status === false) {
 					console.log("Error:", friendListResponse.error);
 					setFriends([]);
+				} else {
+					// Si ce n'est pas un tableau, on affiche une erreur ou on gère l'exception
+					console.error('Erreur : les données des amis ne sont pas un tableau');
 				}
 
 				const invitationListResponse = await FetchInvitations();
@@ -224,7 +227,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 							friends.map((friend) => (
 								<li key={friend.id} className="list-group-item d-flex align-items-center justify-content-between">
 									<div onClick={() => onSelectFriend(friend)} style={{ cursor: "pointer", display: "flex", alignItems: "center"}}>
-										<Image src={friend.profile_picture || "./img/default.png"} alt={`${friend.username}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10, }} />
+										<Image src={friend.profile_picture || "/img/default.png"} alt={`${friend.username}'s avatar`} width={40} height={40} style={{ borderRadius: "50%", marginRight: 10, }} />
 										<span>{friend.username}</span>
 									</div>
 									<button className={`btn ${ blockedUsers.some((user) => user.id === friend.id) ? "btn-danger" : "btn-secondary" }`}
@@ -240,7 +243,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 						invitations.map((invite) => (
 							<li key={invite.id} className="list-group-item d-flex align-items-center justify-content-between" >
 								<div className="d-flex align-items-center">
-									<Image src={invite.profile_picture || "./img/default.png"} alt={`${invite.sender__username}'s avatar`} style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10 }} />
+									<Image src={invite.profile_picture || "/img/default.png"} alt={`${invite.sender__username}'s avatar`} width={40} height={40} style={{ borderRadius: "50%", marginRight: 10 }} />
 									<span>{invite.sender__username || invite.username}</span>
 								</div>
 								<div>

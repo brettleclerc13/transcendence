@@ -10,9 +10,9 @@ COPY . .
 ENV NODE_EXTRA_CA_CERTS=/etc/nginx/ssl/transcendence.pem
 
 
-#RUN npm run build
+# RUN npm run build
 
 #EXPOSE 3000
 
-#CMD ["npm", "run", "start"]
+# CMD ["npm", "run", "start"]
 CMD ["npm", "run", "dev"]

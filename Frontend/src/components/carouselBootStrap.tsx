@@ -9,6 +9,18 @@ const MyCarousel = () => {
 	const [isBootstrapLoaded, setIsBootstrapLoaded] = useState(false);
 
 	useEffect(() => {
+		const loadBootstrap = async () => {
+			if (typeof window !== "undefined" && !window.bootstrap) {
+				await import("bootstrap/dist/js/bootstrap.bundle.min.js");
+				console.log("Bootstrap chargé !");
+				setIsBootstrapLoaded(true);
+			}
+		};
+	
+		loadBootstrap();
+	}, []);
+
+	useEffect(() => {
 		if (carouselRef.current && isBootstrapLoaded) {
 			// Vérification que Bootstrap est bien chargé
 			if (typeof window.bootstrap !== "undefined") {
@@ -29,13 +41,6 @@ const MyCarousel = () => {
 			}
 		}
 	}, [isBootstrapLoaded]);
-
-	useEffect(() => {
-		// Ce useEffect est utilisé pour détecter quand Bootstrap est complètement chargé
-		if (typeof window.bootstrap !== "undefined") {
-			setIsBootstrapLoaded(true);
-		}
-	}, []);
 
 	return (
 		<div className="carousel-container">
@@ -73,6 +78,7 @@ const MyCarousel = () => {
 							alt="Emilien Houot"
 							width={800} 
 							height={400}
+							style={{ objectFit: "contain" }}
 							className="d-block w-100"
 						/>
 						<div className="carousel-caption d-none d-md-block">
@@ -113,6 +119,7 @@ const MyCarousel = () => {
 							alt="Brett Leclerc"
 							width={800}
 							height={400}
+							style={{ objectFit: "contain" }}
 							className="d-block w-100"
 						/>
 						<div className="carousel-caption d-none d-md-block">
@@ -153,6 +160,7 @@ const MyCarousel = () => {
 							alt="Levan Kukhaleishvili"
 							width={800}
 							height={400}
+							style={{ objectFit: "contain" }}
 							className="d-block w-100"
 						/>
 						<div className="carousel-caption d-none d-md-block">

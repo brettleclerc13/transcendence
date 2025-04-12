@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import RefreshAccessToken from "@/app/utilities/JWTClientActions";
+import BootstrapClient from "../components/bootstrapClient";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,6 +21,7 @@ export default function RootLayout({
 		<html lang="en">
 			<body>
 				{children}
+				<BootstrapClient />
 				<RefreshAccessToken />
 			</body>
 		</html>
