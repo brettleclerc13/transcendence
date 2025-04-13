@@ -62,7 +62,8 @@ export default function ProfileImage({
 								? `/api/${userProfile.profile_picture}`
 								: "/img/default.png"
 						} // Fallback to default image
-						
+						width={400}
+						height={400}
 						alt="Profile Picture"
 						className="profile-picture"
 					/>
