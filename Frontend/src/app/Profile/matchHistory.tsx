@@ -22,7 +22,7 @@ export default function MatchHistory({
 	username,
 }: {
 	setAlert: (
-		alert: { message: string; type: "danger" | "success" } | null
+		alert: { message: string; type: "danger" | "success" } | null,
 	) => void;
 	username: string | undefined;
 }) {
@@ -40,12 +40,12 @@ export default function MatchHistory({
 		const fetchMatchHistoryData = async () => {
 			const matchResults = await fetchSimpleMatchHistory();
 
-			if (matchResults && matchResults.ok) {
-				const matchData = matchResults || [];
+			if (matchResults && matchResults.ok && "data" in matchResults) {
+				const matchData = matchResults.data || [];
 				setSimpleMatches(matchData);
 				// Calcul des statistiques Win/Lose
 				const wins = matchData.filter(
-					(match: SimpleMatchHistory) => match.winner_username === username
+					(match: SimpleMatchHistory) => match.winner_username === username,
 				).length;
 				const totalMatches = matchData.length;
 				const losses = totalMatches - wins;
@@ -73,7 +73,7 @@ export default function MatchHistory({
 				});
 			} else {
 				setAlert({
-					message: matchResults.error,
+					message: `Match history error: ${matchResults.error}`,
 					type: "danger",
 				});
 			}
