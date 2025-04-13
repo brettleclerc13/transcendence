@@ -18,14 +18,14 @@ export default function TwoFactorAuth({
 	setAlert,
 }: {
 	setAlert: (
-		alertMessage: { message: string; type: "danger" | "success" } | null
+		alertMessage: { message: string; type: "danger" | "success" } | null,
 	) => void;
 }) {
 	const [qrCode, setQrCode] = useState<string | undefined>(undefined);
 	const [isActive, setIsActive] = useState<boolean>(false);
 	const [otpData, otpAction, otpPending] = useActionState(
 		handleTwoFactorAuthActivation,
-		undefined
+		undefined,
 	);
 
 	useEffect(() => {
@@ -45,7 +45,7 @@ export default function TwoFactorAuth({
 
 	async function handleTwoFactorAuthActivation(
 		_previousState: unknown,
-		formData: FormData
+		formData: FormData,
 	) {
 		const otp = Number(formData.get("otp"));
 
