@@ -276,11 +276,11 @@ class FriendListAPIView(APIView):
             profile_picture_url = None
             if friend.profile_picture:
 
-                profile_picture_url = request.build_absolute_uri(friend.profile_picture.url)
+                profile_picture_url = friend.profile_picture.url
                 
                 # Remplacer 'backend' par 'localhost:8001' si nécessaire
-                if "backend" in profile_picture_url:
-                    profile_picture_url = profile_picture_url.replace("backend", "127.0.0.1")
+                # if "backend" in profile_picture_url:
+                #     profile_picture_url = profile_picture_url.replace("backend", "127.0.0.1")
 
             friends_data.append({
                 "id": friend.user.id,

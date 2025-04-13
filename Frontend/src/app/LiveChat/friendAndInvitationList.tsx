@@ -305,7 +305,7 @@ const FriendAndInvitationList: React.FC<{
 										}}
 									>
 										<img
-											src={friend.profile_picture || "/img/default.png"}
+											src={`/api/${friend.profile_picture}` || "/img/default.png"}
 											alt={`${friend.username}'s avatar`}
 											style={{
 												width: 40,
@@ -345,7 +345,7 @@ const FriendAndInvitationList: React.FC<{
 												: "/img/default.png"
 										}
 										alt={`${invite.sender__username}'s avatar`}
-										style={{ borderRadius: "50%", marginRight: 10 }}
+										style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10 }}
 									/>
 									<span>{invite.sender__username || invite.username}</span>
 								</div>
