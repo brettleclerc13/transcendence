@@ -96,7 +96,7 @@ export default function GameCanvas({
 							screen_width: 800,
 							screen_height: 592,
 							resolution: 8,
-							point_goal: 10,
+							point_goal: 2,
 						},
 					})
 				);
@@ -269,7 +269,7 @@ export default function GameCanvas({
 						screen_width: 800,
 						screen_height: 592,
 						resolution: 8,
-						point_goal: 10,
+						point_goal: 2,
 					},
 				})
 			);
@@ -330,13 +330,15 @@ export default function GameCanvas({
 	}, [socket]);
 
 	useEffect(() => {
-		if (status === "ending") {
-			const timer = setTimeout(() => {
-				setGameType("lobby");
-			}, 3000);
-			return () => clearTimeout(timer);
+		if (status === "ending" && playerRole) {
+		  const delay = playerRole === "player_1" ? 3000 : 3150; // 3s or 3.2s
+		  const timer = setTimeout(() => {
+			setGameType("lobby");
+		  }, delay);
+	  
+		  return () => clearTimeout(timer);
 		}
-	}, [status]);
+	}, [status, playerRole]);
 
 	return (
 		<div className="game-container">

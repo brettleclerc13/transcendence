@@ -14,8 +14,8 @@ import { useRouter } from "next/navigation";
 import { fetchUserProfile } from "../utilities/profileActions";
 import { GetOrCreateConversation } from "../utilities/chatActions";
 import { FetchMessages } from "../utilities/chatActions";
-import type { User, Friend, Message, ConversationResponse, MessagesResponse } from "../utilities/charTypes";
-
+import type { Friend, Message, ConversationResponse, MessagesResponse } from "../utilities/charTypes";
+import type { UserProfileData } from "../utilities/profileActions";
 
 // interface User {
 // 	id: number;
@@ -41,7 +41,7 @@ import type { User, Friend, Message, ConversationResponse, MessagesResponse } fr
 
 const LiveChatClient = () => {
 	const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
-	const [currentUser, setCurrentUser] = useState<User | null>(null);
+	const [currentUser, setCurrentUser] = useState<UserProfileData | null>(null);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const wsRef = useRef<WebSocket | null>(null);
 	const router = useRouter();
@@ -51,7 +51,7 @@ const LiveChatClient = () => {
 			try {
 				if (!isUserLoggedIn()) return;
 				const response = await fetchUserProfile();
-				setCurrentUser(response.data);
+				setCurrentUser(response);
 			} catch (error) {
 				console.warn(
 					"Erreur réseau lors de la récupération de l'utilisateur :",
@@ -111,7 +111,7 @@ const LiveChatClient = () => {
 				}
 
 				wsRef.current = new WebSocket(
-					`wss://${host}:${port}/ws/chat/${conversationData.id}/?token=${accessToken}`,
+					`wss://${host}:${port}/chat/${conversationData.id}/?token=${accessToken}`,
 				);
 
 				wsRef.current.onopen = () => {
@@ -134,7 +134,7 @@ const LiveChatClient = () => {
 							text: data.message,
 							timestamp: new Date().toISOString(),
 							senderPicture:
-								selectedFriend.profile_picture || "./img/default.png",
+								selectedFriend.profile_picture || "/img/default.png",
 						},
 					]);
 				};
@@ -209,6 +209,7 @@ const LiveChatClient = () => {
 		}
 	};
 
+
 	return (
 		<div className="livechat-container">
 			{isUserLoggedIn() ? (
@@ -222,15 +223,19 @@ const LiveChatClient = () => {
 						</div>
 
 						<div className="current-chat">
-							{currentUser && selectedFriend ? (
-								<CurrentChat
-									friend={selectedFriend}
-									messages={messages}
-									currentUser={currentUser}
-								/>
-							) : (
-								<p className="text-muted">Select a friend to start chatting</p>
-							)}
+							{(() => {
+								if (currentUser && selectedFriend) {
+									return (
+										<CurrentChat
+											friend={selectedFriend}
+											messages={messages}
+											currentUser={currentUser}
+										/>
+									);
+								} else {
+									return <p className="text-muted">Select a friend to start chatting</p>;
+								}
+							})()}
 							<MessageBar
 								selectedFriend={selectedFriend}
 								onSendMessage={handleSendMessage}

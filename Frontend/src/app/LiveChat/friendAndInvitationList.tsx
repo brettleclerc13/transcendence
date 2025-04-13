@@ -16,16 +16,16 @@ import {
 	BlockUser,
 	UnblockUser,
 } from "../utilities/blockActions";
-import type { Friend } from "../utilities/charTypes";
+import type { Friend, User } from "../utilities/charTypes";
 
 
-interface User {
-	id: number;
-	username: string;
-	email: string;
-	profile_picture: string | null;
-	is_online: boolean;
-}
+// interface User {
+// 	id: number;
+// 	username: string;
+// 	email: string;
+// 	profile_picture: string | null;
+// 	is_online: boolean;
+// }
 
 // interface Friend {
 // 	id: number;
@@ -104,8 +104,8 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 			return;
 		}
 
-			wsRef.current = new WebSocket(`wss://${host}:${port}/ws/contacts/?token=${accessToken}`);
-		
+			wsRef.current = new WebSocket(`wss://${host}:${port}/chat/contacts/?token=${accessToken}`);
+
 			wsRef.current.onmessage = (event) => {
 			const data = JSON.parse(event.data);
 
@@ -229,7 +229,7 @@ const FriendAndInvitationList: React.FC<{ onSelectFriend: (friend: Friend) => vo
 							friends.map((friend) => (
 								<li key={friend.id} className="list-group-item d-flex align-items-center justify-content-between">
 									<div onClick={() => onSelectFriend(friend)} style={{ cursor: "pointer", display: "flex", alignItems: "center"}}>
-										<Image src={friend.profile_picture || "/img/default.png"} alt={`${friend.username}'s avatar`} width={40} height={40} style={{ borderRadius: "50%", marginRight: 10, }} />
+										<img src={friend.profile_picture || "/img/default.png"} alt={`${friend.username}'s avatar`} style={{  width: 40, height: 40, borderRadius: "50%", marginRight: 10, }} />
 										<span>{friend.username}</span>
 									</div>
 									<button className={`btn ${ blockedUsers.some((user) => user.id === friend.id) ? "btn-danger" : "btn-secondary" }`}

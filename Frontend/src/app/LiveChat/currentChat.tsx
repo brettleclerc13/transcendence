@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import "./liveChat.css";
 import Image from "next/image";
+import type { UserProfileData } from "../utilities/profileActions";
 
 interface Friend {
 	id: number;
@@ -19,13 +20,7 @@ interface Message {
 interface CurrentChatProps {
 	friend: Friend;
 	messages: Message[];
-	currentUser: {
-		id: number;
-		username: string;
-		email: string;
-		profile_picture: string | null;
-		is_online: boolean;
-	};
+	currentUser: UserProfileData;
 }
 
 const CurrentChat: React.FC<CurrentChatProps> = ({
@@ -56,7 +51,7 @@ const CurrentChat: React.FC<CurrentChatProps> = ({
 						>
 							{!isSent && (
 								<Image
-									src={friend.profile_picture ? `${friend.profile_picture}` : "./img/default.png"}
+									src={friend.profile_picture ? `${friend.profile_picture}` : "/img/default.png"}
 									width={40}
 									height={40}
 									alt={`${friend.username}'s avatar`}
@@ -65,7 +60,7 @@ const CurrentChat: React.FC<CurrentChatProps> = ({
 							<div className="message-bubble">{message.text}</div>
 							{isSent && (
 								<Image
-									src={currentUser.profile_picture ? `/api/${currentUser.profile_picture}` : "./img/default.png"}
+									src={currentUser.profile_picture ? `/api/${currentUser.profile_picture}` : "/img/default.png"}
 									width={40}
 									height={40}
 									alt={`Your avatar`}

@@ -202,7 +202,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
             
             self.update_game_parametres(data["game_parametres"])
             self.has_initialize = True
-            if data["type"] == "initialize" and previous_state in ["waiting for players", "game ongoing"]:
+            if data["type"] == "initialize" and previous_state in ["waiting for players", "game ongoing", "unknown"]:
                 if previous_state == "waiting for players":
                     await self.redis.execute("SET", game_state_key, json.dumps(self.game_state))
                 elif previous_state == "game ongoing":
@@ -219,6 +219,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 was_set = await self.redis.execute("SET", game_started_key, self.channel_name, "NX")
 
                 if was_set:
+                    await asyncio.sleep(0.1)
                     await self.channel_layer.group_send(
                         self.room_group_name,
                         {

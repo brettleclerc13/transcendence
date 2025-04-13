@@ -41,7 +41,7 @@ export default function PublicProfile( { username }: { username: string | undefi
     return (
         <div className="profile-container">
             <div className="profile-header">
-                <img src={publicProfile.profile_picture ? `/api/${publicProfile.profile_picture}` : "./img/default.png"} alt="Profile" className="profile-image" />
+                <img src={publicProfile.profile_picture ? `/api/${publicProfile.profile_picture}` : "/img/default.png"} alt="Profile" className="profile-image" />
                 <h2>{username}</h2>
                 <p className={publicProfile.is_online ? "status-online" : "status-offline"}>
                     {publicProfile.is_online ? "Online" : "Offline"}

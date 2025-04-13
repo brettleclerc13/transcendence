@@ -8,6 +8,7 @@ import {
 import { fetchWithAgent } from "@/lib/fetchWithAgent";
 
 export type UserProfileData = {
+	id?: number;
 	email?: string;
 	username?: string;
 	age?: number;
@@ -109,7 +110,7 @@ export const fetchUserPublicProfile = async (username: string) => {
 		}
 
 		const response = await fetchWithAgent(
-			`${process.env.NEXT_PUBLIC_API_URL}/?username=${username}`,
+			`${process.env.NEXT_PUBLIC_API_URL}/public_profile/?username=${username}`,
 			{
 				method: "GET",
 				headers: {

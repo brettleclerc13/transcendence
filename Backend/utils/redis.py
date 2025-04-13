@@ -186,6 +186,19 @@ class RedisManager:
         redis = await cls.get_redis()
         await redis.set(key, "true")
         await redis.expire(key, time)
+
+    @classmethod
+    async def give_expiry_time(cls, key: str, seconds: int) -> bool:
+        try:
+            redis = await cls.get_redis()
+            result = await redis.expire(key, seconds)
+            if result == 1:
+                return True
+            else:
+                return False
+        except Exception as e:
+            print(f"❌ Error setting expiry for key '{key}': {e}", flush=True)
+            return False
     
     @classmethod
     async def set_expiry_json(cls, key: str, time: int, json_data):
