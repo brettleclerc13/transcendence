@@ -17,7 +17,7 @@ export default function GameCanvas({
 		"waiting" | "ready" | "playing" | "reconnection" | "ending"
 	>("waiting");
 	const [playerRole, setPlayerRole] = useState<"player_1" | "player_2" | null>(
-		null
+		null,
 	);
 	const [winner, setWinner] = useState<string | undefined>(undefined);
 	const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -45,7 +45,7 @@ export default function GameCanvas({
 
 		const roomName = matchID;
 		const ws = new WebSocket(
-			`wss://${host}:${port}/game/${roomName}/?token=${accessToken}`
+			`wss://${host}:${port}/game/${roomName}/?token=${accessToken}`,
 		);
 
 		ws.onopen = () => {
@@ -57,11 +57,7 @@ export default function GameCanvas({
 
 			if (data.type === "game_ending") {
 				console.log("Game FINISHED");
-				setWinner(
-					data.winner === "player_1"
-						? gameState?.player1_username
-						: gameState?.player2_username
-				);
+				if ("winner" in data) setWinner(data.winner);
 				setStatus("ending");
 			}
 
@@ -98,7 +94,7 @@ export default function GameCanvas({
 							resolution: 8,
 							point_goal: 2,
 						},
-					})
+					}),
 				);
 			}
 
@@ -193,13 +189,13 @@ export default function GameCanvas({
 				const segmentTime = totalDuration / numSegments;
 				const currentSegment = Math.min(
 					Math.floor(deltaTime / segmentTime),
-					numSegments - 1
+					numSegments - 1,
 				);
 				const segmentStartTime =
 					lastUpdateTime.current + currentSegment * segmentTime;
 				const segmentProgress = Math.min(
 					(now - segmentStartTime) / segmentTime,
-					1
+					1,
 				);
 
 				let start: [number, number];
@@ -241,7 +237,7 @@ export default function GameCanvas({
 					player1_position: interpolatedPaddle1Position,
 					player2_position: interpolatedPaddle2Position,
 				},
-				canvasRef.current
+				canvasRef.current,
 			);
 
 			// Request the next frame
@@ -271,7 +267,7 @@ export default function GameCanvas({
 						resolution: 8,
 						point_goal: 2,
 					},
-				})
+				}),
 			);
 		}
 	}, [status, playerRole]);
@@ -284,7 +280,7 @@ export default function GameCanvas({
 						type: "input",
 						direction: currentDirectionRef.current, // ✅ Always send the latest ref value
 						timestamp: Date.now(),
-					})
+					}),
 				);
 			}
 		};
@@ -331,12 +327,12 @@ export default function GameCanvas({
 
 	useEffect(() => {
 		if (status === "ending" && playerRole) {
-		  const delay = playerRole === "player_1" ? 3000 : 3150; // 3s or 3.2s
-		  const timer = setTimeout(() => {
-			setGameType("lobby");
-		  }, delay);
-	  
-		  return () => clearTimeout(timer);
+			const delay = playerRole === "player_1" ? 3000 : 3150; // 3s or 3.15s
+			const timer = setTimeout(() => {
+				setGameType("lobby");
+			}, delay);
+
+			return () => clearTimeout(timer);
 		}
 	}, [status, playerRole]);
 
@@ -353,7 +349,7 @@ export default function GameCanvas({
 			{status === "ending" && (
 				<div className="game-over-screen">
 					<p>Game is finished!</p>
-					<p>{winner} is the Winner!</p>
+					<p>{winner} has won!</p>
 					<p>Returning in 3 seconds...</p>
 				</div>
 			)}

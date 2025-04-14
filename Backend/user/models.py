@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django_otp.plugins.otp_totp.models import TOTPDevice
+from os import getenv
+from rest_framework import serializers
 
 
 def user_directory_path(instance, filename):
@@ -25,19 +27,25 @@ class UserProfile(models.Model):
 
 		if value and value.size > max_size:
 			raise serializers.ValidationError("The image file size should not exceed 2MB.")
-        
+
 		return value
 
 	def __str__(self):
 		return f"{self.user.username}'s profile"
-	
+
 	def enable_2fa(self):
 		if not self.has_2fa:
-			TOTPDevice.objects.create(user=self.user, name="default")
+			# Clean up any existing devices first
+			self.user.totpdevice_set.all().delete()
+			# Create a new device with proper issuer name
+			device = TOTPDevice.objects.create(user=self.user, name="default")
+			device.issuer = f"{getenv('NEXT_PUBLIC_WS_HOST')}:{getenv('NEXT_PUBLIC_WS_PORT')} - {self.user.username}"
+			device.save()
 			self.has_2fa = True
 			self.save()
-	
+
 	def disable_2fa(self):
+		# Delete all TOTP devices for this user
 		self.user.totpdevice_set.all().delete()
 		self.has_2fa = False
 		self.save()

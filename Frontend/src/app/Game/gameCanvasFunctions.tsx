@@ -1,6 +1,4 @@
 export type GameState = {
-	player1_username: string;
-	player2_username: string;
 	player1_position: [number, number];
 	player2_position: [number, number];
 	ball_speed: number;
@@ -54,7 +52,7 @@ export function drawGame(state: GameState, canvas: HTMLCanvasElement) {
 		state.ball_position[1] * state.resolution, // Y-center
 		1.5 * state.resolution, // Radius (10 pixels)
 		0,
-		Math.PI * 2
+		Math.PI * 2,
 	);
 	ctx.fill();
 

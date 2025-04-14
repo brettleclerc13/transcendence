@@ -185,44 +185,6 @@ export const fetchQrCode = async () => {
 	}
 };
 
-export const verifyOTP = async (otpData: { otp: number }) => {
-	try {
-		const cookieStore = await cookies();
-		const token = cookieStore.get("accessToken")?.value;
-		if (!token) {
-			return {
-				ok: false,
-				error: "Access token missing",
-			};
-		}
-
-		const response = await fetchWithAgent(
-			`${process.env.NEXT_PUBLIC_API_URL}/2fa/verify/`,
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify(otpData),
-			},
-		);
-
-		return await fetchGenericAPIResponses({
-			response,
-			defaultMessages: {
-				errorMessage: "Failed to verify 2FA OTP.",
-				successMessage: "2FA verification successful",
-			},
-		});
-	} catch (error) {
-		return {
-			ok: false,
-			error: (error as Error).message || "Failed to verify 2FA OTP.",
-		};
-	}
-};
-
 export const enable2FA = async (otpData: { otp: number }) => {
 	try {
 		const cookieStore = await cookies();
@@ -295,6 +257,93 @@ export const disable2FA = async (otpData: { otp: number }) => {
 		return {
 			ok: false,
 			error: (error as Error).message || "Failed to disable 2FA.",
+		};
+	}
+};
+
+export const verifyOTP = async (otpData: { otp: number }) => {
+	try {
+		const cookieStore = await cookies();
+		const token = cookieStore.get("accessToken")?.value;
+		if (!token) {
+			return {
+				ok: false,
+				error: "Access token missing",
+			};
+		}
+
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/2fa/verify/`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify(otpData),
+			},
+		);
+
+		return await fetchGenericAPIResponses({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to verify 2FA OTP.",
+				successMessage: "2FA verification successful",
+			},
+		});
+	} catch (error) {
+		return {
+			ok: false,
+			error: (error as Error).message || "Failed to verify 2FA OTP.",
+		};
+	}
+};
+
+export const checkTwoFactorActivation = async () => {
+	try {
+		const cookieStore = await cookies();
+		const token = cookieStore.get("accessToken")?.value;
+		if (!token) {
+			return {
+				ok: false,
+				error: "Access token missing",
+			};
+		}
+
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/2fa/check/`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+			},
+		);
+
+		const result = await fetchAPIResponseData({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to check if 2FA is active.",
+				successMessage: "2FA activation check successful",
+			},
+		});
+
+		if (result && result.ok)
+			return {
+				ok: true,
+				message: result.message,
+				has_2fa: result.data.has_2fa,
+			};
+		else
+			return {
+				ok: false,
+				error: result.error,
+			};
+	} catch (error) {
+		return {
+			ok: false,
+			error: (error as Error).message || "Failed to check if 2FA is active.",
 		};
 	}
 };
