@@ -3,9 +3,9 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
-		"dev": "next dev",
-		"build": "next build",
-		"start": "next start",
+		"dev": "NODE_ENV=development ts-node server.ts",
+		"build": "next build && tsc --project tsconfig.server.json",
+		"start": "NODE_ENV=production node dist/server.js",
 		"lint": "next lint",
 		"postinstall": "sed -i 's|/*# sourceMappingURL=bootstrap.min.css.map||g' node_modules/bootstrap/dist/css/bootstrap.min.css || true"
 	},
@@ -33,6 +33,7 @@
 		"eslint-config-next": "15.2.5",
 		"eslint-config-prettier": "^10.1.2",
 		"prettier": "^3.5.3",
-		"typescript": "^5.8.3"
+		"typescript": "^5.8.3",
+		"ts-node": "^10.9.1"
 	}
 }
