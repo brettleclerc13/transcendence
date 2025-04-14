@@ -28,7 +28,6 @@ export default function ProfileImage({
 			return;
 		}
 
-		// MIME type validation
 		const validImageTypes = [
 			"image/png",
 			"image/jpeg",
@@ -65,7 +64,6 @@ export default function ProfileImage({
 				const isJPEG = header.startsWith("ffd8ffe");
 				const isWebP = header.startsWith("52494646"); // WebP files start with RIFF
 
-				// Additional check for file extension
 				const fileExtension = file.name.split(".").pop()?.toLowerCase();
 				const validExtensions = ["png", "jpg", "jpeg", "webp"];
 				const hasValidExtension = validExtensions.includes(fileExtension || "");
