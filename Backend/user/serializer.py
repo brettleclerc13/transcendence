@@ -5,6 +5,7 @@ from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from django.contrib.auth import authenticate
 from bleach import clean
+from django_otp.plugins.otp_totp.models import TOTPDevice
 
 class UserProfileSerializer(serializers.ModelSerializer):
 	user = serializers.SerializerMethodField()
@@ -61,14 +62,39 @@ class UserSerializer(serializers.ModelSerializer):
 		return user
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+	otp = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
 	def validate(self, attrs):
 		email = attrs.get("username")  # `username` is the default field; treat it as `email`
 		password = attrs.get("password")
+		otp = attrs.get("otp")
 
 		user = authenticate(username=email, password=password)
 
 		if not user:
 			raise serializers.ValidationError("Invalid email or password")
+		
+		if user.profile.has_2fa and not otp:
+			return {
+                "otp_required": True,
+                "user_id": user.id,
+                "email": user.email,
+                "message": "2FA verification required"
+            }
+		
+		if user.profile.has_2fa and otp:
+			try:
+				# Try to find the most recent device
+				devices = TOTPDevice.objects.filter(user=user, name="default")
+				if devices.count() > 0:
+					device = devices.latest('id')
+				else:
+					raise serializers.ValidationError("2FA is not enabled")
+
+				if not device.verify_token(otp):
+					raise serializers.ValidationError("Invalid OTP")
+			except serializers.ValidationError:
+				raise serializers.ValidationError("Invalid OTP")
 
 		# Pass validated user to parent serializer
 		data = super().validate(attrs)

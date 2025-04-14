@@ -185,7 +185,7 @@ export const fetchQrCode = async () => {
 	}
 };
 
-export const enable2FA = async (otpData: { otp: number }) => {
+export const enable2FA = async (otpData: { otp: string }) => {
 	try {
 		const cookieStore = await cookies();
 		const token = cookieStore.get("accessToken")?.value;
@@ -223,7 +223,7 @@ export const enable2FA = async (otpData: { otp: number }) => {
 	}
 };
 
-export const disable2FA = async (otpData: { otp: number }) => {
+export const disable2FA = async (otpData: { otp: string }) => {
 	try {
 		const cookieStore = await cookies();
 		const token = cookieStore.get("accessToken")?.value;

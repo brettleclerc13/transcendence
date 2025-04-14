@@ -13,11 +13,9 @@ import "./profile.css";
 
 const twoFactorAuthSchema = z.object({
 	otp: z
-		.number()
-		.positive("OTP must be a positive number")
-		.refine((val) => val.toString().length === 6, {
-			message: "OTP must be of 6 digits",
-		}),
+		.string()
+		.length(6, "OTP code must be 6 digits")
+		.regex(/^\d+$/, "OTP code must contain only digits"),
 });
 
 export default function TwoFactorAuth({
@@ -66,13 +64,13 @@ export default function TwoFactorAuth({
 
 	useEffect(() => {
 		prepareAuthSetUp();
-	}, [prepareAuthSetUp]);
+	}, []);
 
 	async function handleTwoFactorAuthActivation(
 		_previousState: unknown,
 		formData: FormData,
 	) {
-		const otp = Number(formData.get("otp"));
+		const otp = formData.get("otp");
 
 		const validationResult = twoFactorAuthSchema.safeParse({ otp: otp });
 

@@ -23,6 +23,4 @@ RUN pip install --upgrade channels
 
 RUN chmod +x /app/entrypoint.sh
 
-#EXPOSE 8001
-
 CMD ["/app/entrypoint.sh"]

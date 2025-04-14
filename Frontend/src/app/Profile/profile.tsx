@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useActionState } from "react";
+import React, { useState, useActionState, useCallback } from "react";
 import "./profile.css";
 import { updateUserProfile } from "../utilities/profileActions";
 import { z } from "zod";
@@ -76,16 +76,17 @@ export default function Profile({
 		undefined,
 	);
 
-	const setAlertWithTimeout = (
-		alertData: { message: string; type: "danger" | "success" } | null,
-	) => {
-		setAlert(alertData);
-		if (alertData) {
-			setTimeout(() => {
-				setAlert(null);
-			}, 3000); // 3 seconds
-		}
-	};
+	const setAlertWithTimeout = useCallback(
+		(alertData: { message: string; type: "danger" | "success" } | null) => {
+			setAlert(alertData);
+			if (alertData) {
+				setTimeout(() => {
+					setAlert(null);
+				}, 3000); // 3 seconds
+			}
+		},
+		[],
+	);
 
 	async function handleUserProfileUpdate(
 		_previousState: unknown,

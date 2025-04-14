@@ -19,16 +19,11 @@ export default function PublicProfile( { username }: { username: string | undefi
             if (username) {
                 try {
                     const response = await fetchUserPublicProfile(username);
-                    console.log(response);
                     setPublicProfile(response);
-                    console.log(publicProfile);
                 } catch {
                     console.warn("An error happened while trying to fetch user public profile");
                 }
             }
-            // } else {
-            //     return <p>Username required do display user profile</p>;
-            // }
         };
 
         displayFriendProfile();
@@ -37,9 +32,9 @@ export default function PublicProfile( { username }: { username: string | undefi
     if (!publicProfile) {
         return <p>Loading profile...</p>;
     }
-    
+
     return (
-        <div className="profile-container">
+        <div className="public-profile-container">
             <div className="profile-header">
                 <img src={publicProfile.profile_picture ? `/api/${publicProfile.profile_picture}` : "/img/default.png"} alt="Profile" className="profile-image" />
                 <h2>{username}</h2>

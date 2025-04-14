@@ -31,11 +31,9 @@ export default function HeaderConnectButtons() {
 			const profileResults = await fetchUserProfile();
 
 			setUserProfile(profileResults);
-			console.log(profileResults);
 		} catch (err) {
 			console.warn("Error fetching user profile:", err);
 		}
-		//finally { setLoading(false)}
 	};
 
 	useEffect(() => {

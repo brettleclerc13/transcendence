@@ -58,12 +58,11 @@ const FriendAndInvitationList: React.FC<{
 					Array.isArray(friendListResponse.data)
 				) {
 					setFriends(friendListResponse.data);
-					// console.log("Friends profile picture: ", friends);
 				} else if (friendListResponse.status === "warning") {
-					console.log("Warning:", friendListResponse.message);
+					console.warn("Warning:", friendListResponse.message);
 					setFriends([]);
 				} else if (friendListResponse.status === false) {
-					console.log("Error:", friendListResponse.error);
+					console.warn("Error:", friendListResponse.error);
 					setFriends([]);
 				} else {
 					// Si ce n'est pas un tableau, on affiche une erreur ou on gère l'exception
@@ -77,10 +76,10 @@ const FriendAndInvitationList: React.FC<{
 				) {
 					setInvitations(invitationListResponse.data);
 				} else if (invitationListResponse.status === "warning") {
-					console.log("Warning:", invitationListResponse.message);
+					console.warn("Warning:", invitationListResponse.message);
 					setInvitations([]);
 				} else if (invitationListResponse.status === false) {
-					console.log("Error:", invitationListResponse.error);
+					console.warn("Error:", invitationListResponse.error);
 					setInvitations([]);
 				}
 

@@ -7,13 +7,16 @@ import { fetchWithAgent } from "@/lib/fetchWithAgent";
 type LoginProps = {
 	email: string;
 	pass: string;
+	otp?: string;
 };
 
-export const login = async ({ email, pass }: LoginProps) => {
+export const login = async ({ email, pass, otp }: LoginProps) => {
 	const requestData = {
 		username: email,
 		password: pass,
+		otp: otp,
 	};
+
 	const response = await fetchWithAgent(
 		`${process.env.NEXT_PUBLIC_API_URL}/token/`,
 		{
@@ -41,9 +44,22 @@ export const login = async ({ email, pass }: LoginProps) => {
 			data.message || // Fallback to a generic message
 			data.detail || // Another common key for error messages
 			"Failed to login user.";
-		throw new Error(errorMessage);
+		return {
+			ok: false,
+			error: errorMessage,
+		};
 	} else {
 		data = await response.json();
+
+		if (data.otp_required) {
+			return {
+				ok: true,
+				otp_required: true,
+				user_id: data.user_id,
+				email: data.email,
+				message: data.message,
+			};
+		}
 
 		const accessToken = data.access;
 		const refreshToken = data.refresh;
@@ -58,7 +74,10 @@ export const login = async ({ email, pass }: LoginProps) => {
 		cookieStore.set("refreshToken", refreshToken);
 		cookieStore.set("tokenExpiry", expiresAt.toString());
 
-		return data;
+		return {
+			ok: true,
+			message: "Login successful! Redirecting...",
+		};
 	}
 };
 
@@ -132,8 +151,15 @@ export const register = async (requestData: RegisterProps) => {
 			data.message || // Fallback to a generic message
 			data.detail || // Another common key for error messages
 			"Failed to register user.";
-		throw new Error(errorMessage);
+		return {
+			ok: false,
+			error: errorMessage,
+		};
 	} else {
-		return await response.json();
+		return {
+			ok: true,
+			message: "Registration successful! Redirecting...",
+			data: await response.json(),
+		};
 	}
 };
