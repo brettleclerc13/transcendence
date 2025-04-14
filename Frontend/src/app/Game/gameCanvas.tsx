@@ -331,7 +331,7 @@ export default function GameCanvas({
 
 	useEffect(() => {
 		if (status === "ending" && playerRole) {
-		  const delay = playerRole === "player_1" ? 3000 : 3150; // 3s or 3.2s
+		  const delay = playerRole === "player_1" ? 3000 : 3150; // 3s or 3.15s
 		  const timer = setTimeout(() => {
 			setGameType("lobby");
 		  }, delay);

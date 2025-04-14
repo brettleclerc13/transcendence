@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getCookie } from "cookies-next/client";
 import { leaveTournament } from "../utilities/tournamentActions";
 import GameCanvas from "./gameCanvas";
@@ -68,6 +68,9 @@ export default function TournamentCanvas({
 	const [countdownMessage, setCountdownMessage] = useState<string | undefined>(
 		undefined,
 	);
+	const playersMapRef = useRef<Record<string, TournamentPlayer>>({});
+	const tournamentStateRef = useRef<Record<string, string>>({});
+	const displayedPlayersRef = useRef<string[]>([]);
 
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
@@ -88,7 +91,7 @@ export default function TournamentCanvas({
 
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
-			console.log("Received WebSocket message: ", data);
+			console.log("WS message:", data.type, data, "at", performance.now());
 
 			if (data.type === "Connected to tournament") {
 				console.log("Ready to send data");
@@ -102,9 +105,8 @@ export default function TournamentCanvas({
 			// Handle when a new user joins
 			if (data.type === "new_user") {
 				const newPlayers: Record<string, TournamentPlayer> = {};
-				
-				Object.entries(data.users).forEach(([key, player]) => {
 
+				Object.entries(data.users).forEach(([key, player]) => {
 					if (isTournamentPlayer(player)) {
 						newPlayers[key] = {
 							id: player.id, // Ensure it is always a string
@@ -115,22 +117,24 @@ export default function TournamentCanvas({
 					} else {
 						console.warn(`Invalid player data for ${key}:`, player);
 					}
-				})
-			  
+				});
+
 				setPlayersMap((prev) => {
 					const updatedMap = { ...prev, ...newPlayers };
-					updateDisplayedPlayers(tournamentState, updatedMap); // Use latest state
+					playersMapRef.current = updatedMap;
+					updateDisplayedPlayers(tournamentStateRef.current, updatedMap); // Use latest state
 					return updatedMap;
 				});
 			}
 
 			// Handle tournament state updates
 			if (data.type === "tournament_display_update") {
-				console.log("Tournament display update: ", data.state);
-				setTournamentState(() => {
-				  const newState = data.state;
-				  updateDisplayedPlayers(newState, playersMap); // Use latest map
-				  return newState;
+				//console.log("Tournament display update: ", data.state);
+				setTournamentState((prevState: Record<string, string>) => {
+					const newState = data.state;
+					tournamentStateRef.current = newState;
+					updateDisplayedPlayers(newState, playersMapRef.current); // Use latest map
+					return newState;
 				});
 			}
 
@@ -141,7 +145,7 @@ export default function TournamentCanvas({
 			// Handle when a match is created
 			if (data.type === "tournament_match_created") {
 				setMatchID(data.match_id);
-				setGameOn(true);
+				setTimeout(() => setGameOn(true), 150); // 0.5s
 			}
 		};
 
@@ -168,15 +172,23 @@ export default function TournamentCanvas({
 		"second_layer_2",
 		"third_layer",
 	];
-	  
+
 	const updateDisplayedPlayers = (
 		currentState: Record<string, string>,
-		playerMap: Record<string, TournamentPlayer>
+		playerMap: Record<string, TournamentPlayer>,
 	) => {
 		const updatedNames = layers.map((layer) => {
-		  const playerID = currentState[layer];
-		  return playerMap[playerID]?.tournament_name || "NA";
+			const playerID = currentState[layer];
+
+			//  console.log(
+			//	`Layer: ${layer}, Player ID: ${playerID}, Player Found:`,
+			//	playerMap[playerID],
+			//);
+			return playerMap[playerID]?.tournament_name || "NA";
 		});
+		console.log("UPDATED NAMES: ", updatedNames);
+		displayedPlayersRef.current = updatedNames;
+		//console.log("THE ACTUAL DISPLAY: ", displayedPlayersRef);
 		setDisplayedPlayers(updatedNames);
 	};
 
@@ -231,14 +243,26 @@ export default function TournamentCanvas({
 				<div className="round-container">
 					<h3 className="round-title">Round 1</h3>
 					<div className="round">
-						<PlayerBox className="player1" name={displayedPlayers[0]} />
+						<PlayerBox
+							className="player1"
+							name={displayedPlayersRef.current[0]}
+						/>
 						<div className="match-line vertical vertical1"></div>
 						<div className="match-line horizontal horizontal1"></div>
-						<PlayerBox className="player2" name={displayedPlayers[1]} />
-						<PlayerBox className="player3" name={displayedPlayers[2]} />
+						<PlayerBox
+							className="player2"
+							name={displayedPlayersRef.current[1]}
+						/>
+						<PlayerBox
+							className="player3"
+							name={displayedPlayersRef.current[2]}
+						/>
 						<div className="match-line vertical vertical2"></div>
 						<div className="match-line horizontal horizontal2"></div>
-						<PlayerBox className="player4" name={displayedPlayers[3]} />
+						<PlayerBox
+							className="player4"
+							name={displayedPlayersRef.current[3]}
+						/>
 					</div>
 				</div>
 
@@ -246,10 +270,16 @@ export default function TournamentCanvas({
 				<div className="round-container">
 					<h3 className="round-title">Round 2</h3>
 					<div className="round">
-						<PlayerBox className="player5" name={displayedPlayers[4]} />
+						<PlayerBox
+							className="player5"
+							name={displayedPlayersRef.current[4]}
+						/>
 						<div className="match-line vertical vertical3"></div>
 						<div className="match-line horizontal horizontal3"></div>
-						<PlayerBox className="player6" name={displayedPlayers[5]} />
+						<PlayerBox
+							className="player6"
+							name={displayedPlayersRef.current[5]}
+						/>
 					</div>
 				</div>
 
@@ -257,7 +287,10 @@ export default function TournamentCanvas({
 				<div className="round-container">
 					<h3 className="round-title">Winner!👑</h3>
 					<div className="round">
-						<PlayerBox className="player7" name={displayedPlayers[6]} />
+						<PlayerBox
+							className="player7"
+							name={displayedPlayersRef.current[6]}
+						/>
 					</div>
 				</div>
 			</div>
