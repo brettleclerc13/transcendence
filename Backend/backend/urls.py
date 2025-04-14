@@ -20,7 +20,7 @@ from django.urls import path
 from django.conf.urls.static import static
 from match.views import MatchAPIView, MatchRetrieveUpdateAPIView, MatchHistoryView, MatchCLIView, MatchCheckView
 from tmatch.views import TournamentAPIView, TournamentRetrieveUpdateAPIView, TournamentHistoryView, TournamentCheckView
-from user.views import RegisterAPIView, LogoutAPIView, ProfileAPIView, PublicProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView, GenerateQRCodeView, Enable2FAView, Disable2FAView, Verify2FAView
+from user.views import RegisterAPIView, LogoutAPIView, ProfileAPIView, PublicProfileAPIView, CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView, BlockUserAPIView, UnblockUserAPIView, BlockedUsersAPIView, FriendListAPIView, MessageAPIView, SearchAPIView, SendFriendRequestAPIView, AcceptFriendRequestAPIView, DeclineFriendRequestAPIView, PendingFriendRequestsAPIView, GetOrCreateConversationAPIView, GenerateQRCodeView, Enable2FAView, Disable2FAView, Verify2FAView, Check2FAView
 
 urlpatterns = [
 	path('admin/', admin.site.urls),
@@ -34,6 +34,7 @@ urlpatterns = [
     path("2fa/enable/", Enable2FAView.as_view(), name="enable_2fa"),
     path("2fa/disable/", Disable2FAView.as_view(), name="disable_2fa"),
     path("2fa/verify/", Verify2FAView.as_view(), name="verify_2fa"),
+    path("2fa/check/", Check2FAView.as_view(), name="check_2fa"),
 
 	path('matches/', MatchAPIView.as_view(), name="Match-get-post"),
 	path('matches/<uuid:id>/', MatchRetrieveUpdateAPIView.as_view(), name="match-patch"),

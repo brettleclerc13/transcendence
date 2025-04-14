@@ -1,5 +1,5 @@
 import { Doughnut } from "react-chartjs-2";
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { fetchSimpleMatchHistory } from "../utilities/matchActions";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import type { ChartData } from "chart.js";
@@ -8,6 +8,7 @@ import "./profile.css";
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 type SimpleMatchHistory = {
+	id: string;
 	created_at: string;
 	match_type: string;
 	score_player1: number;
@@ -22,7 +23,7 @@ export default function MatchHistory({
 	username,
 }: {
 	setAlert: (
-		alert: { message: string; type: "danger" | "success" } | null
+		alert: { message: string; type: "danger" | "success" } | null,
 	) => void;
 	username: string | undefined;
 }) {
@@ -36,51 +37,51 @@ export default function MatchHistory({
 	const [simpleMatches, setSimpleMatches] = useState<SimpleMatchHistory[]>([]);
 	const [chartOptions, setChartOptions] = useState({});
 
-	useEffect(() => {
-		const fetchMatchHistoryData = async () => {
-			const matchResults = await fetchSimpleMatchHistory();
+	const fetchMatchHistoryData = useCallback(async () => {
+		const matchResults = await fetchSimpleMatchHistory();
 
-			if (matchResults && matchResults.ok) {
-				const matchData = matchResults || [];
-				setSimpleMatches(matchData);
-				// Calcul des statistiques Win/Lose
-				const wins = matchData.filter(
-					(match: SimpleMatchHistory) => match.winner_username === username
-				).length;
-				const totalMatches = matchData.length;
-				const losses = totalMatches - wins;
+		if (matchResults && matchResults.ok && "data" in matchResults) {
+			const matchData = matchResults.data || [];
+			setSimpleMatches(matchData);
+			// Calcul des statistiques Win/Lose
+			const wins = matchData.filter(
+				(match: SimpleMatchHistory) => match.winner_username === username,
+			).length;
+			const totalMatches = matchData.length;
+			const losses = totalMatches - wins;
 
-				// Données pour la roue
-				setChartData({
-					labels: ["Wins", "Losses"],
-					datasets: [
-						{
-							data: [wins, losses],
-							backgroundColor: ["#4caf50", "#f44336"], // Couleurs pour Win et Lose
-							borderWidth: 1,
-						},
-					],
-				});
-
-				setChartOptions({
-					cutout: "70%", // Taille du "trou" au centre de l'anneau
-					plugins: {
-						legend: {
-							display: true,
-							position: "bottom",
-						},
+			// Données pour la roue
+			setChartData({
+				labels: ["Wins", "Losses"],
+				datasets: [
+					{
+						data: [wins, losses],
+						backgroundColor: ["#4caf50", "#f44336"], // Couleurs pour Win et Lose
+						borderWidth: 1,
 					},
-				});
-			} else {
-				setAlert({
-					message: matchResults.error,
-					type: "danger",
-				});
-			}
-		};
+				],
+			});
 
+			setChartOptions({
+				cutout: "70%", // Taille du "trou" au centre de l'anneau
+				plugins: {
+					legend: {
+						display: true,
+						position: "bottom",
+					},
+				},
+			});
+		} else {
+			setAlert({
+				message: `Match history error: ${matchResults.error}`,
+				type: "danger",
+			});
+		}
+	}, [setAlert, username]);
+
+	useEffect(() => {
 		fetchMatchHistoryData();
-	}, []);
+	}, [fetchMatchHistoryData]);
 
 	return (
 		<>
@@ -99,12 +100,7 @@ export default function MatchHistory({
 						<tbody>
 							{simpleMatches?.length > 0 ? (
 								simpleMatches.map((match) => (
-									<tr
-										key={new Intl.DateTimeFormat("en-GB", {
-											dateStyle: "long",
-											timeStyle: "short",
-										}).format(new Date(match.created_at))}
-									>
+									<tr key={match.id}>
 										<th scope="row">
 											{new Intl.DateTimeFormat("en-GB", {
 												dateStyle: "long",

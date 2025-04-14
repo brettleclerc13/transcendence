@@ -8,12 +8,16 @@ RUN npm install
 
 
 COPY . .
+
 ENV NODE_EXTRA_CA_CERTS=/etc/nginx/ssl/transcendence.pem
 
+ARG NEXT_PUBLIC_WS_HOST
+ARG NEXT_PUBLIC_WS_PORT
 
-#RUN npm run build
+ENV NEXT_PUBLIC_WS_HOST=$NEXT_PUBLIC_WS_HOST
+ENV NEXT_PUBLIC_WS_PORT=$NEXT_PUBLIC_WS_PORT
 
-#EXPOSE 3000
+RUN npm run build
 
-#CMD ["npm", "run", "start"]
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "start"]
+# CMD ["npm", "run", "dev"]

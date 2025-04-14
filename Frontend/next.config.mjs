@@ -21,6 +21,16 @@ const nextConfig = {
 			},
 		];
 	},
+	images: {
+		remotePatterns: [
+			{
+				protocol: "https",
+				hostname: "127.0.0.1",
+				port: process.env.NEXT_PUBLIC_WS_PORT,
+				pathname: "/**",
+			},
+		],
+	},
 };
 
 export default nextConfig;

@@ -1,4 +1,3 @@
-import Hero from "./Hero/hero";
 import HeaderComponent from "./Header/headerComponent";
 import "./page.css";
 import HeroWrapper from "./Hero/heroWrapper";

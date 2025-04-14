@@ -2,19 +2,31 @@
 
 import { cookies } from "next/headers";
 import { fetchWithAgent } from "@/lib/fetchWithAgent";
+import type { Friend, Invitation } from "../utilities/charTypes";
 
-type ApiResponse<T = any> =
+type ApiResponse<T = unknown> =
 	| { status: true; data?: T }
 	| { status: "warning"; message: string }
 	| { status: false; error: string };
+
+// interface Friend {
+//   username: string;
+//   id: number;
+//   profile_picture?: string;
+// }
+
+// interface Invitation {
+//   id: number;
+//   sender: string;
+// }
 
 export const getToken = async () => {
 	const cookieStore = await cookies();
 	return cookieStore.get("accessToken")?.value;
 };
 
-const handleResponse = async <T = any,>(
-	response: Response,
+const handleResponse = async <T = unknown>(
+	response: Response
 ): Promise<ApiResponse<T>> => {
 	const text = await response.text();
 	let data = null;
@@ -51,7 +63,7 @@ const handleResponse = async <T = any,>(
 
 export const SearchFriend = async (
 	searchValue: string,
-): Promise<ApiResponse<any[]>> => {
+): Promise<ApiResponse<Friend[]>> => {
 	try {
 		const response = await fetchWithAgent(
 			`${process.env.NEXT_PUBLIC_API_URL}/search/?query=${searchValue}`,
@@ -62,16 +74,16 @@ export const SearchFriend = async (
 				},
 			},
 		);
-		return await handleResponse(response);
-	} catch (error: any) {
+		return await handleResponse<Friend[]>(response);
+	} catch (error: unknown) {
 		return {
 			status: false,
-			error: error.message || "An unexpected error occurred.",
+			error: (error instanceof Error ? error.message : "An unexpected error occurred."),
 		};
 	}
 };
 
-export const FetchFriends = async (): Promise<ApiResponse<any[]>> => {
+export const FetchFriends = async (): Promise<ApiResponse<Friend[]>> => {
 	const token = await getToken();
 	if (!token) return { status: false, error: "Access token missing" };
 
@@ -86,13 +98,13 @@ export const FetchFriends = async (): Promise<ApiResponse<any[]>> => {
 				},
 			},
 		);
-		return await handleResponse(response);
-	} catch (error: any) {
-		return { status: false, error: error.message || "Network error (friends)" };
+		return await handleResponse<Friend[]>(response);
+	} catch (error: unknown) {
+		return { status: false, error: (error instanceof Error ? error.message : "Network error (friends)") };
 	}
 };
 
-export const FetchInvitations = async (): Promise<ApiResponse<any[]>> => {
+export const FetchInvitations = async (): Promise<ApiResponse<Invitation[]>> => {
 	const token = await getToken();
 	if (!token) return { status: false, error: "Access token missing" };
 
@@ -107,11 +119,11 @@ export const FetchInvitations = async (): Promise<ApiResponse<any[]>> => {
 				},
 			},
 		);
-		return await handleResponse(response);
-	} catch (error: any) {
+		return await handleResponse<Invitation[]>(response);
+	} catch (error: unknown) {
 		return {
 			status: false,
-			error: error.message || "Network error (invitations)",
+			error: (error instanceof Error ? error.message : "Network error (invitations)"),
 		};
 	}
 };
@@ -135,10 +147,10 @@ export const SendFriendRequest = async (
 			},
 		);
 		return await handleResponse(response);
-	} catch (error: any) {
+	} catch (error: unknown) {
 		return {
 			status: false,
-			error: error.message || "An unexpected error occurred.",
+			error: (error instanceof Error ? error.message : "An unexpected error occurred."),
 		};
 	}
 };
@@ -159,10 +171,10 @@ export const AcceptInvitation = async (id: number): Promise<ApiResponse> => {
 			},
 		);
 		return await handleResponse(response);
-	} catch (error: any) {
+	} catch (error: unknown) {
 		return {
 			status: false,
-			error: error.message || "Network error (accept invitation)",
+			error: (error instanceof Error ? error.message : "Network error (accept invitation)"),
 		};
 	}
 };
@@ -183,10 +195,10 @@ export const DeclineInvitation = async (id: number): Promise<ApiResponse> => {
 			},
 		);
 		return await handleResponse(response);
-	} catch (error: any) {
+	} catch (error: unknown) {
 		return {
 			status: false,
-			error: error.message || "Network error (decline invitation)",
+			error: (error instanceof Error ? error.message : "Network error (decline invitation)"),
 		};
 	}
 };

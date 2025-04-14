@@ -2,8 +2,14 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { z } from "zod";
-import { fetchQrCode, verifyOTP } from "../utilities/profileActions";
+import {
+	fetchQrCode,
+	checkTwoFactorActivation,
+	enable2FA,
+	disable2FA,
+} from "../utilities/profileActions";
 import Image from "next/image";
+import "./profile.css";
 
 const twoFactorAuthSchema = z.object({
 	otp: z
@@ -18,34 +24,53 @@ export default function TwoFactorAuth({
 	setAlert,
 }: {
 	setAlert: (
-		alertMessage: { message: string; type: "danger" | "success" } | null
+		alertMessage: { message: string; type: "danger" | "success" } | null,
 	) => void;
 }) {
 	const [qrCode, setQrCode] = useState<string | undefined>(undefined);
 	const [isActive, setIsActive] = useState<boolean>(false);
 	const [otpData, otpAction, otpPending] = useActionState(
 		handleTwoFactorAuthActivation,
-		undefined
+		undefined,
 	);
 
+	const checkTwoFactor = async () => {
+		const twoFaActiveResult = await checkTwoFactorActivation();
+		if (
+			twoFaActiveResult &&
+			twoFaActiveResult.ok &&
+			"has_2fa" in twoFaActiveResult
+		) {
+			setIsActive(twoFaActiveResult.has_2fa);
+		} else {
+			setAlert({
+				message: twoFaActiveResult.error || "Failed to check 2FA activation",
+				type: "danger",
+			});
+		}
+	};
+
+	const prepareAuthSetUp = async () => {
+		const QrResult = await fetchQrCode();
+		if (QrResult && !QrResult.ok) {
+			setAlert({
+				message: "Failed to load QR Code for 2FA activation",
+				type: "danger",
+			});
+		} else {
+			setQrCode(QrResult.qr_code);
+		}
+
+		await checkTwoFactor();
+	};
+
 	useEffect(() => {
-		const prepareAuthSetUp = async () => {
-			const result = await fetchQrCode();
-			if (result && !result.ok) {
-				setAlert({
-					message: "Failed to load QR Code for 2FA activation",
-					type: "danger",
-				});
-			} else {
-				setQrCode(result.qr_code);
-			}
-		};
 		prepareAuthSetUp();
-	}, []);
+	}, [prepareAuthSetUp]);
 
 	async function handleTwoFactorAuthActivation(
 		_previousState: unknown,
-		formData: FormData
+		formData: FormData,
 	) {
 		const otp = Number(formData.get("otp"));
 
@@ -59,16 +84,20 @@ export default function TwoFactorAuth({
 			};
 		} else {
 			if (validationResult.data) {
-				const result = await verifyOTP(validationResult.data);
-				if (result && !result.ok) {
+				let result;
+				if (isActive) result = await disable2FA(validationResult.data);
+				else result = await enable2FA(validationResult.data);
+				if (result && result.ok && "message" in result) {
 					setAlert({
-						message: result.error || "Failed to activate 2FA",
-						type: "danger",
+						message:
+							result.message ||
+							`2FA ${isActive} ? "deactivation successful" : "activation successful"`,
+						type: "success",
 					});
 				} else {
 					setAlert({
-						message: result.error || "2FA activation successful",
-						type: "success",
+						message: result.error || "Failed to activate 2FA",
+						type: "danger",
 					});
 				}
 			} else {
@@ -76,6 +105,7 @@ export default function TwoFactorAuth({
 					otpError: "Invalid OTP",
 				};
 			}
+			await prepareAuthSetUp();
 		}
 	}
 
@@ -97,9 +127,25 @@ export default function TwoFactorAuth({
 				{otpData?.otpError && (
 					<p className="input-error">{otpData?.otpError}</p>
 				)}
-				<button type="submit" formAction={otpAction} disabled={otpPending}>
-					{otpPending ? "Loading..." : "Activate 2FA"}
-				</button>
+				{isActive ? (
+					<button
+						type="submit"
+						formAction={otpAction}
+						disabled={otpPending}
+						className="button-disable"
+					>
+						{otpPending ? "Loading..." : "Disable 2FA"}
+					</button>
+				) : (
+					<button
+						type="submit"
+						formAction={otpAction}
+						disabled={otpPending}
+						className="button-enable"
+					>
+						{otpPending ? "Loading..." : "Enable 2FA"}
+					</button>
+				)}
 			</form>
 		</div>
 	);

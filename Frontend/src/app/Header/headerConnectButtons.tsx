@@ -136,8 +136,6 @@ export default function HeaderConnectButtons() {
 									: "/img/default.png"
 							}
 							alt="Profile Image in navbar"
-							width={100}
-							height={100}
 							className="profile-picture-header"
 						/>
 					</button>

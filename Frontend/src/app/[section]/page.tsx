@@ -1,4 +1,3 @@
-import Hero from "../Hero/hero";
 import HeaderComponent from "../Header/headerComponent";
 import LoginForm from "@/app/User/loginForm";
 import RegisterForm from "@/app/User/registerForm";
@@ -22,7 +21,7 @@ export default async function SectionPage(props: {
 	];
 
 	const params = await props.params;
-	let section = await Promise.resolve(params.section);
+	const section = await Promise.resolve(params.section);
 
 	if (!existingSections.includes(section)) redirect("/");
 

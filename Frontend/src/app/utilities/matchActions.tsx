@@ -160,16 +160,13 @@ export const fetchSimpleMatchHistory = async () => {
 			},
 		);
 
-		const result = await fetchAPIResponseData({
+		return await fetchAPIResponseData({
 			response,
 			defaultMessages: {
 				errorMessage: "Failed to fetch user 1v1 match history.",
 				successMessage: "Successfully fetched user 1v1 match history",
 			},
 		});
-
-		if (result.ok) return result.data;
-		else return result;
 	} catch (error) {
 		return {
 			ok: false,

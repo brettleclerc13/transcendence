@@ -1,4 +1,6 @@
 import React, { useRef } from "react";
+import "./liveChat.css";
+import type { UserProfileData } from "../utilities/profileActions";
 
 interface Friend {
 	id: number;
@@ -17,13 +19,7 @@ interface Message {
 interface CurrentChatProps {
 	friend: Friend;
 	messages: Message[];
-	currentUser: {
-		id: number;
-		username: string;
-		email: string;
-		profile_picture: string | null;
-		is_online: boolean;
-	};
+	currentUser: UserProfileData;
 }
 
 const CurrentChat: React.FC<CurrentChatProps> = ({
@@ -33,11 +29,8 @@ const CurrentChat: React.FC<CurrentChatProps> = ({
 }) => {
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
 	const sortedMessages = [...messages].sort(
-		(a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+		(a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
 	);
-
-	console.log("PP current User : " ,currentUser.profile_picture);
-	console.log("PP friend : ", friend.profile_picture);
 
 	return (
 		<div
@@ -57,14 +50,22 @@ const CurrentChat: React.FC<CurrentChatProps> = ({
 						>
 							{!isSent && (
 								<img
-									src={friend.profile_picture ? `${friend.profile_picture}` : "./img/default.png"}
+									src={
+										friend.profile_picture
+											? `/api/${friend.profile_picture}`
+											: "/img/default.png"
+									}
 									alt={`${friend.username}'s avatar`}
 								/>
 							)}
 							<div className="message-bubble">{message.text}</div>
 							{isSent && (
 								<img
-									src={currentUser.profile_picture ? `/api/${currentUser.profile_picture}` : "./img/default.png"}
+									src={
+										currentUser.profile_picture
+											? `/api/${currentUser.profile_picture}`
+											: "/img/default.png"
+									}
 									alt={`Your avatar`}
 								/>
 							)}
