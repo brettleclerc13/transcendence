@@ -45,7 +45,6 @@ export default function LoginForm() {
 		const email = formData.get("email") as string;
 		const password = formData.get("password") as string;
 		const otp = formData.get("otpCode") as string;
-		console.log("OTP:", otp);
 
 		if (otpRequired && credentials) {
 			const validationResult = otpSchema.safeParse({ otp: otp });

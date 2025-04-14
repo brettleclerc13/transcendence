@@ -91,10 +91,8 @@ export default function TournamentCanvas({
 
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
-			console.log("WS message:", data.type, data, "at", performance.now());
 
 			if (data.type === "Connected to tournament") {
-				console.log("Ready to send data");
 				ws.send(
 					JSON.stringify({
 						type: "user_connected",
@@ -129,7 +127,6 @@ export default function TournamentCanvas({
 
 			// Handle tournament state updates
 			if (data.type === "tournament_display_update") {
-				//console.log("Tournament display update: ", data.state);
 				setTournamentState((prevState: Record<string, string>) => {
 					const newState = data.state;
 					tournamentStateRef.current = newState;
@@ -180,15 +177,9 @@ export default function TournamentCanvas({
 		const updatedNames = layers.map((layer) => {
 			const playerID = currentState[layer];
 
-			//  console.log(
-			//	`Layer: ${layer}, Player ID: ${playerID}, Player Found:`,
-			//	playerMap[playerID],
-			//);
 			return playerMap[playerID]?.tournament_name || "NA";
 		});
-		console.log("UPDATED NAMES: ", updatedNames);
 		displayedPlayersRef.current = updatedNames;
-		//console.log("THE ACTUAL DISPLAY: ", displayedPlayersRef);
 		setDisplayedPlayers(updatedNames);
 	};
 

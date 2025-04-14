@@ -12,7 +12,6 @@ export type GameState = {
 };
 
 export function drawGame(state: GameState, canvas: HTMLCanvasElement) {
-	//console.log("Drawing game state:", state);
 
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
