@@ -287,9 +287,20 @@ class ProfileAPIView(APIView):
 		profile = user.profile
 
 		if "profile_picture" in request.FILES:
-			profile.profile_picture = request.FILES["profile_picture"]
-			profile.save()
-			return Response({"message": "Profile picture updated successfully.", "profile_picture": profile.profile_picture.url}, status=status.HTTP_200_OK)
+			try:
+				# Validate the file using our custom validator
+				file = request.FILES["profile_picture"]
+				validated_file = profile.validate_profile_picture(file)
+
+				# If validation passes, save the file
+				profile.profile_picture = validated_file
+				profile.save()
+				return Response({
+					"message": "Profile picture updated successfully.",
+					"profile_picture": profile.profile_picture.url
+				}, status=status.HTTP_200_OK)
+			except Exception as e:
+				return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 		return Response({"error": "No profile picture provided."}, status=status.HTTP_400_BAD_REQUEST)
 

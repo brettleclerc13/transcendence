@@ -3,6 +3,17 @@ from django.contrib.auth.models import User
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from os import getenv
 from rest_framework import serializers
+from django.core.exceptions import ValidationError
+import os
+import mimetypes
+
+# Try to import python-magic, but provide fallback if not available
+try:
+    import magic
+    HAS_MAGIC = True
+except ImportError:
+    HAS_MAGIC = False
+    print("Warning: python-magic is not installed. Using fallback file type detection.")
 
 
 def user_directory_path(instance, filename):
@@ -23,10 +34,61 @@ class UserProfile(models.Model):
 	has_2fa = models.BooleanField(default=False)
 
 	def validate_profile_picture(self, value):
-		max_size = 2 * 1024 * 1024  # 2MB
+		if not value:
+			return value
 
-		if value and value.size > max_size:
+		# Size validation
+		max_size = 2 * 1024 * 1024  # 2MB
+		if value.size > max_size:
 			raise serializers.ValidationError("The image file size should not exceed 2MB.")
+
+		# File extension validation
+		ext = os.path.splitext(value.name)[1].lower()
+		valid_extensions = ['.png', '.jpg', '.jpeg', '.webp']
+		if ext not in valid_extensions:
+			raise serializers.ValidationError(f"Unsupported file extension. Allowed extensions are: {', '.join(valid_extensions)}")
+
+		# Content type validation
+		valid_mime_types = ['image/png', 'image/jpeg', 'image/webp']
+
+		if HAS_MAGIC:
+			try:
+				# Read the first 2048 bytes to determine file type
+				file_content = value.read(2048)
+				mime = magic.Magic(mime=True)
+				content_type = mime.from_buffer(file_content)
+
+				value.seek(0)
+
+				if content_type not in valid_mime_types:
+					raise serializers.ValidationError(
+						f"Unsupported file type. File appears to be {content_type}. Allowed types are: {', '.join(valid_mime_types)}"
+					)
+			except Exception as e:
+				raise serializers.ValidationError(f"Error validating file: {str(e)}")
+		else:
+			# Fallback method using file extension and basic checks
+			try:
+				# Check file signature manually for common image formats
+				file_content = value.read(8)  # Read first 8 bytes0
+				value.seek(0)
+
+				# Convert bytes to hex for signature checking
+				hex_signature = ''.join([f'{byte:02x}' for byte in file_content])
+
+				# Check signatures
+				is_png = hex_signature.startswith('89504e47')
+				is_jpeg = hex_signature.startswith('ffd8ff')
+				is_webp = b'WEBP' in file_content
+
+				if not (is_png or is_jpeg or is_webp):
+					guessed_type = mimetypes.guess_type(value.name)[0]
+					if guessed_type not in valid_mime_types:
+						raise serializers.ValidationError(
+							f"File does not appear to be a valid image. Allowed types are: PNG, JPEG, WebP"
+						)
+			except Exception as e:
+				raise serializers.ValidationError(f"Error validating file: {str(e)}")
 
 		return value
 
