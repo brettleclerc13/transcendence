@@ -2,7 +2,7 @@ FROM python:3.13-alpine-slim@sha256:18159b2be11db91f84b8f8f655cd860f805dbd9e49a5
 
 WORKDIR /app
 
-RUN apk update && apk add --no-cache libpq-dev gcc curl openssl netcat-openbsd redis && rm -rf /var/cache/apk/*
+RUN apk update && apk add --no-cache libpq-dev gcc curl openssl netcat-openbsd redis file libmagic && rm -rf /var/cache/apk/*
 
 COPY requirements.txt .
 COPY entrypoint.sh .
