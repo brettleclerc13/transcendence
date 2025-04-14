@@ -23,14 +23,14 @@ export const registerSchema = z.object({
 		.max(128, "Password is too long")
 		.regex(
 			/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#?_])[a-zA-Z0-9!@#?_]+$/,
-			"Password must contain at least one uppercase character, one number, and one special character (e.g., ! @ # ? _)"
+			"Password must contain at least one uppercase character, one number, and one special character (e.g., ! @ # ? _)",
 		),
 	age: z
 		.number()
 		.positive("Age must be a positive number")
 		.max(
 			123,
-			"The oldest human, Jeanne Calment, lived till the age of 122 years"
+			"The oldest human, Jeanne Calment, lived till the age of 122 years",
 		)
 		.optional(),
 	nationality: z.string().max(254, "Nationality is too long").optional(),
@@ -39,13 +39,13 @@ export const registerSchema = z.object({
 
 export default function RegisterForm() {
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
-		null
+		null,
 	);
 	const router = useRouter();
 
 	const [registerData, registerAction, registerPending] = useActionState(
 		handleSubmit,
-		undefined
+		undefined,
 	);
 
 	async function handleSubmit(_previousState: unknown, formData: FormData) {
@@ -67,22 +67,22 @@ export default function RegisterForm() {
 
 		if (!validationResult.success) {
 			const emailError = validationResult.error.errors.find(
-				(err) => err.path[0] === "email"
+				(err) => err.path[0] === "email",
 			);
 			const usernameError = validationResult.error.errors.find(
-				(err) => err.path[0] === "username"
+				(err) => err.path[0] === "username",
 			);
 			const passwordError = validationResult.error.errors.find(
-				(err) => err.path[0] === "password"
+				(err) => err.path[0] === "password",
 			);
 			const ageError = validationResult.error.errors.find(
-				(err) => err.path[0] === "age"
+				(err) => err.path[0] === "age",
 			);
 			const nationalityError = validationResult.error.errors.find(
-				(err) => err.path[0] === "nationality"
+				(err) => err.path[0] === "nationality",
 			);
 			const bioError = validationResult.error.errors.find(
-				(err) => err.path[0] === "bio"
+				(err) => err.path[0] === "bio",
 			);
 
 			return {
@@ -112,16 +112,26 @@ export default function RegisterForm() {
 				},
 			};
 
-			await register(requestData);
-			setAlert({
-				message: "Registration successful! Redirecting...",
-				type: "success",
-			});
-			setTimeout(() => {
-				router.push("/login"); // redirect to login section
-			}, 2000);
+			const result = await register(requestData);
+			if (result && result.ok) {
+				setAlert({
+					message: result.message || "Registration successful! Redirecting...",
+					type: "success",
+				});
+				setTimeout(() => {
+					router.push("/login"); // redirect to login section
+				}, 2000);
+			} else {
+				setAlert({
+					message: result.error || "Failed to register user.",
+					type: "danger",
+				});
+				return {
+					previousValues: { email, username, password, age, nationality, bio },
+				};
+			}
 		} catch (error) {
-			setAlert({ message: String(error), type: "danger" });
+			setAlert({ message: "Failed to register user.", type: "danger" });
 			return {
 				previousValues: { email, username, password, age, nationality, bio },
 			};
