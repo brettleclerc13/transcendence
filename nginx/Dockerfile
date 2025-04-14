@@ -13,5 +13,3 @@ RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -extensions v3_req
 
 COPY trance.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 443

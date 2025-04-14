@@ -7,8 +7,8 @@ services:
         NEXT_PUBLIC_WS_PORT: ${NEXT_PUBLIC_WS_PORT}
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
 
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     networks:
       - app-network
     volumes:
@@ -24,8 +24,8 @@ services:
       context: ./Backend
     env_file:
       - .env
-    ports:
-      - "8001:8001"
+    expose:
+      - "8001"
     networks:
       - app-network
     volumes:
