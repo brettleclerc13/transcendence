@@ -14,9 +14,9 @@ from asgiref.sync import sync_to_async
 from channels.layers import get_channel_layer
 from tmatch.models import TournamentMatch
 
-DEBUG_ACTIONS = True
-DEBUG_ERRORS = True
-DEBUG_INFO = True
+DEBUG_ACTIONS = False
+DEBUG_ERRORS = False
+DEBUG_INFO = False
 
 class TournamentConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -149,8 +149,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         user_ids = list(connected_users.keys())[:4]
         for idx,user_id in enumerate(user_ids):
             display_json[layers[idx]] = user_id
-        #DEL
-        print(f"display state for update display: \n {display_json}", flush=True)
         await asyncio.sleep(0)
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -180,8 +178,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             "id": self.tournament_id
         }))
         await asyncio.sleep(0.2)
-        #DEL
-        print(f"sending to {self.user.id} display from get_display(): \n {display}", flush=True)
         await self.send(text_data=json.dumps({
             "type": "tournament_display_update",
             "state": display,
@@ -192,8 +188,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         display_state_key = f"tournament:{self.room_id}:display_state"
 
         display = await RedisManager.get_json(display_state_key)
-        #DEL
-        print(f"display state for refreshing: \n {display}", flush=True)
         await asyncio.sleep(0)
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -283,12 +277,8 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                         print(f"{self.tournament_id} Ran playing finals case to save the tournament outcome", flush=True)
                     display_state = await RedisManager.get_json(display_state_key)
                     display_state["third_layer"] = winner
-                    #DEL
-                    print(f"saving final display by user {self.user.id} display: \n {display_state}", flush=True)
                     await RedisManager.delete_keys(end_display)
                     await RedisManager.set_expiry_json(end_display, 600, display_state)
-                    #DEL
-                    print(f"display state for state manager case managing finals: \n {display_state}", flush=True)
                     await asyncio.sleep(0)
                     await self.channel_layer.group_send(
                         self.room_group_name,
@@ -314,14 +304,9 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         elif previous_state == "playing first stage":
             was_set = await self.redis.execute("SET", save_tournament_key, self.channel_name, "NX")
             if was_set:
-                start = time.perf_counter()
                 if DEBUG_ACTIONS:
                     print(f"{self.tournament_id} Ran playing first stage case to run check non final match winners", flush=True)
                 asyncio.create_task(self.check_non_final_match_winners())
-                end = time.perf_counter()
-                loop_duration = (end - start) * 1000
-                #DEL
-                print(f"checked non finals by user {self.user.id} in {loop_duration:.2f} ms", flush=True)
                 new_state = await RedisManager.get_state(state_key)
             else:
                 await self.get_display(False)
@@ -404,8 +389,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                         print(f"⚠️ Victor {victor[0]} not found in the expected first layer positions.", flush=True)
                     await RedisManager.delete_keys(save_tournament_key)
                     return "nope"
-                #DEL
-                print(f"display state for non final match case with 1 winner: \n {display_state}", flush=True)
                 await asyncio.sleep(0)
                 await self.channel_layer.group_send(
                     self.room_group_name,
@@ -472,8 +455,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                         print(f"⚠️ Victor {victor2[0]} not found in the expected first layer positions.", flush=True)
                     await RedisManager.delete_keys(save_tournament_key)
                     return "nope"
-                #DEL
-                print(f"display state for non final match case with 2 winners: \n {display_state}", flush=True)
                 await asyncio.sleep(0)
                 await self.channel_layer.group_send(
                     self.room_group_name,
@@ -574,8 +555,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             "type": "tournament_countdown",
             "message": event["message"],
         }))
-        #DEL
-        print(f"for {self.user.id} sending the countdown message at {sending_time}", flush=True)
 
     async def tournament_display_update(self, event):
         display_state_key = f"tournament:{self.room_id}:display_state"
@@ -591,8 +570,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             }))
         await asyncio.sleep(0.25)
         await RedisManager.add_json(display_state_key, event["state"])
-        #DEL
-        print(f"sending to {self.user.id} display: \n {event['state']}", flush=True)
         await self.send(text_data=json.dumps({
             "type": "tournament_display_update",
             "state": event["state"],
@@ -644,8 +621,6 @@ async def handle_finals_start(room_id):
             if DEBUG_ACTIONS:
                 print(f"🏆 Tournament {room_id} winner by default: {winner_data['id']}", flush=True)
             display_state["third_layer"] = winner_tournament_id
-            #DEL
-            print(f"display state for handle finals start case 1 present player: \n {display_state}", flush=True)
             await channel_layer.group_send(
                 f"tournament_{room_id}",
                 {
@@ -702,8 +677,6 @@ async def four_players_start(room_id, present_players):
 
     await RedisManager.add_json(f"tournament:{room_id}:display_state", display_state)
 
-    #DEL
-    print(f"display state for four players start: \n {display_state}", flush=True)
     await channel_layer.group_send(
         f"tournament_{room_id}",
         {
@@ -741,8 +714,6 @@ async def three_players_start(room_id, present_players):
         user_key = f"tournament:{room_id}:users"
         await RedisManager.update_user_data_map(user_key, waiting_player, "is_waiting_finals", "true")
 
-        #DEL
-        print(f"display state for three players start: \n custom", flush=True)
         await channel_layer.group_send(
             f"tournament_{room_id}",
             {
@@ -783,8 +754,6 @@ async def two_players_start(room_id, present_players):
             if id not in players:
                 first_layer_4 = id
                 break
-        #DEL
-        print(f"display state for non final match case with 2 winners: \n custom", flush=True)
         await channel_layer.group_send(
             f"tournament_{room_id}",
             {
@@ -890,7 +859,7 @@ async def notify_absent_players_and_wait(room_id):
 
         channel_layer = get_channel_layer()
 
-        await timer(room_id, 5, "Tournament starting in")
+        await timer(room_id, 15, "Tournament starting in")
 
         players_after_wait = await RedisManager.get_all_users_json(user_key)
 
@@ -938,8 +907,6 @@ async def notify_absent_players_and_wait(room_id):
                 elif winner_id == "player_4":
                     display["second_layer_1"], display["second_layer_2"], display["third_layer"] = "player_1", "player_4", "player_4"
 
-                #DEL
-                print(f"display state for notify and wait case only one showed: \n {display}", flush=True)
                 await channel_layer.group_send(
                     f"tournament_{room_id}",  
                     {

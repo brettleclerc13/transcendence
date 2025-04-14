@@ -136,6 +136,27 @@ class RedisManager:
 
         except Exception as e:
             print(f"Error adding JSON to Redis: {e}", flush=True)
+    
+    @classmethod
+    async def remove_last_and_set_list(cls, key: str):
+        redis = await cls.get_redis()
+
+        users = await redis.lrange(key, 0, -1)
+
+        if not users:
+            print(f"No users found at key {key}. Nothing to remove.")
+            return False
+
+        decoded_users = [user.decode("utf-8") for user in users]
+
+        decoded_users.pop()
+
+        await redis.delete(key)
+
+        if decoded_users:
+            await redis.rpush(key, *decoded_users)
+
+        return True
 
     @classmethod
     async def get_all_users_list_map(cls, key):
