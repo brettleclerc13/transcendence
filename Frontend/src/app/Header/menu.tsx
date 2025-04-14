@@ -1,5 +1,5 @@
 "use client";
-
+/// <reference path="/global.d.ts" />
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import "./headerComponent.css";
@@ -30,12 +30,13 @@ export default function Menu() {
 
 	return (
 		<div className="menu-main">
+			{/* @ts-ignore */}
 			<lord-icon
 				trigger="hover"
 				src="/img/wired-gradient-1062-disco-ball-hover-pinch.json"
 				style={{ width: "60px", height: "60px", cursor: "pointer" }}
 				onClick={() => setIsMenuOpen(!isMenuOpen)}
-			></lord-icon>
+			/>
 
 			{isMenuOpen && (
 				<div ref={menuRef} className="menu-container">

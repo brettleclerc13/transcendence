@@ -7,8 +7,9 @@ export async function fetchWithAgent(url: string, options: RequestInit = {}) {
 			// For Node.js environments
 			const nodeFetch = fetch as unknown as (
 				url: string,
-				init: RequestInit & { agent?: any },
+				init: RequestInit & { agent?: import("https").Agent },
 			) => Promise<Response>;
+
 			return nodeFetch(url, {
 				...options,
 				agent: httpsAgent,

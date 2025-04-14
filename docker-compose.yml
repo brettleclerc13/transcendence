@@ -2,6 +2,9 @@ services:
   frontend:
     build:
       context: ./Frontend
+      args:
+        NEXT_PUBLIC_WS_HOST: ${NEXT_PUBLIC_WS_HOST}
+        NEXT_PUBLIC_WS_PORT: ${NEXT_PUBLIC_WS_PORT}
     ports:
       - "3000:3000"
     networks:

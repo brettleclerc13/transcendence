@@ -305,7 +305,7 @@ const FriendAndInvitationList: React.FC<{
 										}}
 									>
 										<img
-											src={`/api/${friend.profile_picture}` || "/img/default.png"}
+											src={friend.profile_picture ? `/api/${friend.profile_picture}` : "/img/default.png"}
 											alt={`${friend.username}'s avatar`}
 											style={{
 												width: 40,
