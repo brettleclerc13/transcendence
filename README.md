@@ -84,7 +84,7 @@ A modern web application featuring a real-time multiplayer Pong game with user m
 
    # Django Configuration
    DEBUG=False
-   ALLOWED_HOSTS=localhost,your_local_ip_address
+   ALLOWED_HOSTS=localhost,127.0.0.1,nginx,backend,your_local_ip_address
    DJANGO_SETTINGS_MODULE=backend.settings
    DATABASE_HOST=db
    DATABASE_NAME=transcendence
@@ -98,9 +98,8 @@ A modern web application featuring a real-time multiplayer Pong game with user m
    ```
 
    Note: The Django required SECRET_KEY will be automatically generated when you run `make`.
-   Replace the 3 instances of `your_local_ip_address` with your computer's local IP address (see next step).
 
-   Alternative: If you have issues finding your local IP address or just want to test locally, you can use `127.0.0.1` instead. However, with this configuration, you won't be able to play with other players on different devices in the same network. You can still test multiplayer functionality using two different browsers on the same machine, though the gameplay experience may not be optimal.
+   Replace the **3 instances** of `your_local_ip_address` with your computer's local IP address (see next step).
 
    Important: Make sure each environment variable is on its own line to avoid parsing issues.
 
@@ -144,8 +143,7 @@ A modern web application featuring a real-time multiplayer Pong game with user m
 
 5. Access the application:
 
-   - Locally: `https://127.0.0.1:8080`
-   - From other devices on the same network: `https://your_local_ip_address:8080`
+   `https://your_local_ip_address:8080`
 
    Note: You may need to accept the security warning about the self-signed SSL certificate.
 
@@ -182,8 +180,6 @@ To play with friends on the same network:
 2. Have your friends connect to `https://your_local_ip_address:8080` from their devices
 3. They'll need to accept the security warning about the self-signed SSL certificate
 4. Both players can now register accounts and play together
-
-Note: If you configured with `127.0.0.1` instead of your actual local IP address, you won't be able to play with other devices. You can still test multiplayer functionality using two different browsers on the same machine.
 
 ### User Registration and Authentication
 
