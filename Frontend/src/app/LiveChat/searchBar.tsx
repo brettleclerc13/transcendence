@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SearchFriend, SendFriendRequest } from "../utilities/chatActions"; 
 
 type UserResult = {
@@ -59,6 +59,16 @@ const SearchBar = () => {
 			setLoading(false);
 		}
 	};
+
+	useEffect(() => {
+        if (message) {
+            const timer = setTimeout(() => {
+                setMessage("");
+            }, 3000);
+    
+            return () => clearTimeout(timer);
+        }
+    }, [message]);
 
 	return (
 		<div className="position-relative">

@@ -19,13 +19,12 @@ export async function fetchGenericAPIResponses({
 		}
 
 		if (!response.ok) {
-			// const errorMessage =
-			// 	data.error ||
-			// 	data.non_field_errors?.[0] || // First item in non_field_errors array
-			// 	data.message || // Fallback to a generic message
-			// 	data.detail || // Another common key for error messages
-			// 	defaultMessages.errorMessage;
-			throw new Error(defaultMessages.errorMessage);
+			const errorMessage =
+				data.error || data.message || defaultMessages.errorMessage;
+			return {
+				ok: false,
+				error: errorMessage || defaultMessages.errorMessage,
+			};
 		} else {
 			return {
 				ok: true,
@@ -61,13 +60,12 @@ export async function fetchAPIResponseData({
 		}
 
 		if (!response.ok) {
-			// const errorMessage =
-			// 	data.error ||
-			// 	data.non_field_errors?.[0] || // First item in non_field_errors array
-			// 	data.message || // Fallback to a generic message
-			// 	data.detail || // Another common key for error messages
-			// 	defaultMessages.errorMessage;
-			throw new Error(defaultMessages.errorMessage);
+			const errorMessage =
+				data.error || data.message || defaultMessages.errorMessage;
+			return {
+				ok: false,
+				error: errorMessage || defaultMessages.errorMessage,
+			};
 		} else {
 			return {
 				ok: true,

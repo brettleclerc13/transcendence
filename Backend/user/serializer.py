@@ -16,19 +16,20 @@ class UserProfileSerializer(serializers.ModelSerializer):
 		fields = ['user', 'profile_picture', 'age', 'nationality', 'bio', 'is_online', 'tournament_name']
 
 	def validate_profile_picture(self, value):
-		max_size = 2 * 1024 * 1024  # 2MB
+		if not value:
+			return value
 
-		if value and value.size > max_size:
-			raise serializers.ValidationError("The image file size should not exceed 2MB.")
-        
-		return value
+		# Use the model's validation method
+		from .models import UserProfile
+		model_instance = UserProfile()
+		return model_instance.validate_profile_picture(value)
 
 	def get_profile_picture(self, obj):
 		return obj.profile_picture.url if obj.profile_picture else None
-		
+
 	def get_user(self, obj):
 		return {"id": obj.user.id, "username": obj.user.username}
-	
+
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -44,7 +45,7 @@ class UserSerializer(serializers.ModelSerializer):
 		# Check for duplicate email
 		if "email" in data and User.objects.filter(email=data.get('email')).exists():
 			raise serializers.ValidationError({"email": "A user with this email already exists."})
-        
+
 		# Check for duplicate username
 		if "username" in data and User.objects.filter(username=data.get('username')).exists():
 			raise serializers.ValidationError({"username": "A user with this username already exists."})
@@ -82,6 +83,28 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 "message": "2FA verification required"
             }
 		
+		if user.profile.has_2fa and otp:
+			try:
+				# Try to find the most recent device
+				devices = TOTPDevice.objects.filter(user=user, name="default")
+				if devices.count() > 0:
+					device = devices.latest('id')
+				else:
+					raise serializers.ValidationError("2FA is not enabled")
+
+				if not device.verify_token(otp):
+					raise serializers.ValidationError("Invalid OTP")
+			except serializers.ValidationError:
+				raise serializers.ValidationError("Invalid OTP")
+
+		if user.profile.has_2fa and not otp:
+			return {
+                "otp_required": True,
+                "user_id": user.id,
+                "email": user.email,
+                "message": "2FA verification required"
+            }
+
 		if user.profile.has_2fa and otp:
 			try:
 				# Try to find the most recent device

@@ -15,7 +15,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # Base URL for the backend API 
 #add back 8080 IN SCHOOL
 BASE_URL_DATA = "wss://127.0.0.1:8080/game"
-MATCH_API_URL = "https://127.0.0.1:8001/match-list/"
+MATCH_API_URL = "https://127.0.0.1:8080/api/match-list/"
 
 def get_active_matches():
     try:
