@@ -7,3 +7,4 @@ Backend/media/profile_pictures/*
 .vscode
 dump.rdb
 Backend/dump.rdb
+.env
