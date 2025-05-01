@@ -1,28 +1,36 @@
 "use server";
 
 import { cookies } from "next/headers";
+// import { fetchGenericAPIResponses } from "./generalActions";
+import { fetchWithAgent } from "@/lib/fetchWithAgent";
 
 type LoginProps = {
 	email: string;
 	pass: string;
+	otp?: string;
 };
 
-export const login = async ({ email, pass }: LoginProps) => {
+export const login = async ({ email, pass, otp }: LoginProps) => {
 	const requestData = {
 		username: email,
 		password: pass,
+		otp: otp,
 	};
-	const response = await fetch("http://backend:8001/token/", {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
+
+	const response = await fetchWithAgent(
+		`${process.env.NEXT_PUBLIC_API_URL}/token/`,
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(requestData),
 		},
-		body: JSON.stringify(requestData),
-	});
+	);
 
 	let data;
 
-	if (!response.ok) {
+	if (response && !response.ok) {
 		const text = await response.text();
 		try {
 			data = JSON.parse(text);
@@ -36,9 +44,22 @@ export const login = async ({ email, pass }: LoginProps) => {
 			data.message || // Fallback to a generic message
 			data.detail || // Another common key for error messages
 			"Failed to login user.";
-		throw new Error(errorMessage);
+		return {
+			ok: false,
+			error: errorMessage,
+		};
 	} else {
 		data = await response.json();
+
+		if (data.otp_required) {
+			return {
+				ok: true,
+				otp_required: true,
+				user_id: data.user_id,
+				email: data.email,
+				message: data.message,
+			};
+		}
 
 		const accessToken = data.access;
 		const refreshToken = data.refresh;
@@ -53,7 +74,10 @@ export const login = async ({ email, pass }: LoginProps) => {
 		cookieStore.set("refreshToken", refreshToken);
 		cookieStore.set("tokenExpiry", expiresAt.toString());
 
-		return data;
+		return {
+			ok: true,
+			message: "Login successful! Redirecting...",
+		};
 	}
 };
 
@@ -65,14 +89,17 @@ export async function backendLogout() {
 		cookieStore.delete("refreshToken");
 		cookieStore.delete("tokenExpiry");
 
-		const response = await fetch("http://backend:8001/logout/", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/logout/`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
 			},
-		});
+		);
 
-		if (response.ok) console.log("Logout successful");
+		if (response && response.ok) console.log("Logout successful");
 		else console.warn("Logout unsuccessful");
 
 		return response.ok;
@@ -95,17 +122,20 @@ type RegisterProps = {
 };
 
 export const register = async (requestData: RegisterProps) => {
-	const response = await fetch("http://backend:8001/register/", {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
+	const response = await fetchWithAgent(
+		`${process.env.NEXT_PUBLIC_API_URL}/register/`,
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(requestData),
 		},
-		body: JSON.stringify(requestData),
-	});
+	);
 
 	let data;
 
-	if (!response.ok) {
+	if (response && !response.ok) {
 		const text = await response.text();
 		try {
 			data = JSON.parse(text);
@@ -121,8 +151,15 @@ export const register = async (requestData: RegisterProps) => {
 			data.message || // Fallback to a generic message
 			data.detail || // Another common key for error messages
 			"Failed to register user.";
-		throw new Error(errorMessage);
+		return {
+			ok: false,
+			error: errorMessage,
+		};
 	} else {
-		return await response.json();
+		return {
+			ok: true,
+			message: "Registration successful! Redirecting...",
+			data: await response.json(),
+		};
 	}
 };

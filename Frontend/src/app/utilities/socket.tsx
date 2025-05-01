@@ -1,6 +1,18 @@
+interface Friend {
+  username: string;
+  id: number;
+  profile_picture?: string;
+}
+
+interface ChatMessage {
+  sender: string;
+  content: string;
+  timestamp: string;
+}
+
 let friendListSocket: WebSocket | null = null;
 
-export const createFriendListSocket = (onUpdate: (data: any) => void, onClose?: () => void): WebSocket => {
+export const createFriendListSocket = (onUpdate: (data: Friend[]) => void, onClose?: () => void): WebSocket => {
 	const wsUrl = `wss://127.0.0.1:8000/ws/friends/`;
 	const socket = new WebSocket(wsUrl);
 
@@ -18,7 +30,7 @@ export const createFriendListSocket = (onUpdate: (data: any) => void, onClose?: 
 };
 
 
-export const connectFriendListSocket = (onMessage: (data: any) => void) => {
+export const connectFriendListSocket = (onMessage: (data: Friend[]) => void) => {
     const wsUrl = `wss://127.0.0.1:8000/ws/friends/`;
 
     if (friendListSocket) {
@@ -45,7 +57,7 @@ export const closeFriendListSocket = () => {
     }
 };
 
-export const createChatSocket = (conversationId: number | null, onMessage: (message: any) => void, onClose?: () => void): WebSocket => {
+export const createChatSocket = (conversationId: number | null, onMessage: (message: ChatMessage) => void, onClose?: () => void): WebSocket => {
 	const wsUrl = `wss://127.0.0.1:8000/ws/chat/${conversationId}/`;
 	const socket = new WebSocket(wsUrl);
 

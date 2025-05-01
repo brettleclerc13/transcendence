@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SearchFriend, SendFriendRequest } from "../utilities/chatActions"; 
 
 type UserResult = {
@@ -60,6 +60,16 @@ const SearchBar = () => {
 		}
 	};
 
+	useEffect(() => {
+        if (message) {
+            const timer = setTimeout(() => {
+                setMessage("");
+            }, 3000);
+    
+            return () => clearTimeout(timer);
+        }
+    }, [message]);
+
 	return (
 		<div className="position-relative">
 			<nav className="navbar">
@@ -103,9 +113,17 @@ const SearchBar = () => {
 			)}
 			{message && (
 				<div
-					className={`alert ${invitationSent ? "alert-success" : "alert-danger"}`}
-					role="alert"
-				>
+				className={`alert ${invitationSent ? "alert-success" : "alert-danger"}`}
+				role="alert"
+				style={{
+					position: "absolute",
+					top: "-40px",
+					left: "50%",
+					transform: "translateX(-50%)",
+					zIndex: 1050, // S'assurer qu'il passe au-dessus des autres éléments
+					whiteSpace: "nowrap", // Empêche le texte de forcer un retour à la ligne
+				}}
+			>
 					{message}
 				</div>
 			)}

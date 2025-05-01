@@ -30,7 +30,7 @@ header {
 .menu-main {
 	flex-basis: 15%;
 	display: flex;
-	justify-content: start;
+	justify-content: flex-start;
 	align-items: center;
 }
 
@@ -93,7 +93,7 @@ header {
 .action-buttons {
 	flex-basis: 15%;
 	display: flex;
-	justify-content: end;
+	justify-content: flex-end;
 	align-items: center;
 	gap: 1rem;
 }

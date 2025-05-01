@@ -31,11 +31,9 @@ export default function HeaderConnectButtons() {
 			const profileResults = await fetchUserProfile();
 
 			setUserProfile(profileResults);
-			console.log(profileResults);
 		} catch (err) {
 			console.warn("Error fetching user profile:", err);
 		}
-		//finally { setLoading(false)}
 	};
 
 	useEffect(() => {
@@ -92,6 +90,11 @@ export default function HeaderConnectButtons() {
 		else console.warn("Error logging out backend side");
 	};
 
+	const handleProfileClick = () => {
+		setIsProfileOpen(true);
+		setTimeout(() => setIsDropdownOpen(false), 100);
+	};
+
 	return (
 		<div className="action-buttons">
 			{!isUserLoggedIn() ? (
@@ -131,18 +134,13 @@ export default function HeaderConnectButtons() {
 									: "/img/default.png"
 							}
 							alt="Profile Image in navbar"
-							width={100}
-							height={100}
 							className="profile-picture-header"
 						/>
 					</button>
 
 					{isDropdownOpen ? (
 						<div className="dropdown-menu" ref={dropdownRef}>
-							<button
-								className="dropdown-item"
-								onClick={() => setIsProfileOpen(true)}
-							>
+							<button className="dropdown-item" onClick={handleProfileClick}>
 								<svg
 									className="icon"
 									aria-hidden="true"

@@ -17,6 +17,7 @@ import {
 import GameCanvas from "./gameCanvas";
 import "./match.css";
 import TournamentCanvas from "./tournamentCanvas";
+import { Alert } from "react-bootstrap";
 
 export const profileSchema = z.object({
 	tournament_name: z
@@ -27,28 +28,41 @@ export const profileSchema = z.object({
 
 export default function Lobby() {
 	const [alias, setAlias] = useState<string | undefined>(undefined);
-	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
-		null
-	);
+	const [alert, setAlert] = useState<{
+		message: string;
+		type: "danger" | "success";
+	} | null>(null);
 	const [gameType, setGameType] = useState<string>("");
 	const [gameID, setGameID] = useState<string>("");
 	const [tournamentData, tournamentAction, tournamentPending] = useActionState(
 		handleTournamentMatchCreation,
-		undefined
+		undefined,
 	);
+	const [simpleGamePending, setSimpleGamePending] = useState<boolean>(false);
+
+	const setAlertWithTimeout = (
+		alertData: { message: string; type: "danger" | "success" } | null,
+	) => {
+		setAlert(alertData);
+		if (alertData) {
+			setTimeout(() => {
+				setAlert(null);
+			}, 3000); // 3 seconds
+		}
+	};
 
 	const fetchProfile = async () => {
 		try {
 			const userProfile = await fetchUserProfile();
 			setAlias(
-				userProfile.tournament_name ? userProfile.tournament_name : undefined
+				userProfile.tournament_name ? userProfile.tournament_name : undefined,
 			);
 		} catch (error) {
-			setAlert({
+			setAlertWithTimeout({
 				message: `Error fetching your profile info: ${error}`,
 				type: "danger",
 			});
-			setGameType("lobby")
+			setGameType("lobby");
 			return;
 		}
 	};
@@ -58,39 +72,45 @@ export default function Lobby() {
 			const matchResults = await checkMatches();
 			if (matchResults.ok) {
 				setGameID(matchResults.matchID);
-				setGameType("match");
+				setGameType("simple");
 				return;
+			} else {
+				const tournamentResults = await checkTournaments();
+				if (tournamentResults.ok) {
+					setGameID(tournamentResults.tournamentID);
+					setGameType("tournament");
+					return;
+				} else {
+					setGameType("lobby");
+					return;
+				}
 			}
-			const tournamentResults = await checkTournaments();
-			if (tournamentResults.ok) {
-				setGameID(tournamentResults.tournamentID);
-				setGameType("tournament");
-				return;
-			}
-			setGameType("lobby");
 		} catch (error) {
-			setAlert({
+			setAlertWithTimeout({
 				message: `Error checking for ongoing matches: ${error}`,
 				type: "danger",
 			});
-			setGameType("lobby")
+			setGameType("lobby");
 			return;
 		}
 	};
 
 	useEffect(() => {
 		if (isUserLoggedIn()) {
-			checkGames();
+			if (gameType === "" || gameType === "lobby") {
+				checkGames();
+			}
 			fetchProfile();
 		} else {
 			setGameType("notLoggedIn");
 		}
-	}, []);
+	}, [gameType]);
 
 	const handleSimpleMatchCreation = async () => {
 		try {
+			setSimpleGamePending(true);
 			const response = await createSimpleMatch();
-			setAlert({
+			setAlertWithTimeout({
 				message: "Game on!",
 				type: "success",
 			});
@@ -98,19 +118,21 @@ export default function Lobby() {
 			setTimeout(() => {
 				setGameType("simple");
 			}, 1000);
+			setSimpleGamePending(false);
 			return;
 		} catch (error) {
-			setAlert({
+			setAlertWithTimeout({
 				message: `Error creating a 1v1 game: ${error}`,
 				type: "danger",
 			});
+			setSimpleGamePending(false);
 			return;
 		}
 	};
 
 	async function handleTournamentMatchCreation(
 		_previousState: unknown,
-		formData: FormData
+		formData: FormData,
 	) {
 		const tournament_name = formData.get("tournamentName") as string;
 		if (!tournament_name) {
@@ -125,7 +147,7 @@ export default function Lobby() {
 			return {
 				previousValues: { tournament_name },
 				tournamentNameError: validationResult.error.errors.find(
-					(err: { path: string[]; }) => err.path[0] === "tournament_name"
+					(err) => err.path[0] === "tournament_name",
 				)?.message,
 			};
 
@@ -133,7 +155,7 @@ export default function Lobby() {
 			await updateUserProfile(validationResult.data);
 			setAlias(validationResult.data.tournament_name);
 		} catch (error) {
-			setAlert({
+			setAlertWithTimeout({
 				message: `Error updating your alias name: ${error}`,
 				type: "danger",
 			});
@@ -142,7 +164,7 @@ export default function Lobby() {
 
 		try {
 			const response = await createTournament();
-			setAlert({
+			setAlertWithTimeout({
 				message: "Game on!",
 				type: "success",
 			});
@@ -152,7 +174,7 @@ export default function Lobby() {
 			}, 1000);
 			return;
 		} catch (error) {
-			setAlert({
+			setAlertWithTimeout({
 				message: `Error creating a tournament: ${error}`,
 				type: "danger",
 			});
@@ -161,42 +183,46 @@ export default function Lobby() {
 	}
 
 	return (
-		<>
-			{gameType == "simple" && <GameCanvas ID={gameID} />}
-			{gameType == "tournament" && <TournamentCanvas ID={gameID} />}
+		<div className="app-container">
+			{gameType == "simple" && (
+				<GameCanvas matchID={gameID} setGameType={setGameType} />
+			)}
+			{gameType == "tournament" && (
+				<TournamentCanvas tournamentID={gameID} setGameType={setGameType} />
+			)}
 			{gameType == "lobby" && (
 				<div className="lobby-container">
 					{alert && (
-						<div className={`alert alert-${alert.type} alert-box`} role="alert">
-							{alert.message}
-							<button
-								type="button"
-								className="close"
-								onClick={() => setAlert(null)}
-								aria-label="Close"
+						<div className="alert-box">
+							<Alert
+								variant={alert.type}
+								onClose={() => setAlertWithTimeout(null)}
+								dismissible
+								show={!!alert}
 							>
-								<span aria-hidden="true">&times;</span>
-							</button>
+								<span className="alert-message">{alert.message}</span>
+							</Alert>
 						</div>
 					)}
 					<div className="lobby-sub-container">
-						<div className="basis-3/5">
+						<div style={{ flex: 3 }}>
 							<MatchList
-								setAlert={setAlert}
+								setAlert={setAlertWithTimeout}
 								setGameID={setGameID}
 								setGameType={setGameType}
+								alias={alias}
+								setAlias={setAlias}
 							/>
 						</div>
-						<div className="basis-2/5">
+						<div style={{ flex: 2 }}>
 							<form action={tournamentAction}>
 								<h3>Tournament alias name</h3>
 								<input
 									type="text"
 									name="tournamentName"
-									defaultValue={
-										tournamentData?.previousValues?.tournament_name || alias
-									}
-									className="border rounded-md p-2 mb-4 w-full"
+									value={alias ?? ""}
+									onChange={(e) => setAlias(e.target.value)}
+									className="input-field"
 								/>
 								{tournamentData?.tournamentNameError && (
 									<p className="input-error">
@@ -215,6 +241,7 @@ export default function Lobby() {
 							</form>
 							<div className="lobby-button-container">
 								<button
+									disabled={simpleGamePending}
 									className="button-simple"
 									onClick={handleSimpleMatchCreation}
 								>
@@ -226,15 +253,16 @@ export default function Lobby() {
 				</div>
 			)}
 			{gameType == "notLoggedIn" && (
-				<div className="flex flex-col gap-4 justify-center items-center h-full w-full">
+				<div className="not-logged-in-container">
 					<p className="text-lg">
-						Please log in before starting a game. It won't even take a minute!
+						Please log in before starting a game. It won&apos;t even take a
+						minute!
 					</p>
 					<Link className="secondary-button" href="/login">
 						Connect
 					</Link>
 				</div>
 			)}
-		</>
+		</div>
 	);
 }

@@ -136,6 +136,27 @@ class RedisManager:
 
         except Exception as e:
             print(f"Error adding JSON to Redis: {e}", flush=True)
+    
+    @classmethod
+    async def remove_last_and_set_list(cls, key: str):
+        redis = await cls.get_redis()
+
+        users = await redis.lrange(key, 0, -1)
+
+        if not users:
+            print(f"No users found at key {key}. Nothing to remove.")
+            return False
+
+        decoded_users = [user.decode("utf-8") for user in users]
+
+        decoded_users.pop()
+
+        await redis.delete(key)
+
+        if decoded_users:
+            await redis.rpush(key, *decoded_users)
+
+        return True
 
     @classmethod
     async def get_all_users_list_map(cls, key):
@@ -181,6 +202,31 @@ class RedisManager:
 
         return True 
     
+    @classmethod
+    async def set_expiry_key(cls, key: str, time: int):
+        redis = await cls.get_redis()
+        await redis.set(key, "true")
+        await redis.expire(key, time)
+
+    @classmethod
+    async def give_expiry_time(cls, key: str, seconds: int) -> bool:
+        try:
+            redis = await cls.get_redis()
+            result = await redis.expire(key, seconds)
+            if result == 1:
+                return True
+            else:
+                return False
+        except Exception as e:
+            print(f"❌ Error setting expiry for key '{key}': {e}", flush=True)
+            return False
+    
+    @classmethod
+    async def set_expiry_json(cls, key: str, time: int, json_data):
+        redis = await cls.get_redis()
+        await cls.add_json(key, json_data)
+        await redis.expire(key, time)
+
     @classmethod
     async def set_state(cls, key: str, state: str):
         redis = await cls.get_redis()

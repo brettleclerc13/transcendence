@@ -1,6 +1,11 @@
 "use server";
 
 import { cookies } from "next/headers";
+import {
+	fetchGenericAPIResponses,
+	fetchAPIResponseData,
+} from "./generalActions";
+import { fetchWithAgent } from "@/lib/fetchWithAgent";
 
 type MatchFilterProps = {
 	id?: string;
@@ -33,35 +38,27 @@ export const fetchMatches = async (filters: MatchFilterProps = {}) => {
 			})
 			.join("&");
 
-		const response = await fetch(
-			`http://backend:8001/matches/?${queryString}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/matches/?${queryString}`,
 			{
 				method: "GET",
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${token}`,
 				},
-			}
+			},
 		);
 
-		let data;
-		const text = await response.text();
-		try {
-			data = JSON.parse(text);
-		} catch {
-			throw new Error(`Unexpected response: ${response.status}`);
-		}
+		const result = await fetchAPIResponseData({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to fetch matches.",
+				successMessage: "Successfully fetched matches",
+			},
+		});
 
-		if (!response.ok) {
-			const errorMessage =
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to fetch matches.";
-			throw new Error(errorMessage);
-		} else {
-			return data;
-		}
+		if (result.ok) return result.data;
+		else throw new Error(String(result.error) || "Failed to fetch matches.");
 	} catch (error) {
 		throw new Error(String(error) || "Failed to fetch matches.");
 	}
@@ -73,36 +70,34 @@ export const createSimpleMatch = async (invite_game?: boolean) => {
 	if (!token) throw new Error("Access token missing");
 
 	try {
-		const response = await fetch("http://backend:8001/matches/", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/matches/`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: invite_game
+					? JSON.stringify({ invite_game })
+					: JSON.stringify({}),
 			},
-			body: invite_game ? JSON.stringify({ invite_game }) : JSON.stringify({}),
+		);
+
+		const result = await fetchAPIResponseData({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to create simple match.",
+				successMessage: "Successfully created simple match",
+			},
 		});
 
-		let data;
-		const text = await response.text();
-		try {
-			data = JSON.parse(text);
-		} catch {
-			throw new Error(
-				`Unexpected response concerning simple match creation: ${response.status}`
-			);
-		}
-		if (!response.ok) {
-			const errorMessage =
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to create simple match.";
-			throw new Error(errorMessage);
-		} else {
-			// console.log("create Match data: ", data);
-			if (data.id) return { matchID: data.id as string };
-			else throw new Error("MatchID not found");
-		}
+		if (result.ok) {
+			if (result.data && result.data.id) {
+				return { ok: true, matchID: result.data.id };
+			} else throw new Error("MatchID not found");
+		} else
+			throw new Error(String(result.error) || "Failed to create simple match.");
 	} catch (error) {
 		throw new Error(String(error) || "Failed to create simple match.");
 	}
@@ -111,74 +106,67 @@ export const createSimpleMatch = async (invite_game?: boolean) => {
 export const joinSimpleMatch = async (matchID: string) => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
-	if (!token) throw new Error("Access token missing");
+	if (!token)
+		return {
+			ok: false,
+			error: "Access token missing",
+		};
 
 	try {
-		const response = await fetch(`http://backend:8001/matches/${matchID}/`, {
-			method: "PATCH",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchID}/`,
+			{
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+			},
+		);
+
+		return await fetchGenericAPIResponses({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to join simple match.",
+				successMessage: "Successfully joined simple match",
 			},
 		});
-
-		let data;
-		const text = await response.text();
-		try {
-			data = JSON.parse(text);
-		} catch {
-			throw new Error(
-				`Unexpected response when trying to join simple match: ${response.status}`
-			);
-		}
-		if (!response.ok) {
-			const errorMessage =
-				data.error ||
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to join simple match.";
-			throw new Error(errorMessage);
-		}
 	} catch (error) {
-		throw new Error(String(error) || "Failed to join simple match.");
+		return {
+			ok: false,
+			error: (error as Error).message || "Failed to join simple match.",
+		};
 	}
 };
 
 export const fetchSimpleMatchHistory = async () => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
-	if (!token) throw new Error("Access token missing");
+	if (!token)
+		return {
+			ok: false,
+			error: "Access token missing",
+		};
 
 	try {
-		const response = await fetch(`http://backend:8001/match-history/`, {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/match-history/`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+			},
+		);
+
+		return await fetchAPIResponseData({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to fetch user 1v1 match history.",
+				successMessage: "Successfully fetched user 1v1 match history",
 			},
 		});
-
-		let data;
-		const text = await response.text();
-		try {
-			data = JSON.parse(text);
-		} catch {
-			throw new Error(
-				`Unexpected response when trying to fetch user 1v1 match history: ${response.status}`
-			);
-		}
-		if (!response.ok) {
-			const errorMessage =
-				data.error ||
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to fetch user 1v1 match history.";
-			throw new Error(errorMessage);
-		} else {
-			return data;
-		}
 	} catch (error) {
 		return {
 			ok: false,
@@ -191,42 +179,38 @@ export const fetchSimpleMatchHistory = async () => {
 export const checkMatches = async () => {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("accessToken")?.value;
-	if (!token) throw new Error("Access token missing");
+	if (!token)
+		return {
+			ok: false,
+			error: "Access token missing",
+		};
 
 	try {
 		console.log("Checking 1v1 matches");
-		const response = await fetch(`http://backend:8001/match-check/`, {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetchWithAgent(
+			`${process.env.NEXT_PUBLIC_API_URL}/match-check/`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+			},
+		);
+
+		const result = await fetchAPIResponseData({
+			response,
+			defaultMessages: {
+				errorMessage: "Failed to check user 1v1 active matches.",
+				successMessage: "Successfully checked user 1v1 active matches",
 			},
 		});
 
-		let data;
-		const text = await response.text();
-		try {
-			data = JSON.parse(text);
-		} catch {
-			throw new Error(
-				`Unexpected response when trying to check user's active 1v1 matches: ${response.status}`
-			);
-		}
-		if (!response.ok) {
-			const errorMessage =
-				data.error ||
-				data.non_field_errors?.[0] || // First item in non_field_errors array
-				data.message || // Fallback to a generic message
-				data.detail || // Another common key for error messages
-				"Failed to check user 1v1 active matches.";
-			throw new Error(errorMessage);
-		} else {
-			console.log("CHECK MATCH data received: ", data);
-			if (data && data[0].id) {
-				return { ok: true, matchID: data[0].id};	
-			}
-			else return data;
-		}
+		if (result.ok) {
+			if (result.data && result.data[0].id) {
+				return { ok: true, matchID: result.data[0].id };
+			} else return result.data;
+		} else return result;
 	} catch (error) {
 		return {
 			ok: false,

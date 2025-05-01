@@ -1,0 +1,231 @@
+.tournament-container {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+	width: 100%;
+	background-color: #1f2937;
+	color: white;
+}
+
+.tournament-title {
+	font-size: 2rem;
+	font-weight: bold;
+	margin-bottom: 50px;
+}
+
+.round-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin: 0 20px;
+}
+
+.round-title {
+	font-size: 1.5rem;
+	font-weight: bold;
+	margin-bottom: 10px;
+	color: white;
+}
+
+.quit-tournament-btn {
+	padding: 10px 20px;
+	background-color: #ff4444;
+	color: white;
+	font-weight: bold;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: background-color 0.3s;
+	margin-bottom: 20px;
+}
+
+.quit-tournament-btn:hover {
+	background-color: #cc0000;
+}
+
+.tournament-grid {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 120px; /* Augmenter l'écart entre les colonnes */
+}
+
+.round {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	position: relative;
+}
+
+.player-box {
+	width: 140px;
+	height: 50px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-color: #319795;
+	border-radius: 8px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+	font-weight: bold;
+	position: relative;
+	margin: 30px 0; /* Espacement vertical entre les PlayerBox */
+}
+
+/* Lignes reliant les joueurs */
+.match-line {
+	position: absolute;
+	background-color: white;
+}
+
+/* Lignes verticales */
+.match-line.vertical {
+	width: 4px;
+	height: 60px; /* Ajuster la hauteur pour chaque duo */
+	left: 50%; /* Centré horizontalement */
+	transform: translateX(-50%);
+}
+
+/* Lignes horizontales */
+.match-line.horizontal {
+	height: 4px;
+	width: 230px; /* Longueur des lignes horizontales */
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+/* Placement des lignes verticales et horizontales entre les différents joueurs */
+.match-line.vertical1 {
+	/* Ligne verticale entre player 0 et 1 */
+	top: 16%;
+}
+
+.match-line.horizontal1 {
+	/* Ligne horizontale entre player 1 et player 4 */
+	left: -31%;
+	top: 22.5%;
+	transform: translateY(-50%) translateX(50%);
+}
+
+.match-line.vertical2 {
+	/* Ligne verticale entre player 2 et player 3 */
+	top: 72%;
+}
+
+.match-line.horizontal2 {
+	/* Ligne horizontale entre player 3 et player 5 */
+	left: -31%;
+	top: 78%;
+	transform: translateY(-50%) translateX(50%);
+}
+
+.match-line.vertical3 {
+	/* Ligne verticale entre player 4 et player 5 */
+	top: 20.5%;
+	height: 230px;
+}
+
+.match-line.horizontal3 {
+	/* Ligne horizontale entre player 5 et player 6 */
+	left: -31%;
+	top: 50%;
+	transform: translateY(-50%) translateX(50%);
+}
+
+/* Left column (first 4 players) */
+.player-box.player1 {
+	margin-top: 30px;
+	margin-bottom: 30px;
+}
+
+.player-box.player2 {
+	margin-top: 30px;
+	margin-bottom: 60px;
+}
+
+.player-box.player3 {
+	margin-top: 60px;
+	margin-bottom: 30px;
+}
+
+.player-box.player4 {
+	margin-top: 30px;
+	margin-bottom: 30px;
+}
+
+/* Middle column (2 winners) */
+.player-box.player5 {
+	margin-top: 30px;
+	margin-bottom: 115px;
+}
+
+.player-box.player6 {
+	margin-top: 115px;
+	margin-bottom: 30px;
+}
+
+/* Final (winner) */
+.player-box.player7 {
+	margin-top: 30px;
+	margin-bottom: 30px;
+	width: 180px;
+	height: 90px;
+	background-color: goldenrod;
+}
+
+.countdown-screen {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(0, 0, 0, 0.75);
+	color: white;
+	font-size: 1.875rem;
+	text-align: center;
+	z-index: 100;
+}
+
+.alert-box {
+	position: absolute;
+	top: 16% !important;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 7;
+	min-width: 300px;
+	width: auto;
+}
+
+/* Fix for React Bootstrap Alert to prevent overlapping */
+.alert-box .alert {
+	display: flex !important;
+	justify-content: space-between !important;
+	align-items: center !important;
+	width: 100%;
+}
+
+.alert-box .alert-dismissible {
+	padding-right: 3rem !important; /* Increase padding on the right for the close button */
+}
+
+.alert-box .btn-close {
+	position: absolute !important;
+	right: 1rem !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+}
+
+.alert-message {
+	display: block;
+	padding-right: 1.5rem; /* Add padding to prevent text from overlapping with close button */
+	word-break: break-word; /* Allow long messages to wrap */
+	max-width: calc(
+		100% - 2rem
+	); /* Ensure text doesn't extend beyond the alert */
+}

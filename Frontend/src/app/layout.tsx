@@ -1,15 +1,8 @@
 import type { Metadata } from "next";
-import RefreshAccessToken from "@/app/utilities/JWTActions";
+import RefreshAccessToken from "@/app/utilities/JWTClientActions";
+import BootstrapClient from "../components/bootstrapClient";
 import "bootstrap/dist/css/bootstrap.min.css";
-import BootstrapClient from "@/components/bootstrapClient";
 import "./globals.css";
-import { Bungee_Shade } from "next/font/google";
-
-const bungee_shade = Bungee_Shade({
-	weight: "400",
-	style: ["normal"],
-	subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
 	title: "Transcendence",
@@ -28,8 +21,8 @@ export default function RootLayout({
 		<html lang="en">
 			<body>
 				{children}
-				<RefreshAccessToken />
 				<BootstrapClient />
+				<RefreshAccessToken />
 			</body>
 		</html>
 	);

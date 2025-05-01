@@ -6,6 +6,7 @@ import { register } from "@/app/utilities/userActions";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import "./user.css";
+import "./registerForm.css";
 
 export const registerSchema = z.object({
 	email: z
@@ -22,14 +23,14 @@ export const registerSchema = z.object({
 		.max(128, "Password is too long")
 		.regex(
 			/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#?_])[a-zA-Z0-9!@#?_]+$/,
-			"Password must contain at least one uppercase character, one number, and one special character (e.g., ! @ # ? _)"
+			"Password must contain at least one uppercase character, one number, and one special character (e.g., ! @ # ? _)",
 		),
 	age: z
 		.number()
 		.positive("Age must be a positive number")
 		.max(
 			123,
-			"The oldest human, Jeanne Calment, lived till the age of 122 years"
+			"The oldest human, Jeanne Calment, lived till the age of 122 years",
 		)
 		.optional(),
 	nationality: z.string().max(254, "Nationality is too long").optional(),
@@ -38,11 +39,14 @@ export const registerSchema = z.object({
 
 export default function RegisterForm() {
 	const [alert, setAlert] = useState<{ message: string; type: string } | null>(
-		null
+		null,
 	);
 	const router = useRouter();
 
-	const [data, action, isPending] = useActionState(handleSubmit, undefined);
+	const [registerData, registerAction, registerPending] = useActionState(
+		handleSubmit,
+		undefined,
+	);
 
 	async function handleSubmit(_previousState: unknown, formData: FormData) {
 		const email = formData.get("email") as string;
@@ -63,22 +67,22 @@ export default function RegisterForm() {
 
 		if (!validationResult.success) {
 			const emailError = validationResult.error.errors.find(
-				(err) => err.path[0] === "email"
+				(err) => err.path[0] === "email",
 			);
 			const usernameError = validationResult.error.errors.find(
-				(err) => err.path[0] === "username"
+				(err) => err.path[0] === "username",
 			);
 			const passwordError = validationResult.error.errors.find(
-				(err) => err.path[0] === "password"
+				(err) => err.path[0] === "password",
 			);
 			const ageError = validationResult.error.errors.find(
-				(err) => err.path[0] === "age"
+				(err) => err.path[0] === "age",
 			);
 			const nationalityError = validationResult.error.errors.find(
-				(err) => err.path[0] === "nationality"
+				(err) => err.path[0] === "nationality",
 			);
 			const bioError = validationResult.error.errors.find(
-				(err) => err.path[0] === "bio"
+				(err) => err.path[0] === "bio",
 			);
 
 			return {
@@ -108,16 +112,26 @@ export default function RegisterForm() {
 				},
 			};
 
-			await register(requestData);
-			setAlert({
-				message: "Registration successful! Redirecting...",
-				type: "success",
-			});
-			setTimeout(() => {
-				router.push("/login"); // redirect to login section
-			}, 2000);
+			const result = await register(requestData);
+			if (result && result.ok) {
+				setAlert({
+					message: result.message || "Registration successful! Redirecting...",
+					type: "success",
+				});
+				setTimeout(() => {
+					router.push("/login"); // redirect to login section
+				}, 2000);
+			} else {
+				setAlert({
+					message: result.error || "Failed to register user.",
+					type: "danger",
+				});
+				return {
+					previousValues: { email, username, password, age, nationality, bio },
+				};
+			}
 		} catch (error) {
-			setAlert({ message: String(error), type: "danger" });
+			setAlert({ message: "Failed to register user.", type: "danger" });
 			return {
 				previousValues: { email, username, password, age, nationality, bio },
 			};
@@ -125,65 +139,65 @@ export default function RegisterForm() {
 	}
 
 	return (
-		<div className="fixed inset-0 bg-teal-800 flex justify-center items-center">
-			<div className="bg-white mt-20 p-8 rounded-lg shadow-lg w-96">
-				<Link
-					href="/"
-					className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-3xl font-bold"
-				>
+		<div className="modal-container">
+			<div className="modal-content">
+				<Link href="/" className="close-button">
 					&times;
 				</Link>
 
 				{alert && (
-					<div className={`alert alert-${alert.type} mb-4`} role="alert">
+					<div className={`alert alert-${alert.type}`} role="alert">
 						{alert.message}
 					</div>
 				)}
 
-				<form action={action}>
-					<label htmlFor="email" className="block text-sm font-medium mb-1">
-						Email<span className="text-red-500 ml-1">*</span>
+				<form>
+					<label htmlFor="email" className="label">
+						Email<span className="mandatory">*</span>
 					</label>
 					<input
 						type="email"
 						placeholder="youremail@gmail.com"
 						id="email"
 						name="email"
-						defaultValue={data?.previousValues?.email}
-						className="border rounded-md p-2 mb-4 w-full"
+						defaultValue={registerData?.previousValues?.email}
+						className="input-field"
 					/>
-					{data?.emailError && (
-						<p className="input-error">{data?.emailError}</p>
+					{registerData?.emailError && (
+						<p className="input-error">{registerData?.emailError}</p>
 					)}
-					<label htmlFor="username" className="block text-sm font-medium mb-1">
-						Username<span className="text-red-500 ml-1">*</span>
+
+					<label htmlFor="username" className="label">
+						Username<span className="mandatory">*</span>
 					</label>
 					<input
 						type="text"
 						placeholder="JohnDoe"
 						id="username"
 						name="username"
-						defaultValue={data?.previousValues?.username}
-						className="border rounded-md p-2 mb-4 w-full"
+						defaultValue={registerData?.previousValues?.username}
+						className="input-field"
 					/>
-					{data?.usernameError && (
-						<p className="input-error">{data?.usernameError}</p>
+					{registerData?.usernameError && (
+						<p className="input-error">{registerData?.usernameError}</p>
 					)}
-					<label htmlFor="password" className="block text-sm font-medium mb-1">
-						Password<span className="text-red-500 ml-1">*</span>
+
+					<label htmlFor="password" className="label">
+						Password<span className="mandatory">*</span>
 					</label>
 					<input
 						type="password"
 						placeholder="*************"
 						id="password"
 						name="password"
-						defaultValue={data?.previousValues?.password}
-						className="border rounded-md p-2 mb-4 w-full"
+						defaultValue={registerData?.previousValues?.password}
+						className="input-field"
 					/>
-					{data?.passwordError && (
-						<p className="input-error">{data?.passwordError}</p>
+					{registerData?.passwordError && (
+						<p className="input-error">{registerData?.passwordError}</p>
 					)}
-					<label htmlFor="age" className="block text-sm font-medium mb-1">
+
+					<label htmlFor="age" className="label">
 						Age
 					</label>
 					<input
@@ -191,14 +205,14 @@ export default function RegisterForm() {
 						placeholder="77"
 						id="age"
 						name="age"
-						defaultValue={data?.previousValues?.age}
-						className="border rounded-md p-2 mb-4 w-full"
+						defaultValue={registerData?.previousValues?.age}
+						className="input-field"
 					/>
-					{data?.ageError && <p className="input-error">{data?.ageError}</p>}
-					<label
-						htmlFor="nationality"
-						className="block text-sm font-medium mb-1"
-					>
+					{registerData?.ageError && (
+						<p className="input-error">{registerData?.ageError}</p>
+					)}
+
+					<label htmlFor="nationality" className="label">
 						Nationality
 					</label>
 					<input
@@ -206,13 +220,14 @@ export default function RegisterForm() {
 						placeholder="French"
 						id="nationality"
 						name="nationality"
-						defaultValue={data?.previousValues?.nationality}
-						className="border rounded-md p-2 mb-4 w-full"
+						defaultValue={registerData?.previousValues?.nationality}
+						className="input-field"
 					/>
-					{data?.nationalityError && (
-						<p className="input-error">{data?.nationalityError}</p>
+					{registerData?.nationalityError && (
+						<p className="input-error">{registerData?.nationalityError}</p>
 					)}
-					<label htmlFor="bio" className="block text-sm font-medium mb-1">
+
+					<label htmlFor="bio" className="label">
 						Bio
 					</label>
 					<input
@@ -220,23 +235,29 @@ export default function RegisterForm() {
 						placeholder="Hi there ! I'm John Doe the greatest"
 						id="bio"
 						name="bio"
-						defaultValue={data?.previousValues?.bio}
-						className="border rounded-md p-2 mb-4 w-full"
+						defaultValue={registerData?.previousValues?.bio}
+						className="input-field"
 					/>
-					{data?.bioError && <p className="input-error">{data?.bioError}</p>}
+					{registerData?.bioError && (
+						<p className="input-error">{registerData?.bioError}</p>
+					)}
+
 					<button
-						disabled={isPending}
+						disabled={registerPending}
+						formAction={registerAction}
 						type="submit"
-						className="text-white bg-teal-600 hover:bg-teal-700 rounded-md p-2 w-full"
+						className="submit-button"
 					>
 						Sign Up
 					</button>
 				</form>
-				<Link className="link-btn underline mt-4 ml-6" href="/login">
-					Already have an account ? Login here
+
+				<Link className="register-link" href="/login">
+					Already have an account? Login here
 				</Link>
-				<p className="text-xs mt-4">
-					<span className="text-red-500 mr-1">*</span>: Mandatory information
+
+				<p className="mandatory-info">
+					<span>*</span>: Mandatory information
 				</p>
 			</div>
 		</div>

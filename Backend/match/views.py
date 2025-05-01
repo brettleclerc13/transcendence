@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from uuid import UUID
 from rest_framework.views import APIView
 from django.db.models import Q
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.permissions import AllowAny
 
 class MatchAPIView(generics.ListCreateAPIView):
@@ -100,13 +100,13 @@ class MatchRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 			with transaction.atomic():
 				match = Match.objects.select_for_update().get(id=match_id)
 
+				# If user is player1, return the match data for game rendering
+				if match.player1 == user:
+					return Response(MatchSerializer(match).data, status=status.HTTP_200_OK)
+				
 				# Ensure player2 is not already set
 				if match.player2 is not None:
 					return Response({'error': 'Player2 has already joined this match.'}, status=status.HTTP_400_BAD_REQUEST)
-
-				# Prevent player1 from joining as player2
-				if match.player1 == user:
-					return Response({'error': 'You cannot join your own match as player2.'}, status=status.HTTP_400_BAD_REQUEST)
 
 				# Assign player2 and set match as ongoing
 				match.player2 = user
@@ -168,5 +168,6 @@ class MatchCheckView(APIView):
 			is_ongoing=True,
 			player2=user
 		)
+		print(f"ongoing matches: {ongoing_matches}")
 		serializer = MatchSerializer(ongoing_matches, many=True)
 		return Response(serializer.data)

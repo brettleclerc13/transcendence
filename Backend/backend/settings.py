@@ -64,7 +64,14 @@ INSTALLED_APPS = [
 	'tmatch',
     'tournament',
 	'chat',
+	'bleach',
+	'django_otp',
+	'django_otp.plugins.otp_totp'
 ]
+
+BLEACH_ALLOWED_TAGS = ['p', 'span', 'br', 'strong', 'em', 'u']
+BLEACH_ALLOWED_ATTRIBUTES = ['style']
+BLEACH_STRIP_COMMENTS = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -74,6 +81,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+	'django_otp.middleware.OTPMiddleware',
 ]
 
 ROOT_URLCONF = 'backend.urls'

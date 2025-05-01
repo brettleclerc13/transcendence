@@ -4,21 +4,32 @@ from .models import  UserProfile, Message
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from django.contrib.auth import authenticate
+from bleach import clean
+from django_otp.plugins.otp_totp.models import TOTPDevice
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField()
-    profile_picture = serializers.SerializerMethodField()
+	user = serializers.SerializerMethodField()
+	profile_picture = serializers.SerializerMethodField()
 
-    class Meta:
-        model = UserProfile
-        fields = ['user' ,'nationality', 'bio', 'age', 'profile_picture', 'tournament_name', 'is_online']
+	class Meta:
+		model = UserProfile
+		fields = ['user', 'profile_picture', 'age', 'nationality', 'bio', 'is_online', 'tournament_name']
 
-    def get_profile_picture(self, obj):
-        return obj.profile_picture.url if obj.profile_picture else None
-		
-    def get_user(self, obj):
-        return {"id": obj.user.id, "username": obj.user.username}
-	
+	def validate_profile_picture(self, value):
+		if not value:
+			return value
+
+		# Use the model's validation method
+		from .models import UserProfile
+		model_instance = UserProfile()
+		return model_instance.validate_profile_picture(value)
+
+	def get_profile_picture(self, obj):
+		return obj.profile_picture.url if obj.profile_picture else None
+
+	def get_user(self, obj):
+		return {"id": obj.user.id, "username": obj.user.username}
+
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -34,7 +45,7 @@ class UserSerializer(serializers.ModelSerializer):
 		# Check for duplicate email
 		if "email" in data and User.objects.filter(email=data.get('email')).exists():
 			raise serializers.ValidationError({"email": "A user with this email already exists."})
-        
+
 		# Check for duplicate username
 		if "username" in data and User.objects.filter(username=data.get('username')).exists():
 			raise serializers.ValidationError({"username": "A user with this username already exists."})
@@ -52,14 +63,39 @@ class UserSerializer(serializers.ModelSerializer):
 		return user
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+	otp = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
 	def validate(self, attrs):
 		email = attrs.get("username")  # `username` is the default field; treat it as `email`
 		password = attrs.get("password")
+		otp = attrs.get("otp")
 
 		user = authenticate(username=email, password=password)
 
 		if not user:
 			raise serializers.ValidationError("Invalid email or password")
+
+		if user.profile.has_2fa and not otp:
+			return {
+                "otp_required": True,
+                "user_id": user.id,
+                "email": user.email,
+                "message": "2FA verification required"
+            }
+
+		if user.profile.has_2fa and otp:
+			try:
+				# Try to find the most recent device
+				devices = TOTPDevice.objects.filter(user=user, name="default")
+				if devices.count() > 0:
+					device = devices.latest('id')
+				else:
+					raise serializers.ValidationError("2FA is not enabled")
+
+				if not device.verify_token(otp):
+					raise serializers.ValidationError("Invalid OTP")
+			except serializers.ValidationError:
+				raise serializers.ValidationError("Invalid OTP")
 
 		# Pass validated user to parent serializer
 		data = super().validate(attrs)
@@ -109,6 +145,29 @@ class CustomTokenVerifySerializer(serializers.Serializer):
 		return attrs
 
 class MessageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Message
-        fields = '__all__'
+	class Meta:
+		model = Message
+		fields = '__all__'
+
+	def to_representation(self, instance):
+		data = super().to_representation(instance)
+		data['content'] = clean(data['content'], tags=[])
+		return data
+
+def to_representation(self, instance):
+	data = super(self.__class__, self).to_representation(instance)
+	for field in self.Meta.fields:
+		value = data.get(field)
+		if isinstance(value, str):
+			data[field] = clean(value, tags=[])
+	return data
+
+serializer_classes = [
+    UserProfileSerializer,
+    UserSerializer,
+    MessageSerializer,
+]
+
+for serializer in serializer_classes:
+	if hasattr(serializer, 'Meta'):
+		serializer.to_representation = to_representation

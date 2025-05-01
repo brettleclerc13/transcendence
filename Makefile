@@ -1,6 +1,14 @@
 COMPOSE_FILE=docker-compose.yml
 
-all: up
+PYTHON_PACKAGES = websockets requests asgiref
+
+all: install-deps up
+
+install-deps:
+	@echo "Checking and installing required Python packages..."
+	@for package in $(PYTHON_PACKAGES); do \
+		python3 -c "import $$package" 2>/dev/null || (echo "Installing missing package: $$package" && pip install --user $$package); \
+	done
 
 up:
 	@mkdir -p ./Volume
@@ -19,8 +27,13 @@ fclean: down
 	docker volume rm $$(docker volume ls -q);\
 	docker system prune -a --force
 	rm -Rf ./Volume
+	rm -Rf ./Backend/authentication/__pycache__
 	rm -Rf ./Backend/user/migrations
 	rm -Rf ./Backend/user/__pycache__
+	rm -Rf ./Backend/tournament/migrations
+	rm -Rf ./Backend/tournament/__pycache__
+	rm -Rf ./Backend/chat/migrations
+	rm -Rf ./Backend/chat/__pycache__
 	rm -Rf ./Backend/backend/__pycache__
 	rm -Rf ./Backend/utils/__pycache__
 	rm -Rf ./Backend/game/migrations
@@ -29,6 +42,10 @@ fclean: down
 	rm -Rf ./Backend/match/__pycache__
 	rm -Rf ./Backend/tmatch/migrations
 	rm -Rf ./Backend/tmatch/__pycache__
+	rm -Rf ./Backend/tournament/migrations
+	rm -Rf ./Backend/tournament/__pycache__
+	rm -Rf ./Backend/chat/migrations
+	rm -Rf ./Backend/chat/__pycache__
 	rm -Rf ./Backend/media/profile_pictures/*
 	mkdir -p ./Volume
 	mkdir -p ./Volume/postgresql

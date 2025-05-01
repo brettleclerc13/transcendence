@@ -1,0 +1,111 @@
+.modal-container {
+	position: fixed;
+	inset: 0;
+	background-color: #0d9488;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.modal-content {
+	background-color: white;
+	padding: 2rem;
+	margin-top: 5rem;
+	border-radius: 8px;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	width: 24rem;
+	position: relative;
+}
+
+.close-button {
+	position: absolute;
+	top: 0.5rem;
+	right: 0.5rem;
+	color: #6b7280;
+	font-size: 1.875rem;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+.close-button:hover {
+	color: #374151;
+}
+
+.alert {
+	margin-bottom: 1rem;
+	padding: 0.75rem;
+	border-radius: 4px;
+}
+
+.alert-danger {
+	background-color: #f8d7da;
+	color: #721c24;
+}
+
+.alert-success {
+	background-color: #d4edda;
+	color: #155724;
+}
+
+.label {
+	display: block;
+	font-size: 0.875rem;
+	font-weight: 500;
+	margin-bottom: 0.25rem;
+}
+
+.input-field {
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	padding: 0.5rem;
+	margin-bottom: 1rem;
+	width: 100%;
+}
+
+.error-message {
+	color: #dc2626;
+	font-size: 0.875rem;
+	margin-bottom: 0.5rem;
+}
+
+.submit-button {
+	color: white;
+	background-color: #0f766e;
+	border-radius: 6px;
+	padding: 0.5rem;
+	width: 100%;
+	border: none;
+	cursor: pointer;
+}
+
+.submit-button:hover {
+	background-color: #115e59;
+}
+
+.submit-button:disabled {
+	background-color: #94a3b8;
+	cursor: not-allowed;
+}
+
+.register-link {
+	display: block;
+	text-decoration: underline;
+	margin-top: 1rem;
+	text-align: center;
+}
+
+.mandatory-info {
+	font-size: 0.75rem;
+	margin-top: 1rem;
+}
+
+.mandatory-info span {
+	color: #dc2626;
+	margin-right: 0.25rem;
+}
+
+.mandatory {
+	color: red;
+	margin-left: 4px;
+}
+  

@@ -1,4 +1,3 @@
-import { FormProps } from "@/app/types";
 import Carousel from "../../components/carouselBootStrap";
 import AboutUsTitle from "./aboutUsTitle";
 import "./aboutUs.css";

@@ -10,63 +10,52 @@ import MessageBar from "./messageBar";
 import SearchBar from "./searchBar";
 import { getCookie } from "cookies-next/client";
 import { createSimpleMatch } from "../utilities/matchActions";
+import { useRouter } from "next/navigation";
+import { fetchUserProfile } from "../utilities/profileActions";
+import { GetOrCreateConversation } from "../utilities/chatActions";
+import { FetchMessages } from "../utilities/chatActions";
+import type { Friend, Message, ConversationResponse, MessagesResponse } from "../utilities/charTypes";
+import type { UserProfileData } from "../utilities/profileActions";
 
-interface User {
-	id: number;
-	username: string;
-	email: string;
-	profile_picture: string | null;
-	is_online: boolean;
-}
+// interface User {
+// 	id: number;
+// 	username: string;
+// 	email: string;
+// 	profile_picture: string | null;
+// 	is_online: boolean;
+// }
 
-interface Friend {
-	id: number;
-	username: string;
-	profile_picture: string | null;
-}
+// interface Friend {
+// 	id: number;
+// 	username: string;
+// 	profile_picture: string | null;
+// }
 
-interface Message {
-	sender: number;
-	conversation_id: number;
-	text: string;
-	timestamp: string;
-	senderPicture: string | null;
-}
+// interface Message {
+// 	sender: number;
+// 	conversation_id: number;
+// 	text: string;
+// 	timestamp: string;
+// 	senderPicture: string | null;
+// }
 
 const LiveChatClient = () => {
 	const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
-	const [currentUser, setCurrentUser] = useState<User | null>(null);
+	const [currentUser, setCurrentUser] = useState<UserProfileData | null>(null);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const wsRef = useRef<WebSocket | null>(null);
-	const [socket, setSocket] = useState<WebSocket | null>(null);
+	const router = useRouter();
 
 	useEffect(() => {
 		const fetchCurrentUser = async () => {
 			try {
-				const accessToken = getCookie("accessToken");
-				if (!accessToken) {
-					console.warn("Access token missing!");
-					return;
-				}
-				const response = await fetch("/api/profile/", {
-					headers: {
-						Authorization: `Bearer ${accessToken}`,
-						"Content-Type": "application/json",
-					},
-				});
-				if (!response.ok) {
-					console.warn(
-						"Erreur lors de la récupération de l'utilisateur :",
-						response.statusText
-					);
-					return;
-				}
-				const data = await response.json();
-				setCurrentUser(data);
+				if (!isUserLoggedIn()) return;
+				const response = await fetchUserProfile();
+				setCurrentUser(response);
 			} catch (error) {
 				console.warn(
 					"Erreur réseau lors de la récupération de l'utilisateur :",
-					error
+					error,
 				);
 			}
 		};
@@ -85,61 +74,48 @@ const LiveChatClient = () => {
 
 		const fetchConversationId = async () => {
 			try {
-				const accessToken = getCookie("accessToken");
-				if (!accessToken) {
-					console.warn("Access token missing!");
-					return;
-				}
+				const host = process.env.NEXT_PUBLIC_WS_HOST;
+				const port = process.env.NEXT_PUBLIC_WS_PORT;
 
-				const response = await fetch("/api/get_or_create_conversation/", {
-					method: "POST",
-					headers: {
-						Authorization: `Bearer ${accessToken}`,
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({ user_id: selectedFriend.id }),
-				});
+				const response = await GetOrCreateConversation(selectedFriend.id) as ConversationResponse;
+				let conversationData: { id: string } | null = null;
 
-				if (!response.ok) {
+				if (response && response.status && response.data) {
+					conversationData = response.data;
+				} else {
 					console.warn("Erreur lors de la récupération de la conversation.");
 					return;
 				}
-
-				const conversationData = await response.json();
-				if (!conversationData.id) {
+			
+				if (!conversationData || !conversationData.id) {
 					console.warn("Aucune conversation trouvée ou créée.");
 					return;
 				}
 
-				const messagesRetrieve = await fetch(
-					`/api/messages/?conversation_id=${conversationData.id}`,
-					{
-						headers: {
-							Authorization: `Bearer ${accessToken}`,
-							"Content-Type": "application/json",
-						},
-					}
-				);
+				const messagesRetrieve = await FetchMessages(conversationData.id) as MessagesResponse;
 
-				if (messagesRetrieve.ok) {
-					const data = await messagesRetrieve.json();
-					setMessages(data);
+				if (messagesRetrieve.status && messagesRetrieve.data) {
+					setMessages(messagesRetrieve.data);
 				} else {
+					const errorMessage =
+						"message" in response
+							? response.message
+							: "Failed to fetch messages.";
 					console.warn(
-						`Erreur lors de la récupération des messages : ${response.statusText}`
+						`Erreur lors de la récupération des messages : ${errorMessage}`,
 					);
 				}
-				if (!messagesRetrieve.ok) {
+				if (!messagesRetrieve.status) {
 					console.warn("Erreur lors de la récupération des messages.");
 					return;
 				}
 
 				wsRef.current = new WebSocket(
-					`wss://127.0.0.1:8080/ws/chat/${conversationData.id}/?token=${accessToken}`
+					`wss://${host}:${port}/chat/${conversationData.id}/?token=${accessToken}`,
 				);
 
 				wsRef.current.onopen = () => {
-					setSocket(wsRef.current);
+					console.log("WebSocket connecté !");
 				};
 
 				wsRef.current.onmessage = (event: MessageEvent) => {
@@ -154,11 +130,11 @@ const LiveChatClient = () => {
 						...prevMessages,
 						{
 							sender: data.sender,
-							conversation_id: conversationData.id,
+							conversation_id: Number(conversationData.id),
 							text: data.message,
 							timestamp: new Date().toISOString(),
 							senderPicture:
-								selectedFriend.profile_picture || "./img/default.png",
+								selectedFriend.profile_picture || "/img/default.png",
 						},
 					]);
 				};
@@ -200,7 +176,7 @@ const LiveChatClient = () => {
 			JSON.stringify({
 				message,
 				sender: currentUser?.id,
-			})
+			}),
 		);
 	};
 
@@ -209,7 +185,7 @@ const LiveChatClient = () => {
 			console.warn("Aucun ami sélectionné ou WebSocket non initialisé.");
 			return;
 		}
-		
+
 		try {
 			const response = await createSimpleMatch(true);
 			if (response.matchID) {
@@ -219,18 +195,19 @@ const LiveChatClient = () => {
 						JSON.stringify({
 							message: inviteMessage,
 							sender: currentUser?.id,
-						})
+						}),
 					);
 				} else {
 					console.warn(" WebSocket fermé. Impossible d'envoyer l'invitation.");
 				}
+				router.push("/lobby");
 			} else {
 				console.warn("Invite game creation not possible");
 			}
 		} catch (error) {
 			console.warn("Invite game creation not possible", error);
 		}
-	}
+	};
 
 
 	return (
@@ -244,17 +221,21 @@ const LiveChatClient = () => {
 							</div>
 							<FriendAndInvitationList onSelectFriend={setSelectedFriend} />
 						</div>
-					
+
 						<div className="current-chat">
-							{currentUser && selectedFriend ? (
-								<CurrentChat
-								friend={selectedFriend}
-								messages={messages}
-								currentUser={currentUser}
-								/>
-								) : (
-									<p className="text-muted">Select a friend to start chatting</p>
-									)}
+							{(() => {
+								if (currentUser && selectedFriend) {
+									return (
+										<CurrentChat
+											friend={selectedFriend}
+											messages={messages}
+											currentUser={currentUser}
+										/>
+									);
+								} else {
+									return <p className="text-muted">Select a friend to start chatting</p>;
+								}
+							})()}
 							<MessageBar
 								selectedFriend={selectedFriend}
 								onSendMessage={handleSendMessage}
@@ -266,8 +247,7 @@ const LiveChatClient = () => {
 			) : (
 				<div className="flex flex-col gap-4 justify-center items-center h-full w-full">
 					<p className="text-lg">
-						Please log in before chatting. It won't even take a
-						minute!
+						Please log in before chatting. It won&apos;t even take a minute!
 					</p>
 					<Link className="secondary-button" href="/login">
 						Connect

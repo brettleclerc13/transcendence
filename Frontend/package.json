@@ -3,36 +3,37 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
-		"dev": "next dev",
-		"build": "next build",
-		"start": "next start",
+		"dev": "NODE_ENV=development ts-node server.ts",
+		"build": "next build && tsc --project tsconfig.server.json",
+		"start": "NODE_ENV=production node dist/server.js",
 		"lint": "next lint",
 		"postinstall": "sed -i 's|/*# sourceMappingURL=bootstrap.min.css.map||g' node_modules/bootstrap/dist/css/bootstrap.min.css || true"
 	},
 	"dependencies": {
 		"@lordicon/element": "^1.10.1",
-		"bootstrap": "^5.3.3",
+		"bootstrap": "^5.3.5",
 		"cookies-next": "^5.1.0",
-		"framer-motion": "^12.4.4",
+		"framer-motion": "^12.6.3",
 		"jwt-decode": "^4.0.0",
 		"lottie-web": "^5.12.2",
-		"lucide-react": "^0.475.0",
-		"motion": "^12.0.6",
-		"next": "15.1.4",
-		"react": "^19",
+		"lucide-react": "^0.487.0",
+		"next": "^15.2.5",
+		"react": "^19.1.0",
+		"react-bootstrap": "^2.10.9",
 		"react-chartjs-2": "^5.3.0",
-		"react-dom": "^19",
-		"zod": "^3.24.1"
+		"react-dom": "^19.1.0",
+		"zod": "^3.24.2"
 	},
 	"devDependencies": {
 		"@types/bootstrap": "^5.2.10",
-		"@types/node": "^20",
-		"@types/react": "^18",
-		"@types/react-dom": "^18",
-		"eslint": "^9",
-		"eslint-config-next": "15.1.4",
-		"postcss": "^8",
-		"tailwindcss": "^3.4.1",
-		"typescript": "^5"
+		"@types/node": "^22.14.0",
+		"@types/react": "^19.1.0",
+		"@types/react-dom": "^19.1.0",
+		"eslint": "^9.24.0",
+		"eslint-config-next": "15.2.5",
+		"eslint-config-prettier": "^10.1.2",
+		"prettier": "^3.5.3",
+		"typescript": "^5.8.3",
+		"ts-node": "^10.9.1"
 	}
 }

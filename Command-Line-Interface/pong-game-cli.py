@@ -4,15 +4,18 @@ import websockets
 import requests
 import ssl
 from asgiref.sync import sync_to_async
+import urllib3
+
 
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Base URL for the backend API 
 #add back 8080 IN SCHOOL
 BASE_URL_DATA = "wss://127.0.0.1:8080/game"
-MATCH_API_URL = "http://127.0.0.1:8001/match-list/"
+MATCH_API_URL = "https://127.0.0.1:8080/api/match-list/"
 
 def get_active_matches():
     try:
@@ -20,7 +23,7 @@ def get_active_matches():
             "is_ongoing": "True",
             "is_finished": "False"
         }
-        response = requests.get(MATCH_API_URL, params=params)
+        response = requests.get(MATCH_API_URL, params=params, verify=False)  
 
         if response.status_code == 200:
             matches = response.json()
@@ -61,8 +64,7 @@ async def get_game_state():
         print("⚠️ No active games with that room-name")
         return
     try:
-        print(f"{BASE_URL_DATA}/{room_name}/")
-        async with websockets.connect(f"{BASE_URL_DATA}/{room_name}/", ssl=ssl_context) as websocket:
+        async with websockets.connect(f"{BASE_URL_DATA}/{room_name}/", ssl=ssl_context, origin="https://127.0.0.1") as websocket:
             response = await websocket.recv()
             game_data = json.loads(response)
 
@@ -92,7 +94,7 @@ async def get_game_state():
 async def get_connections():
     room_name = input("Enter room name: ")
     try:
-        async with websockets.connect(f"{BASE_URL_DATA}/{room_name}/", ssl=ssl_context) as websocket:
+        async with websockets.connect(f"{BASE_URL_DATA}/{room_name}/", ssl=ssl_context, origin="https://127.0.0.1") as websocket:
             response = await websocket.recv()
             game_data = json.loads(response)
 

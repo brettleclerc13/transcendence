@@ -1,3 +1,8 @@
+import qrcode
+import io
+import base64
+import os
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -5,7 +10,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from .serializer import UserSerializer, CustomTokenObtainPairSerializer, CustomTokenRefreshSerializer, CustomTokenVerifySerializer, MessageSerializer
+from .serializer import UserSerializer, UserProfileSerializer, CustomTokenObtainPairSerializer, CustomTokenRefreshSerializer, CustomTokenVerifySerializer, MessageSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import UserProfile, Message, FriendRequest, Conversation
@@ -13,8 +18,10 @@ from rest_framework_simplejwt.views import TokenVerifyView
 from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
 from user.websocket_utils import notify_user_update, notify_block_status
+from django_otp.plugins.otp_totp.models import TOTPDevice
+from os import getenv
 
-# Create your views here.
+# ===========================     USER     =========================== #
 
 class RegisterAPIView(APIView):  # User registration and management
     def post(self, request):
@@ -42,7 +49,7 @@ class LogoutAPIView(APIView):
             user.profile.save()
 
         logout(request)
-        
+
         return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -53,6 +60,140 @@ class CustomTokenRefreshView(TokenRefreshView):
 
 class CustomTokenVerifyView(TokenVerifyView):
 	serializer_class = CustomTokenVerifySerializer
+
+
+# ===========================     2FA     =========================== #
+
+class GenerateQRCodeView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		user = request.user
+
+		# Delete any existing devices to prevent duplicates
+		existing_devices = TOTPDevice.objects.filter(user=user, name="default")
+		if existing_devices.count() > 1:
+			# Keep only the most recent device if multiple exist
+			latest_device = existing_devices.latest('id')
+			existing_devices.exclude(id=latest_device.id).delete()
+			device = latest_device
+			created = False
+		elif existing_devices.count() == 1:
+			device = existing_devices.first()
+			created = False
+		else:
+			# Create a new device if none exists
+			device = TOTPDevice.objects.create(user=user, name="default")
+			created = True
+
+		# Always update the issuer to ensure it's correct
+		device.issuer = f"{getenv('NEXT_PUBLIC_WS_HOST')}:{getenv('NEXT_PUBLIC_WS_PORT')} - {user.username}"
+		device.save()
+
+		otp_uri = device.config_url
+
+		qr = qrcode.make(otp_uri)
+		buffered = io.BytesIO()
+		qr.save(buffered, format="PNG")
+		qr_base64 = base64.b64encode(buffered.getvalue()).decode()
+
+		return Response({"qr_code": f"data:image/png;base64,{qr_base64}"}, status=status.HTTP_200_OK)
+
+class Enable2FAView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def post(self, request):
+		user = request.user
+		otp_code = request.data.get("otp")
+
+		if not otp_code:
+			return Response({"error": "OTP is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+		try:
+			# Try to find the most recent device
+			devices = TOTPDevice.objects.filter(user=user, name="default")
+			if devices.count() > 0:
+				device = devices.latest('id')
+			else:
+				raise TOTPDevice.DoesNotExist
+		except TOTPDevice.DoesNotExist:
+			return Response({"error": "QR code not generated or expired"}, status=status.HTTP_400_BAD_REQUEST)
+
+		if not device.verify_token(otp_code):
+			return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+		# Clean up any other devices before enabling 2FA
+		devices.exclude(id=device.id).delete()
+
+		# Update the profile
+		user.profile.has_2fa = True
+		user.profile.save()
+
+		print(f"2FA enabled for user {user.username}", flush=True)
+		return Response({"message": "2FA enabled successfully"}, status=status.HTTP_200_OK)
+
+class Disable2FAView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def post(self, request):
+		user = request.user
+		otp_code = request.data.get("otp")
+
+		try:
+			# Try to find the most recent device
+			devices = TOTPDevice.objects.filter(user=user, name="default")
+			if devices.count() > 0:
+				device = devices.latest('id')
+			else:
+				raise TOTPDevice.DoesNotExist
+		except TOTPDevice.DoesNotExist:
+			return Response({"error": "2FA is not enabled"}, status=status.HTTP_400_BAD_REQUEST)
+
+		if not device.verify_token(otp_code):
+			return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+		# Delete all TOTP devices for this user
+		TOTPDevice.objects.filter(user=user).delete()
+
+		# Update the profile
+		user.profile.has_2fa = False
+		user.profile.save()
+
+		return Response({"message": "2FA disabled successfully"}, status=status.HTTP_200_OK)
+
+class Check2FAView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		user = request.user
+		profile = user.profile
+
+		return Response({"has_2fa": profile.has_2fa}, status=status.HTTP_200_OK)
+
+class Verify2FAView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def post(self, request):
+		user = request.user
+		otp_code = request.data.get("otp")
+
+		try:
+			# Try to find the most recent device
+			devices = TOTPDevice.objects.filter(user=user, name="default")
+			if devices.count() > 0:
+				device = devices.latest('id')
+			else:
+				raise TOTPDevice.DoesNotExist
+		except TOTPDevice.DoesNotExist:
+			return Response({"error": "2FA is not enabled"}, status=status.HTTP_400_BAD_REQUEST)
+
+		if not device.verify_token(otp_code):
+			return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+		return Response({"message": "OTP verified successfully"}, status=status.HTTP_200_OK)
+
+
+# ===========================     PROFILE     =========================== #
 
 class ProfileAPIView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -78,7 +219,7 @@ class ProfileAPIView(APIView):
             "is_online": profile.is_online,
 		}
 		return Response(profile_data, status=status.HTTP_200_OK)
-        
+
 	def post(self, request):
 		print(f"Received data: {request.data}", flush=True)
 		user = request.user
@@ -97,7 +238,7 @@ class ProfileAPIView(APIView):
 			if User.objects.filter(email=email).exists():
 				return Response({"error": "Email already exists."}, status=status.HTTP_400_BAD_REQUEST)
 			user.email = email
-        
+
 		# Validate and update password
 		old_password = data.get("old_password")
 		new_password = data.get("new_password")
@@ -146,9 +287,20 @@ class ProfileAPIView(APIView):
 		profile = user.profile
 
 		if "profile_picture" in request.FILES:
-			profile.profile_picture = request.FILES["profile_picture"]
-			profile.save()
-			return Response({"message": "Profile picture updated successfully.", "profile_picture": profile.profile_picture.url}, status=status.HTTP_200_OK)
+			try:
+				# Validate the file using our custom validator
+				file = request.FILES["profile_picture"]
+				validated_file = profile.validate_profile_picture(file)
+
+				# If validation passes, save the file
+				profile.profile_picture = validated_file
+				profile.save()
+				return Response({
+					"message": "Profile picture updated successfully.",
+					"profile_picture": profile.profile_picture.url
+				}, status=status.HTTP_200_OK)
+			except Exception as e:
+				return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 		return Response({"error": "No profile picture provided."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -177,9 +329,12 @@ class PublicProfileAPIView(APIView):
 		}
 		return Response(profile_data, status=status.HTTP_200_OK)
 
+
+# ===========================     CHAT     =========================== #
+
 class FriendListAPIView(APIView):
     permission_classes = [IsAuthenticated]
-     
+
     def get(self, request):
         user = request.user
         profile = user.profile
@@ -191,11 +346,11 @@ class FriendListAPIView(APIView):
             profile_picture_url = None
             if friend.profile_picture:
 
-                profile_picture_url = request.build_absolute_uri(friend.profile_picture.url)
-                
+                profile_picture_url = friend.profile_picture.url
+
                 # Remplacer 'backend' par 'localhost:8001' si nécessaire
-                if "backend" in profile_picture_url:
-                    profile_picture_url = profile_picture_url.replace("backend", "127.0.0.1")
+                # if "backend" in profile_picture_url:
+                #     profile_picture_url = profile_picture_url.replace("backend", "127.0.0.1")
 
             friends_data.append({
                 "id": friend.user.id,
@@ -204,7 +359,7 @@ class FriendListAPIView(APIView):
             })
 
         return Response(friends_data, status=status.HTTP_200_OK)
-        
+
     def post(self, request):
         user = request.user
         profile = user.profile
@@ -214,13 +369,13 @@ class FriendListAPIView(APIView):
             friend_profile = UserProfile.objects.get(user_id=friend_id)
         except UserProfile.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-        
+
         if friend_profile == profile:
             return Response({"error": "You cannot add yourself as a friend."}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         profile.friends.add(friend_profile)
         return Response({"message": "Friend added successfully."}, status=status.HTTP_200_OK)
-        
+
     def delete(self, request):
         user = request.user
         profile = user.profile
@@ -230,10 +385,9 @@ class FriendListAPIView(APIView):
             friend_profile = UserProfile.objects.get(user_id=friend_id)
         except UserProfile.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-        
+
         profile.friends.remove(friend_profile)
         return Response({"message": "Friend removed successfully."}, status=status.HTTP_200_OK)
-        
 
 class MessageAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -243,17 +397,17 @@ class MessageAPIView(APIView):
 
         if not conversation_id:
             return Response({"error": "conversation_id is missing"}, status=400)
-        
+
         conversation = get_object_or_404(Conversation, id=conversation_id)
         participants = conversation.participants.all()
-        
+
         if request.user not in conversation.participants.all():
             return Response({"error": "You are not part of this conversation"}, status=status.HTTP_403_FORBIDDEN)
-        
+
         for participant in conversation.participants.all():
             if request.user.profile.is_blocked(participant) or participant.profile.is_blocked(request.user):
                 return Response({"error": "You cannot send messages to this user."}, status=status.HTTP_403_FORBIDDEN)
-        
+
         serializer = MessageSerializer(data={
             "sender": request.user.id,
             "conversation": conversation.id,
@@ -272,23 +426,11 @@ class MessageAPIView(APIView):
 
         if request.user not in conversation.participants.all():
             return Response({"error": "You are not part of this conversation"}, status=status.HTTP_403_FORBIDDEN)
-        
+
         blocked_users = request.user.profile.blocked_users.all()
         messages = Message.objects.filter(conversation=conversation).exclude(sender__profile__in=blocked_users).order_by('timestamp')
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
-
-
-# # class SearchAPIView(APIView):
-
-# #     def get(self, request):
-# #         query = request.query_params.get("query", "").strip()
-# #         if not query:
-# #             return Response({"error": "Query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
-# #         users = User.objects.filter(username__icontains=query).values("username")[:3]
-# #         # serializer = UserSerializer([user.user for user in users], many=True)
-# #         return Response(list(users), status=status.HTTP_200_OK)
 
 class SearchAPIView(APIView):
 
@@ -296,10 +438,9 @@ class SearchAPIView(APIView):
         query = request.query_params.get("query", "").strip()
         if not query:
             return Response({"error": "Query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         users = User.objects.filter(username__icontains=query).values("username")[:3]
         return JsonResponse(list(users), safe=False)
-
 
 class SendFriendRequestAPIView(APIView):
     permission_classes = [IsAuthenticated]

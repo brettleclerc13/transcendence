@@ -2,82 +2,26 @@
 
 import { useState, useEffect, useRef } from "react";
 import { getCookie } from "cookies-next/client";
+import "./game.css";
+import type { GameState } from "./gameCanvasFunctions";
+import { drawGame } from "./gameCanvasFunctions";
 
-type GameState = {
-	player1_position: [number, number];
-	player2_position: [number, number];
-	ball_speed: number;
-	ball_position: [number, number];
-	ball_direction: [number, number];
-	score: [number, number];
-	paddle_speed: number;
-	resolution: number;
-	collision_point: [number, number][];
-	last_update_time: number;
-};
-
-function drawGame(state: GameState, canvas: HTMLCanvasElement) {
-	//console.log("Drawing game state:", state);
-
-	const ctx = canvas.getContext("2d");
-	if (!ctx) return;
-
-	ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the entire canvas
-	ctx.save();
-	ctx.translate(0, canvas.height);
-	ctx.scale(1, -1);
-
-	// Convert paddle dimensions from "units" to pixels temporarry hard coded.
-	const paddleWidth = 1.5 * state.resolution;
-	const paddleHeight = 12 * state.resolution;
-
-	// Player 1's paddle
-	const player1XCenter = state.player1_position[0] * state.resolution; // Convert X-center to pixels
-	const player1YCenter = state.player1_position[1] * state.resolution; // Convert Y-center to pixels
-
-	const player1XTopLeft = player1XCenter - paddleWidth / 2; // Move from center X to top-left X
-	const player1YTopLeft = player1YCenter + paddleHeight / 2; // Move from center Y to top-left Y (positive Y is up)
-
-	ctx.fillStyle = "white";
-	ctx.fillRect(player1XTopLeft, player1YTopLeft, paddleWidth, -paddleHeight); // -paddleHeight to draw upward
-
-	// Player 2's paddle
-	const player2XCenter = state.player2_position[0] * state.resolution;
-	const player2YCenter = state.player2_position[1] * state.resolution;
-
-	const player2XTopLeft = player2XCenter - paddleWidth / 2;
-	const player2YTopLeft = player2YCenter + paddleHeight / 2;
-
-	ctx.fillRect(player2XTopLeft, player2YTopLeft, paddleWidth, -paddleHeight);
-
-	// Draw the ball
-	ctx.beginPath();
-	ctx.arc(
-		state.ball_position[0] * state.resolution, // X-center
-		state.ball_position[1] * state.resolution, // Y-center
-		1.5 * state.resolution, // Radius (10 pixels)
-		0,
-		Math.PI * 2
-	);
-	ctx.fill();
-
-	// Draw the score
-	ctx.setTransform(1, 0, 0, 1, 0, 0);
-	ctx.font = "30px Arial";
-	ctx.fillText(`Player 1: ${state.score[0]}`, 20, 30); // Player 1 score at the top
-	ctx.fillText(`Player 2: ${state.score[1]}`, canvas.width - 180, 30); // Player 2 score at the top
-	ctx.restore();
-}
-
-export default function GameCanvas(match: { ID: string }) {
-	const [status, setStatus] = useState<"waiting" | "ready" | "playing">(
-		"waiting"
-	);
+export default function GameCanvas({
+	matchID,
+	setGameType,
+}: {
+	matchID: string | undefined;
+	setGameType: (isReadyToPlay: string) => void;
+}) {
+	const [status, setStatus] = useState<
+		"waiting" | "ready" | "playing" | "reconnection" | "ending"
+	>("waiting");
 	const [playerRole, setPlayerRole] = useState<"player_1" | "player_2" | null>(
-		null
+		null,
 	);
+	const [winner, setWinner] = useState<string | undefined>(undefined);
 	const [socket, setSocket] = useState<WebSocket | null>(null);
-	const [gameState, setGameState] = useState<GameState | null>(null);
+	const [gameState, setGameState] = useState<GameState | undefined>(undefined);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const inputInterval = useRef<NodeJS.Timeout | null>(null);
 	const currentDirectionRef = useRef(0); // ✅ Use a ref to track direction persistently
@@ -91,17 +35,17 @@ export default function GameCanvas(match: { ID: string }) {
 	const prevPaddle2Position = useRef<[number, number] | null>(null);
 	const targetPaddle1Position = useRef<[number, number] | null>(null);
 	const targetPaddle2Position = useRef<[number, number] | null>(null);
+	const host = process.env.NEXT_PUBLIC_WS_HOST;
+	const port = process.env.NEXT_PUBLIC_WS_PORT;
 
 	useEffect(() => {
 		const accessToken = getCookie("accessToken");
 
-		if (!accessToken) {
-			console.log("Access Token not retrieved in Game Canvas");
-			return;
-		}
-		const roomName = match.ID;
+		if (!accessToken || !matchID) return;
+
+		const roomName = matchID;
 		const ws = new WebSocket(
-			`wss://127.0.0.1:8080/game/${roomName}/?token=${accessToken}`
+			`wss://${host}:${port}/game/${roomName}/?token=${accessToken}`,
 		);
 
 		ws.onopen = () => {
@@ -111,7 +55,13 @@ export default function GameCanvas(match: { ID: string }) {
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
 
-			if (data.type === "game_ending" || data.type === "game_pause")
+			if (data.type === "game_ending") {
+				console.log("Game FINISHED");
+				if ("winner" in data) setWinner(data.winner);
+				setStatus("ending");
+			}
+
+			if (data.type === "game_pause")
 				console.log("Game Stopped! reason:", data.reason);
 
 			if (data.type === "initializer_pack") {
@@ -128,8 +78,8 @@ export default function GameCanvas(match: { ID: string }) {
 				setStatus("playing");
 			}
 
-			if (data.type === "reconnected"){
-				socket?.send(
+			if (data.type === "reconnected") {
+				ws.send(
 					JSON.stringify({
 						type: "restart",
 						game_parametres: {
@@ -142,9 +92,9 @@ export default function GameCanvas(match: { ID: string }) {
 							screen_width: 800,
 							screen_height: 592,
 							resolution: 8,
-							point_goal: 10,
+							point_goal: 5,
 						},
-					})
+					}),
 				);
 			}
 
@@ -168,6 +118,10 @@ export default function GameCanvas(match: { ID: string }) {
 				lastUpdateTime.current = Date.now();
 
 				setGameState(data.game_state);
+			}
+
+			if (data.type === "pending_reconnection") {
+				setStatus("reconnection");
 			}
 		};
 
@@ -235,13 +189,13 @@ export default function GameCanvas(match: { ID: string }) {
 				const segmentTime = totalDuration / numSegments;
 				const currentSegment = Math.min(
 					Math.floor(deltaTime / segmentTime),
-					numSegments - 1
+					numSegments - 1,
 				);
 				const segmentStartTime =
 					lastUpdateTime.current + currentSegment * segmentTime;
 				const segmentProgress = Math.min(
 					(now - segmentStartTime) / segmentTime,
-					1
+					1,
 				);
 
 				let start: [number, number];
@@ -276,7 +230,6 @@ export default function GameCanvas(match: { ID: string }) {
 				];
 			}
 
-			// Draw the updated frame
 			drawGame(
 				{
 					...gameState,
@@ -284,7 +237,7 @@ export default function GameCanvas(match: { ID: string }) {
 					player1_position: interpolatedPaddle1Position,
 					player2_position: interpolatedPaddle2Position,
 				},
-				canvasRef.current
+				canvasRef.current,
 			);
 
 			// Request the next frame
@@ -312,23 +265,22 @@ export default function GameCanvas(match: { ID: string }) {
 						screen_width: 800,
 						screen_height: 592,
 						resolution: 8,
-						point_goal: 10,
+						point_goal: 5,
 					},
-				})
+				}),
 			);
 		}
 	}, [status, playerRole]);
 
 	useEffect(() => {
 		const sendInput = () => {
-			if (socket && playerRole) {
+			if (socket) {
 				socket.send(
 					JSON.stringify({
 						type: "input",
-						player: playerRole,
 						direction: currentDirectionRef.current, // ✅ Always send the latest ref value
 						timestamp: Date.now(),
-					})
+					}),
 				);
 			}
 		};
@@ -371,19 +323,35 @@ export default function GameCanvas(match: { ID: string }) {
 				inputInterval.current = null;
 			}
 		};
-	}, [socket, playerRole]);
+	}, [socket]);
+
+	useEffect(() => {
+		if (status === "ending" && playerRole) {
+			const delay = playerRole === "player_1" ? 3000 : 3150; // 3s or 3.15s
+			const timer = setTimeout(() => {
+				setGameType("lobby");
+			}, delay);
+
+			return () => clearTimeout(timer);
+		}
+	}, [status, playerRole]);
 
 	return (
-		<div className="flex justify-center items-center h-full w-full">
+		<div className="game-container">
 			{status === "waiting" && <p>Waiting for opponent...</p>}
 			{status === "ready" && <p>Ready! Game starting soon...</p>}
+			{status === "reconnection" && (
+				<p>Waiting for reconnection of the opponent...</p>
+			)}
 			{status === "playing" && (
-				<canvas
-					ref={canvasRef}
-					width={800}
-					height={592}
-					style={{ backgroundColor: "black", display: "block" }}
-				/>
+				<canvas ref={canvasRef} width={800} height={592} className="canvas" />
+			)}
+			{status === "ending" && (
+				<div className="game-over-screen">
+					<p>Game is finished!</p>
+					<p>{winner} has won!</p>
+					<p>Returning in 3 seconds...</p>
+				</div>
 			)}
 		</div>
 	);

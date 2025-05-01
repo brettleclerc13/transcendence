@@ -1,4 +1,3 @@
-import Hero from "../Hero/hero";
 import HeaderComponent from "../Header/headerComponent";
 import LoginForm from "@/app/User/loginForm";
 import RegisterForm from "@/app/User/registerForm";
@@ -6,6 +5,7 @@ import AboutUsLayer from "../AboutUs/aboutUs";
 import LiveChat from "../LiveChat/liveChat";
 import Lobby from "../Game/lobby";
 import { redirect } from "next/navigation";
+import HeroWrapper from "../Hero/heroWrapper";
 
 export default async function SectionPage(props: {
 	params: Promise<{ section: string }>;
@@ -21,7 +21,7 @@ export default async function SectionPage(props: {
 	];
 
 	const params = await props.params;
-	let section = await Promise.resolve(params.section);
+	const section = await Promise.resolve(params.section);
 
 	if (!existingSections.includes(section)) redirect("/");
 
@@ -29,7 +29,7 @@ export default async function SectionPage(props: {
 		<>
 			<div className="app-container">
 				<HeaderComponent />
-				{section === "" && <Hero />}
+				{section === "" && <HeroWrapper />}
 				{section === "lobby" && <Lobby />}
 				{section === "aboutUs" && <AboutUsLayer />}
 				{section === "login" && <LoginForm />}

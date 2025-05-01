@@ -1,23 +1,31 @@
 import { Doughnut } from "react-chartjs-2";
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { fetchSimpleMatchHistory } from "../utilities/matchActions";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import type { ChartData } from "chart.js";
 import "./profile.css";
 
+ChartJS.register(ArcElement, Tooltip, Legend);
+
 type SimpleMatchHistory = {
+	id: string;
 	created_at: string;
-	result: string;
 	match_type: string;
 	score_player1: number;
 	score_player2: number;
 	type: string;
 	score: string;
+	winner_username: string | undefined;
 };
 
 export default function MatchHistory({
 	setAlert,
+	username,
 }: {
-	setAlert: (alert: { message: string; type: string } | null) => void;
+	setAlert: (
+		alert: { message: string; type: "danger" | "success" } | null,
+	) => void;
+	username: string | undefined;
 }) {
 	//const modalRef = useRef<HTMLDivElement>(null);
 	const [chartData, setChartData] = useState<
@@ -29,52 +37,51 @@ export default function MatchHistory({
 	const [simpleMatches, setSimpleMatches] = useState<SimpleMatchHistory[]>([]);
 	const [chartOptions, setChartOptions] = useState({});
 
-	useEffect(() => {
-		const fetchMatchHistoryData = async () => {
-			const matchResults = await fetchSimpleMatchHistory();
+	const fetchMatchHistoryData = useCallback(async () => {
+		const matchResults = await fetchSimpleMatchHistory();
 
-			if (!matchResults.ok) {
-				setAlert({
-					message: `Error fetching your match history: ${matchResults.error}`,
-					type: "danger",
-				});
-				return;
-			} else {
-				setSimpleMatches(matchResults.data);
-				// Calcul des statistiques Win/Lose
-				const wins = simpleMatches.filter(
-					(match) => match.result === "Won"
-				).length;
-				const losses = simpleMatches.filter(
-					(match) => match.result === "Lost"
-				).length;
+		if (matchResults && matchResults.ok && "data" in matchResults) {
+			const matchData = matchResults.data || [];
+			setSimpleMatches(matchData);
+			// Calcul des statistiques Win/Lose
+			const wins = matchData.filter(
+				(match: SimpleMatchHistory) => match.winner_username === username,
+			).length;
+			const totalMatches = matchData.length;
+			const losses = totalMatches - wins;
 
-				// Données pour la roue
-				setChartData({
-					labels: ["Wins", "Losses"],
-					datasets: [
-						{
-							data: [wins, losses],
-							backgroundColor: ["#4caf50", "#f44336"], // Couleurs pour Win et Lose
-							borderWidth: 1,
-						},
-					],
-				});
-
-				setChartOptions({
-					cutout: "70%", // Taille du "trou" au centre de l'anneau
-					plugins: {
-						legend: {
-							display: true,
-							position: "bottom",
-						},
+			// Données pour la roue
+			setChartData({
+				labels: ["Wins", "Losses"],
+				datasets: [
+					{
+						data: [wins, losses],
+						backgroundColor: ["#4caf50", "#f44336"], // Couleurs pour Win et Lose
+						borderWidth: 1,
 					},
-				});
-			}
-		};
+				],
+			});
 
+			setChartOptions({
+				cutout: "70%", // Taille du "trou" au centre de l'anneau
+				plugins: {
+					legend: {
+						display: true,
+						position: "bottom",
+					},
+				},
+			});
+		} else {
+			setAlert({
+				message: `Match history error: ${matchResults.error}`,
+				type: "danger",
+			});
+		}
+	}, [username]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	useEffect(() => {
 		fetchMatchHistoryData();
-	}, []);
+	}, [fetchMatchHistoryData]);
 
 	return (
 		<>
@@ -91,14 +98,27 @@ export default function MatchHistory({
 							</tr>
 						</thead>
 						<tbody>
-							{simpleMatches.map((match) => (
-								<tr key={match.created_at}>
-									<th scope="row">{match.created_at}</th>
-									<td>{match.type}</td>
-									<td>{match.result}</td>
-									<td>{match.score}</td>
+							{simpleMatches?.length > 0 ? (
+								simpleMatches.map((match) => (
+									<tr key={match.id}>
+										<th scope="row">
+											{new Intl.DateTimeFormat("en-GB", {
+												dateStyle: "long",
+												timeStyle: "short",
+											}).format(new Date(match.created_at))}
+										</th>
+										<td>{match.match_type}</td>
+										<td>{match.winner_username === username ? "W" : "L"}</td>
+										<td>{match.score}</td>
+									</tr>
+								))
+							) : (
+								<tr>
+									<td colSpan={4} style={{ textAlign: "center" }}>
+										No match history available
+									</td>
 								</tr>
-							))}
+							)}
 						</tbody>
 					</table>
 				</div>

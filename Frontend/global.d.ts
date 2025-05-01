@@ -1,4 +1,4 @@
-declare module "bootstrap/dist/js/bootstrap.bundle.min" {
+declare module "bootstrap/dist/js/bootstrap.bundle.min.js" {
 	const bootstrap: any;
 	export default bootstrap;
 }
@@ -15,4 +15,4 @@ declare namespace JSX {
 	}
 }
 
-// declare module 'bootstrap/dist/css/bootstrap.min.css';
+declare module "bootstrap/dist/css/bootstrap.min.css";
