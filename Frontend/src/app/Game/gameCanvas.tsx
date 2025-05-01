@@ -92,7 +92,7 @@ export default function GameCanvas({
 							screen_width: 800,
 							screen_height: 592,
 							resolution: 8,
-							point_goal: 2,
+							point_goal: 5,
 						},
 					}),
 				);
@@ -265,7 +265,7 @@ export default function GameCanvas({
 						screen_width: 800,
 						screen_height: 592,
 						resolution: 8,
-						point_goal: 2,
+						point_goal: 5,
 					},
 				}),
 			);

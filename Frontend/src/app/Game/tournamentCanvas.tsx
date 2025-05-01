@@ -37,13 +37,13 @@ export default function TournamentCanvas({
 		Record<string, TournamentPlayer>
 	>({});
 	const [displayedPlayers, setDisplayedPlayers] = useState<string[]>([
-		"NA",
-		"NA",
-		"NA",
-		"NA",
-		"NA",
-		"NA",
-		"NA",
+		" ",
+		" ",
+		" ",
+		" ",
+		" ",
+		" ",
+		" ",
 	]);
 	const [matchID, setMatchID] = useState<string | undefined>(undefined);
 	const [alert, setAlert] = useState<{
@@ -177,7 +177,7 @@ export default function TournamentCanvas({
 		const updatedNames = layers.map((layer) => {
 			const playerID = currentState[layer];
 
-			return playerMap[playerID]?.tournament_name || "NA";
+			return playerMap[playerID]?.tournament_name || " ";
 		});
 		displayedPlayersRef.current = updatedNames;
 		setDisplayedPlayers(updatedNames);

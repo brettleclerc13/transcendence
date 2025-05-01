@@ -12,7 +12,6 @@ services:
     networks:
       - app-network
     volumes:
-      - front-data:/app
       - /app/.next
       - /app/node_modules
       - ssl-certs:/etc/nginx/ssl:ro

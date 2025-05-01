@@ -58,7 +58,6 @@ class UserProfile(models.Model):
 				mime = magic.Magic(mime=True)
 				content_type = mime.from_buffer(file_content)
 
-				# Reset file pointer
 				value.seek(0)
 
 				if content_type not in valid_mime_types:
@@ -71,19 +70,18 @@ class UserProfile(models.Model):
 			# Fallback method using file extension and basic checks
 			try:
 				# Check file signature manually for common image formats
-				file_content = value.read(8)  # Read first 8 bytes
-				value.seek(0)  # Reset file pointer
+				file_content = value.read(8)  # Read first 8 bytes0
+				value.seek(0)
 
 				# Convert bytes to hex for signature checking
 				hex_signature = ''.join([f'{byte:02x}' for byte in file_content])
 
 				# Check signatures
-				is_png = hex_signature.startswith('89504e47')  # PNG signature
-				is_jpeg = hex_signature.startswith('ffd8ff')   # JPEG signature
-				is_webp = b'WEBP' in file_content           # WebP contains 'WEBP' string
+				is_png = hex_signature.startswith('89504e47')
+				is_jpeg = hex_signature.startswith('ffd8ff')
+				is_webp = b'WEBP' in file_content
 
 				if not (is_png or is_jpeg or is_webp):
-					# If signature check fails, use extension as fallback
 					guessed_type = mimetypes.guess_type(value.name)[0]
 					if guessed_type not in valid_mime_types:
 						raise serializers.ValidationError(

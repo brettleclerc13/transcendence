@@ -57,11 +57,11 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         #variables to change the feel of the game
         self.time_per_tick = 0.1 
         self.sub_tick_amount = 5
-        self.reflection_bias = 0.95    
+        self.reflection_bias = 0.55    
         self.max_speed = 45 # best not set too high
         self.directional_limit = 0.1
         self.dir_correction_rate = 0.12
-        self.reconnection_timer = 60
+        self.reconnection_timer = 20
 
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
@@ -70,6 +70,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         # Detect User-Agent to differentiate between CLI and browser users
         headers = dict(self.scope["headers"])
         user_agent = headers.get(b"user-agent", b"").decode("utf-8")  # Decode bytes to string
+        duplicate_check = f"room:{self.room_name}:duplicates"
+        state_key = f"room:{self.room_name}:state"
 
         try:
             self.redis = await RedisManager.get_redis()
@@ -99,6 +101,12 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 if not self.match:
                     await self.close(code=4002)
                     return
+                await RedisManager.append_to_list(duplicate_check, str(self.user.id))
+                if await self.checkduplate():
+                    await RedisManager.remove_last_and_set_list(duplicate_check)
+                    await RedisManager.set_state(state_key, "duplicate refused")
+                    await self.close(code=4003)
+                    return
                 if self.debug_connections:
                     print(f"Match Authenticated!", flush=True)
 
@@ -113,7 +121,6 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 await self.accept()
                 username = await sync_to_async(lambda: self.user.user.username)()
                 await self.redis.rpush(players_key, username)
-
                 
                 self.player_number =  await self.get_player_number()
                 await self.send(text_data=json.dumps({
@@ -152,16 +159,19 @@ class PongGameConsumer(AsyncWebsocketConsumer):
         username = None
         if self.is_cli:
             return
+        if await RedisManager.get_state(state_key) == "duplicate refused":
+            return
 
         if hasattr(self, "user") and self.user:
             username = await sync_to_async(lambda: self.user.user.username)()
         
-        try:      
+        try:
             if hasattr(self, "user") and self.user:     
                 await RedisManager.delete_user_data_list("room", self.room_name, "players", username)
             current_players = await RedisManager.get_list_of_list(players_key)
 
             if self.debug_connections:
+
                 print(f"in disconect: len of players {len(current_players)}", flush=True)
                 print(f"the game state at disconnect: {await RedisManager.get_state(state_key)}", flush=True)
             if (await RedisManager.get_state(state_key)) in ["game ongoing", "waiting for players", "waiting for reconnection"]: 
@@ -238,6 +248,17 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 "player": self.player_number, #potentially
                 "direction": data["direction"]
             }))
+
+    async def checkduplate(self):
+        duplicate_check = f"room:{self.room_name}:duplicates"
+
+        users = await RedisManager.get_list_of_list(duplicate_check)
+        if self.debug_connections:
+            print(f"this user: {self.user.id}, users in total: {users}", flush=True)
+
+        if len(users) >= 2 and users[0] == users[1]:
+            return True
+        return False
     
     async def handle_cli_request(self):
         try:

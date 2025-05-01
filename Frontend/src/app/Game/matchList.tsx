@@ -13,6 +13,7 @@ type Games = {
 	created_at: string;
 	is_tournament: boolean;
 	player1_username: string;
+	players_usernames: string[];
 	// Add other properties here
 };
 
@@ -175,7 +176,7 @@ export default function MatchList({
 									}).format(new Date(game.created_at))}
 								</td>
 								<td>{game.is_tournament ? "Tournament" : "1v1"}</td>
-								<td>{game.player1_username}</td>
+								<td>{game.is_tournament ? game.players_usernames[0] : game.player1_username}</td>
 								<td>{game.id}</td>
 								<td>
 									<button

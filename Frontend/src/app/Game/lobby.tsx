@@ -183,7 +183,7 @@ export default function Lobby() {
 	}
 
 	return (
-		<>
+		<div className="app-container">
 			{gameType == "simple" && (
 				<GameCanvas matchID={gameID} setGameType={setGameType} />
 			)}
@@ -255,13 +255,14 @@ export default function Lobby() {
 			{gameType == "notLoggedIn" && (
 				<div className="not-logged-in-container">
 					<p className="text-lg">
-						Please log in before starting a game. It won&apos;t even take a minute!
+						Please log in before starting a game. It won&apos;t even take a
+						minute!
 					</p>
 					<Link className="secondary-button" href="/login">
 						Connect
 					</Link>
 				</div>
 			)}
-		</>
+		</div>
 	);
 }
