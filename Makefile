@@ -9,12 +9,27 @@ install-deps:
 	@for package in $(PYTHON_PACKAGES); do \
 		python3 -c "import $$package" 2>/dev/null || (echo "Installing missing package: $$package" && pip install --user $$package); \
 	done
+	@echo "Generating Django secret key..."
+	@if [ ! -f .env ]; then \
+		touch .env; \
+		echo "Created new .env file"; \
+	fi
+	@if ! grep -q "^SECRET_KEY=" .env; then \
+		SECRET_KEY=$$(python3 -c "import secrets; print('django-insecure-' + secrets.token_urlsafe(32))"); \
+		if [ -s .env ] && [ "$$(tail -c 1 .env | wc -l)" -eq 0 ]; then \
+			echo "" >> .env; \
+		fi; \
+		echo "SECRET_KEY=$$SECRET_KEY" >> .env; \
+		echo "✅ Secret key generated and added to .env file"; \
+	else \
+		echo "✅ Secret key already exists in .env file"; \
+	fi
 
 up:
 	@mkdir -p ./Volume
 	@mkdir -p ./Volume/postgresql
 	@mkdir -p ./Backend/media/profile_pictures
-	docker compose -f $(COMPOSE_FILE) up 
+	docker compose -f $(COMPOSE_FILE) up
 
 down:
 	docker compose -f $(COMPOSE_FILE) down
@@ -50,11 +65,11 @@ fclean: down
 	mkdir -p ./Volume
 	mkdir -p ./Volume/postgresql
 
-re:	
+re:
 	@mkdir -p ./Volume
 	@mkdir -p ./Volume/postgresql
 	@mkdir -p ./Backend/media/profile_pictures
 	@docker compose -f $(COMPOSE_FILE) build
-	@docker compose -f $(COMPOSE_FILE) up 
+	@docker compose -f $(COMPOSE_FILE) up
 
 .PHONY: all up down ps fclean re
